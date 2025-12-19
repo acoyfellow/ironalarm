@@ -1,5 +1,7 @@
 # ironalarm
 
+[![npm version](https://img.shields.io/npm/v/ironalarm.svg)](https://www.npmjs.com/package/ironalarm)
+
 Reliable task scheduling for Cloudflare Durable Objects, implementing the "reliable runNow" pattern for resilient long-running tasks.
 
 ## Problem
