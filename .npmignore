@@ -1,0 +1,11 @@
+src/
+examples/
+build.ts
+.cursor/
+.git
+.gitignore
+*.test.ts
+*.spec.ts
+tsconfig.json
+bun.lock
+node_modules/
