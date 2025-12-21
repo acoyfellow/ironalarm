@@ -1,0 +1,52 @@
+{
+  "name": "ironalarm-app",
+  "main": "../../.svelte-kit/cloudflare/_worker.js",
+  "compatibility_date": "2025-11-09",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "assets": {
+    "directory": "../../.svelte-kit/cloudflare",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "html_handling": "auto-trailing-slash",
+    "run_worker_first": false
+  },
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "TASK_SCHEDULER_DO",
+        "class_name": "TaskSchedulerDO",
+        "script_name": "ironalarm-worker"
+      }
+    ]
+  },
+  "services": [
+    {
+      "binding": "WORKER",
+      "service": "ironalarm-worker"
+    }
+  ],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_id": "ironalarm-db",
+      "database_name": "ironalarm-db",
+      "migrations_dir": "migrations",
+      "preview_database_id": "ironalarm-db"
+    }
+  ],
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": [
+        "TaskSchedulerDO"
+      ],
+      "new_classes": []
+    }
+  ],
+  "vars": {
+    "BETTER_AUTH_SECRET": "807775cc270eef333bd405d2b573f7f808f5ef4a44ace4ec65a9c66db562223c",
+    "BETTER_AUTH_URL": "http://localhost:5173"
+  }
+}

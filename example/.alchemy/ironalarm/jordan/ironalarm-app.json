@@ -1,0 +1,202 @@
+{
+  "kind": "cloudflare::Worker",
+  "id": "ironalarm-app",
+  "fqn": "ironalarm/jordan/ironalarm-app",
+  "seq": 2,
+  "data": {},
+  "status": "updated",
+  "output": {
+    "Symbol(alchemy::ResourceKind)": "cloudflare::Worker",
+    "Symbol(alchemy::ResourceID)": "ironalarm-app",
+    "Symbol(alchemy::ResourceFQN)": "ironalarm/jordan/ironalarm-app",
+    "Symbol(alchemy::ResourceScope)": {
+      "@scope": null
+    },
+    "Symbol(alchemy::ResourceSeq)": 2,
+    "bindings": {
+      "TASK_SCHEDULER_DO": {
+        "type": "durable_object_namespace",
+        "id": "ironalarm-scheduler-do",
+        "className": "TaskSchedulerDO",
+        "scriptName": "ironalarm-worker",
+        "sqlite": true
+      },
+      "WORKER": {
+        "Symbol(alchemy::ResourceKind)": "cloudflare::Worker",
+        "Symbol(alchemy::ResourceID)": "ironalarm-worker",
+        "Symbol(alchemy::ResourceFQN)": "ironalarm/jordan/ironalarm-worker",
+        "Symbol(alchemy::ResourceScope)": {
+          "@scope": null
+        },
+        "Symbol(alchemy::ResourceSeq)": 1,
+        "name": "ironalarm-worker",
+        "entrypoint": "./worker/index.ts",
+        "adopt": true,
+        "bindings": {
+          "TASK_SCHEDULER_DO": {
+            "type": "durable_object_namespace",
+            "id": "ironalarm-scheduler-do",
+            "className": "TaskSchedulerDO",
+            "scriptName": "ironalarm-worker",
+            "sqlite": true
+          }
+        },
+        "url": "http://localhost:1337/",
+        "type": "service",
+        "id": "ironalarm-worker",
+        "cwd": "",
+        "compatibilityDate": "2025-11-09",
+        "compatibilityFlags": [],
+        "format": "esm",
+        "createdAt": 1766340115339,
+        "updatedAt": 1766360194476,
+        "routes": [],
+        "domains": [],
+        "dev": {
+          "hasRemote": true
+        }
+      },
+      "DB": {
+        "Symbol(alchemy::ResourceKind)": "cloudflare::D1Database",
+        "Symbol(alchemy::ResourceID)": "ironalarm-db",
+        "Symbol(alchemy::ResourceFQN)": "ironalarm/jordan/ironalarm-db",
+        "Symbol(alchemy::ResourceScope)": {
+          "@scope": null
+        },
+        "Symbol(alchemy::ResourceSeq)": 0,
+        "type": "d1",
+        "id": "0ee51bb0-db83-4efc-82a5-c7361cddc200",
+        "name": "ironalarm-db",
+        "migrationsDir": "migrations",
+        "migrationsTable": "d1_migrations",
+        "dev": {
+          "id": "ironalarm-db",
+          "remote": false
+        },
+        "jurisdiction": "default"
+      }
+    },
+    "url": "http://localhost:5173/",
+    "adopt": true,
+    "env": {
+      "BETTER_AUTH_SECRET": "807775cc270eef333bd405d2b573f7f808f5ef4a44ace4ec65a9c66db562223c",
+      "BETTER_AUTH_URL": "http://localhost:5173"
+    },
+    "entrypoint": ".svelte-kit/cloudflare/_worker.js",
+    "compatibilityFlags": [
+      "nodejs_compat"
+    ],
+    "compatibilityDate": "2025-11-09",
+    "wrangler": {
+      "secrets": true
+    },
+    "name": "ironalarm-app",
+    "cwd": "",
+    "assets": {
+      "html_handling": "auto-trailing-slash",
+      "not_found_handling": "single-page-application",
+      "run_worker_first": false,
+      "directory": ".svelte-kit/cloudflare"
+    },
+    "dev": {
+      "hasRemote": true
+    },
+    "type": "service",
+    "id": "ironalarm-app",
+    "format": "esm",
+    "createdAt": 1766340116546,
+    "updatedAt": 1766360195724,
+    "routes": [],
+    "domains": []
+  },
+  "props": {
+    "bindings": {
+      "TASK_SCHEDULER_DO": {
+        "type": "durable_object_namespace",
+        "id": "ironalarm-scheduler-do",
+        "className": "TaskSchedulerDO",
+        "scriptName": "ironalarm-worker",
+        "sqlite": true
+      },
+      "WORKER": {
+        "Symbol(alchemy::ResourceKind)": "cloudflare::Worker",
+        "Symbol(alchemy::ResourceID)": "ironalarm-worker",
+        "Symbol(alchemy::ResourceFQN)": "ironalarm/jordan/ironalarm-worker",
+        "Symbol(alchemy::ResourceScope)": {
+          "@scope": null
+        },
+        "Symbol(alchemy::ResourceSeq)": 1,
+        "name": "ironalarm-worker",
+        "entrypoint": "./worker/index.ts",
+        "adopt": true,
+        "bindings": {
+          "TASK_SCHEDULER_DO": {
+            "type": "durable_object_namespace",
+            "id": "ironalarm-scheduler-do",
+            "className": "TaskSchedulerDO",
+            "scriptName": "ironalarm-worker",
+            "sqlite": true
+          }
+        },
+        "url": "http://localhost:1337/",
+        "type": "service",
+        "id": "ironalarm-worker",
+        "cwd": "",
+        "compatibilityDate": "2025-11-09",
+        "compatibilityFlags": [],
+        "format": "esm",
+        "createdAt": 1766340115339,
+        "updatedAt": 1766360194476,
+        "routes": [],
+        "domains": [],
+        "dev": {
+          "hasRemote": true
+        }
+      },
+      "DB": {
+        "Symbol(alchemy::ResourceKind)": "cloudflare::D1Database",
+        "Symbol(alchemy::ResourceID)": "ironalarm-db",
+        "Symbol(alchemy::ResourceFQN)": "ironalarm/jordan/ironalarm-db",
+        "Symbol(alchemy::ResourceScope)": {
+          "@scope": null
+        },
+        "Symbol(alchemy::ResourceSeq)": 0,
+        "type": "d1",
+        "id": "0ee51bb0-db83-4efc-82a5-c7361cddc200",
+        "name": "ironalarm-db",
+        "migrationsDir": "migrations",
+        "migrationsTable": "d1_migrations",
+        "dev": {
+          "id": "ironalarm-db",
+          "remote": false
+        },
+        "jurisdiction": "default"
+      }
+    },
+    "url": true,
+    "adopt": true,
+    "env": {
+      "BETTER_AUTH_SECRET": "807775cc270eef333bd405d2b573f7f808f5ef4a44ace4ec65a9c66db562223c",
+      "BETTER_AUTH_URL": "http://localhost:5173"
+    },
+    "entrypoint": ".svelte-kit/cloudflare/_worker.js",
+    "compatibilityFlags": [
+      "nodejs_compat"
+    ],
+    "compatibilityDate": "2025-11-09",
+    "wrangler": {
+      "secrets": true
+    },
+    "name": "ironalarm-app",
+    "cwd": "",
+    "assets": {
+      "html_handling": "auto-trailing-slash",
+      "not_found_handling": "single-page-application",
+      "run_worker_first": false,
+      "directory": ".svelte-kit/cloudflare"
+    },
+    "dev": {
+      "url": "http://localhost:5173/"
+    }
+  }
+}

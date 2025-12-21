@@ -1,0 +1,58 @@
+{
+  "kind": "cloudflare::Worker",
+  "id": "ironalarm-worker",
+  "fqn": "ironalarm/jordan/ironalarm-worker",
+  "seq": 1,
+  "data": {},
+  "status": "updated",
+  "output": {
+    "Symbol(alchemy::ResourceKind)": "cloudflare::Worker",
+    "Symbol(alchemy::ResourceID)": "ironalarm-worker",
+    "Symbol(alchemy::ResourceFQN)": "ironalarm/jordan/ironalarm-worker",
+    "Symbol(alchemy::ResourceScope)": {
+      "@scope": null
+    },
+    "Symbol(alchemy::ResourceSeq)": 1,
+    "name": "ironalarm-worker",
+    "entrypoint": "./worker/index.ts",
+    "adopt": true,
+    "bindings": {
+      "TASK_SCHEDULER_DO": {
+        "type": "durable_object_namespace",
+        "id": "ironalarm-scheduler-do",
+        "className": "TaskSchedulerDO",
+        "scriptName": "ironalarm-worker",
+        "sqlite": true
+      }
+    },
+    "url": "http://localhost:1337/",
+    "type": "service",
+    "id": "ironalarm-worker",
+    "cwd": "",
+    "compatibilityDate": "2025-11-09",
+    "compatibilityFlags": [],
+    "format": "esm",
+    "createdAt": 1766340115339,
+    "updatedAt": 1766360194476,
+    "routes": [],
+    "domains": [],
+    "dev": {
+      "hasRemote": true
+    }
+  },
+  "props": {
+    "name": "ironalarm-worker",
+    "entrypoint": "./worker/index.ts",
+    "adopt": true,
+    "bindings": {
+      "TASK_SCHEDULER_DO": {
+        "type": "durable_object_namespace",
+        "id": "ironalarm-scheduler-do",
+        "className": "TaskSchedulerDO",
+        "scriptName": "ironalarm-worker",
+        "sqlite": true
+      }
+    },
+    "url": false
+  }
+}
