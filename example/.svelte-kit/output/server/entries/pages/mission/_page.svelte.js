@@ -1,4 +1,4 @@
-import { h as spread_props, z as head, m as escape_html, k as attr, l as attr_class, j as ensure_array_like, v as attr_style, n as stringify, G as run } from "../../../chunks/async.js";
+import { h as spread_props, ad as head, m as escape_html, j as attr, l as attr_class, k as ensure_array_like, z as attr_style, n as stringify, p as run } from "../../../chunks/async.js";
 import { s as startTask, g as getTasks } from "../../../chunks/data.remote.js";
 import { B as Button } from "../../../chunks/button.js";
 import { I as Icon } from "../../../chunks/Icon.js";

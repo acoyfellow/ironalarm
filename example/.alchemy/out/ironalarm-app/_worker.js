@@ -1229,9 +1229,9 @@ var init_internal = __esm({
        * @param {300 | 301 | 302 | 303 | 304 | 305 | 306 | 307 | 308} status
        * @param {string} location
        */
-      constructor(status, location2) {
+      constructor(status, location) {
         this.status = status;
-        this.location = location2;
+        this.location = location;
       }
     };
     SvelteKitError = class extends Error {
@@ -4816,23 +4816,23 @@ function destroy_effect_children(signal, remove_dom = false) {
         controller2.abort(STALE_REACTION);
       });
     }
-    var next3 = effect.next;
+    var next2 = effect.next;
     if ((effect.f & ROOT_EFFECT) !== 0) {
       effect.parent = null;
     } else {
       destroy_effect(effect, remove_dom);
     }
-    effect = next3;
+    effect = next2;
   }
 }
 function destroy_block_effect_children(signal) {
   var effect = signal.first;
   while (effect !== null) {
-    var next3 = effect.next;
+    var next2 = effect.next;
     if ((effect.f & BRANCH_EFFECT) === 0) {
       destroy_effect(effect);
     }
-    effect = next3;
+    effect = next2;
   }
 }
 function destroy_effect(effect, remove_dom = true) {
@@ -4863,20 +4863,20 @@ function destroy_effect(effect, remove_dom = true) {
 }
 function remove_effect_dom(node, end) {
   while (node !== null) {
-    var next3 = node === end ? null : /* @__PURE__ */ get_next_sibling(node);
+    var next2 = node === end ? null : /* @__PURE__ */ get_next_sibling(node);
     node.remove();
-    node = next3;
+    node = next2;
   }
 }
 function unlink_effect(effect) {
   var parent = effect.parent;
-  var prev2 = effect.prev;
-  var next3 = effect.next;
-  if (prev2 !== null) prev2.next = next3;
-  if (next3 !== null) next3.prev = prev2;
+  var prev = effect.prev;
+  var next2 = effect.next;
+  if (prev !== null) prev.next = next2;
+  if (next2 !== null) next2.prev = prev;
   if (parent !== null) {
-    if (parent.first === effect) parent.first = next3;
-    if (parent.last === effect) parent.last = prev2;
+    if (parent.first === effect) parent.first = next2;
+    if (parent.last === effect) parent.last = prev;
   }
 }
 function pause_effect(effect, callback, destroy = true) {
@@ -4923,9 +4923,9 @@ function move_effect(effect, fragment) {
   var node = effect.nodes.start;
   var end = effect.nodes.end;
   while (node !== null) {
-    var next3 = node === end ? null : /* @__PURE__ */ get_next_sibling(node);
+    var next2 = node === end ? null : /* @__PURE__ */ get_next_sibling(node);
     fragment.append(node);
-    node = next3;
+    node = next2;
   }
 }
 function set_is_updating_effect(value) {
@@ -6361,8 +6361,8 @@ var init_utils_NloIXYE0 = __esm({
     init_env_DbssmzoK();
     init_random();
     __name(defineErrorCodes, "defineErrorCodes");
-    generateId = /* @__PURE__ */ __name((size3) => {
-      return createRandomStringGenerator("a-z", "A-Z", "0-9")(size3 || 32);
+    generateId = /* @__PURE__ */ __name((size) => {
+      return createRandomStringGenerator("a-z", "A-Z", "0-9")(size || 32);
     }, "generateId");
     __name(safeJSONParse, "safeJSONParse");
     __name(capitalizeFirstLetter, "capitalizeFirstLetter");
@@ -6484,17 +6484,17 @@ function getAlphabet(urlSafe) {
 function base64Encode(data, alphabet, padding) {
   let result = "";
   let buffer = 0;
-  let shift3 = 0;
+  let shift = 0;
   for (const byte of data) {
     buffer = buffer << 8 | byte;
-    shift3 += 8;
-    while (shift3 >= 6) {
-      shift3 -= 6;
-      result += alphabet[buffer >> shift3 & 63];
+    shift += 8;
+    while (shift >= 6) {
+      shift -= 6;
+      result += alphabet[buffer >> shift & 63];
     }
   }
-  if (shift3 > 0) {
-    result += alphabet[buffer << 6 - shift3 & 63];
+  if (shift > 0) {
+    result += alphabet[buffer << 6 - shift & 63];
   }
   if (padding) {
     const padCount = (4 - result.length % 4) % 4;
@@ -8253,8 +8253,8 @@ var init_checks = __esm({
       });
       inst._zod.check = (payload) => {
         const input = payload.value;
-        const size3 = input.size;
-        if (size3 <= def.maximum)
+        const size = input.size;
+        if (size <= def.maximum)
           return;
         payload.issues.push({
           origin: getSizableOrigin(input),
@@ -8281,8 +8281,8 @@ var init_checks = __esm({
       });
       inst._zod.check = (payload) => {
         const input = payload.value;
-        const size3 = input.size;
-        if (size3 >= def.minimum)
+        const size = input.size;
+        if (size >= def.minimum)
           return;
         payload.issues.push({
           origin: getSizableOrigin(input),
@@ -8310,10 +8310,10 @@ var init_checks = __esm({
       });
       inst._zod.check = (payload) => {
         const input = payload.value;
-        const size3 = input.size;
-        if (size3 === def.size)
+        const size = input.size;
+        if (size === def.size)
           return;
-        const tooBig = size3 > def.size;
+        const tooBig = size > def.size;
         payload.issues.push({
           origin: getSizableOrigin(input),
           ...tooBig ? { code: "too_big", maximum: def.size } : { code: "too_small", minimum: def.size },
@@ -8895,12 +8895,12 @@ function handleNonOptionalResult(payload, inst) {
   }
   return payload;
 }
-function handlePipeResult(left, next3, ctx) {
+function handlePipeResult(left, next2, ctx) {
   if (left.issues.length) {
     left.aborted = true;
     return left;
   }
-  return next3._zod.run({ value: left.value, issues: left.issues }, ctx);
+  return next2._zod.run({ value: left.value, issues: left.issues }, ctx);
 }
 function handleCodecAResult(result, def, ctx) {
   if (result.issues.length) {
@@ -17306,11 +17306,11 @@ function _minSize(minimum, params) {
     minimum
   });
 }
-function _size(size3, params) {
+function _size(size, params) {
   return new $ZodCheckSizeEquals({
     check: "size_equals",
     ...normalizeParams(params),
-    size: size3
+    size
   });
 }
 function _maxLength(maximum, params) {
@@ -20023,8 +20023,8 @@ var init_schemas2 = __esm({
     ZodFile = /* @__PURE__ */ $constructor("ZodFile", (inst, def) => {
       $ZodFile.init(inst, def);
       ZodType.init(inst, def);
-      inst.min = (size3, params) => inst.check(_minSize(size3, params));
-      inst.max = (size3, params) => inst.check(_maxSize(size3, params));
+      inst.min = (size, params) => inst.check(_minSize(size, params));
+      inst.max = (size, params) => inst.check(_maxSize(size, params));
       inst.mime = (types2, params) => inst.check(_mime(Array.isArray(types2) ? types2 : [types2], params));
     });
     __name(file, "file");
@@ -24276,10 +24276,10 @@ var init_select_query_node = __esm({
           limit
         });
       },
-      cloneWithOffset(selectNode, offset3) {
+      cloneWithOffset(selectNode, offset) {
         return freeze({
           ...selectNode,
-          offset: offset3
+          offset
         });
       },
       cloneWithFetch(selectNode, fetch2) {
@@ -30471,10 +30471,10 @@ var init_offset_node = __esm({
       is(node) {
         return node.kind === "OffsetNode";
       },
-      create(offset3) {
+      create(offset) {
         return freeze({
           kind: "OffsetNode",
-          offset: offset3
+          offset
         });
       }
     });
@@ -30958,10 +30958,10 @@ var init_select_query_builder = __esm({
           queryNode: SelectQueryNode.cloneWithLimit(this.#props.queryNode, LimitNode.create(parseValueExpression(limit)))
         });
       }
-      offset(offset3) {
+      offset(offset) {
         return new _SelectQueryBuilderImpl({
           ...this.#props,
-          queryNode: SelectQueryNode.cloneWithOffset(this.#props.queryNode, OffsetNode.create(parseValueExpression(offset3)))
+          queryNode: SelectQueryNode.cloneWithOffset(this.#props.queryNode, OffsetNode.create(parseValueExpression(offset)))
         });
       }
       fetch(rowCount, modifier = "only") {
@@ -42150,7 +42150,7 @@ var init_adapter = __esm({
           });
           return transformed;
         }, "findOne"),
-        findMany: /* @__PURE__ */ __name(async ({ model: unsafeModel, where: unsafeWhere, limit: unsafeLimit, sortBy, offset: offset3, join: unsafeJoin }) => {
+        findMany: /* @__PURE__ */ __name(async ({ model: unsafeModel, where: unsafeWhere, limit: unsafeLimit, sortBy, offset, join: unsafeJoin }) => {
           transactionId++;
           let thisTransactionId = transactionId;
           const limit = unsafeLimit ?? options2.advanced?.database?.defaultFindManyLimit ?? 100;
@@ -42172,7 +42172,7 @@ var init_adapter = __esm({
             where,
             limit,
             sortBy,
-            offset: offset3,
+            offset,
             join
           });
           const res = await adapterInstance.findMany({
@@ -42180,7 +42180,7 @@ var init_adapter = __esm({
             where,
             limit,
             sortBy,
-            offset: offset3,
+            offset,
             join: passJoinToAdapter ? join : void 0
           });
           debugLog({ method: "findMany" }, `${formatTransactionId(thisTransactionId)} ${formatStep(2, 3)}`, `${formatMethod("findMany")} ${formatAction("DB Result")}:`, {
@@ -42310,8 +42310,8 @@ var init_adapter = __esm({
               log$1.args[0] = `
 ${log$1.args[0]}`;
               return [...log$1.args, "\n"];
-            }).reduce((prev2, curr) => {
-              return [...curr, ...prev2];
+            }).reduce((prev, curr) => {
+              return [...curr, ...prev];
             }, [`
 ${separator}`]);
             console.log(...log3);
@@ -42363,9 +42363,9 @@ function aexists(instance, checkFinished = true) {
 }
 function aoutput(out, instance) {
   abytes(out, void 0, "digestInto() output");
-  const min2 = instance.outputLen;
-  if (out.length < min2) {
-    throw new Error('"digestInto() output" expected to be of length >=' + min2);
+  const min = instance.outputLen;
+  if (out.length < min) {
+    throw new Error('"digestInto() output" expected to be of length >=' + min);
   }
 }
 function u32(arr) {
@@ -42379,11 +42379,11 @@ function clean(...arrays) {
 function createView(arr) {
   return new DataView(arr.buffer, arr.byteOffset, arr.byteLength);
 }
-function rotr(word, shift3) {
-  return word << 32 - shift3 | word >>> shift3;
+function rotr(word, shift) {
+  return word << 32 - shift | word >>> shift;
 }
-function rotl(word, shift3) {
-  return word << shift3 | word >>> 32 - shift3 >>> 0;
+function rotl(word, shift) {
+  return word << shift | word >>> 32 - shift >>> 0;
 }
 function byteSwap(word) {
   return word << 24 & 4278190080 | word << 8 & 16711680 | word >>> 8 & 65280 | word >>> 24 & 255;
@@ -42858,9 +42858,9 @@ var init_sha2 = __esm({
         this.G = G | 0;
         this.H = H | 0;
       }
-      process(view, offset3) {
-        for (let i = 0; i < 16; i++, offset3 += 4)
-          SHA256_W[i] = view.getUint32(offset3, false);
+      process(view, offset) {
+        for (let i = 0; i < 16; i++, offset += 4)
+          SHA256_W[i] = view.getUint32(offset, false);
         for (let i = 16; i < 64; i++) {
           const W15 = SHA256_W[i - 15];
           const W2 = SHA256_W[i - 2];
@@ -42928,8 +42928,8 @@ var init_sha2 = __esm({
 
 // node_modules/jose/dist/webapi/lib/buffer_utils.js
 function concat(...buffers) {
-  const size3 = buffers.reduce((acc, { length }) => acc + length, 0);
-  const buf = new Uint8Array(size3);
+  const size = buffers.reduce((acc, { length }) => acc + length, 0);
+  const buf = new Uint8Array(size);
   let i = 0;
   for (const buffer of buffers) {
     buf.set(buffer, i);
@@ -42937,11 +42937,11 @@ function concat(...buffers) {
   }
   return buf;
 }
-function writeUInt32BE(buf, value, offset3) {
+function writeUInt32BE(buf, value, offset) {
   if (value < 0 || value >= MAX_INT32) {
     throw new RangeError(`value must be >= 0 and <= ${MAX_INT32 - 1}. Received ${value}`);
   }
-  buf.set([value >>> 24, value >>> 16, value >>> 8, value & 255], offset3);
+  buf.set([value >>> 24, value >>> 16, value >>> 8, value & 255], offset);
 }
 function uint64be(value) {
   const high = Math.floor(value / MAX_INT32);
@@ -45637,8 +45637,8 @@ function validateClaimsSet(protectedHeader, encodedPayload, options2 = {}) {
   }
   if (maxTokenAge) {
     const age = now3 - payload.iat;
-    const max2 = typeof maxTokenAge === "number" ? maxTokenAge : secs(maxTokenAge);
-    if (age - tolerance > max2) {
+    const max = typeof maxTokenAge === "number" ? maxTokenAge : secs(maxTokenAge);
+    if (age - tolerance > max) {
       throw new JWTExpired('"iat" claim timestamp check failed (too far in the past)', payload, "iat", "check_failed");
     }
     if (age < 0 - tolerance) {
@@ -46782,9 +46782,9 @@ function aexists2(instance, checkFinished = true) {
 }
 function aoutput2(out, instance) {
   abytes2(out, void 0, "output");
-  const min2 = instance.outputLen;
-  if (out.length < min2) {
-    throw new Error("digestInto() expects output buffer of length at least " + min2);
+  const min = instance.outputLen;
+  if (out.length < min) {
+    throw new Error("digestInto() expects output buffer of length at least " + min);
   }
 }
 function u322(arr) {
@@ -47187,7 +47187,7 @@ var init_poly1305 = __esm({
         for (let i = 0; i < 8; i++)
           this.pad[i] = u8to16(key2, 16 + 2 * i);
       }
-      process(data, offset3, isLast = false) {
+      process(data, offset, isLast = false) {
         const hibit = isLast ? 0 : 1 << 11;
         const { h, r: r3 } = this;
         const r0 = r3[0];
@@ -47200,14 +47200,14 @@ var init_poly1305 = __esm({
         const r7 = r3[7];
         const r8 = r3[8];
         const r9 = r3[9];
-        const t0 = u8to16(data, offset3 + 0);
-        const t1 = u8to16(data, offset3 + 2);
-        const t2 = u8to16(data, offset3 + 4);
-        const t3 = u8to16(data, offset3 + 6);
-        const t4 = u8to16(data, offset3 + 8);
-        const t5 = u8to16(data, offset3 + 10);
-        const t6 = u8to16(data, offset3 + 12);
-        const t7 = u8to16(data, offset3 + 14);
+        const t0 = u8to16(data, offset + 0);
+        const t1 = u8to16(data, offset + 2);
+        const t2 = u8to16(data, offset + 4);
+        const t3 = u8to16(data, offset + 6);
+        const t4 = u8to16(data, offset + 8);
+        const t5 = u8to16(data, offset + 10);
+        const t6 = u8to16(data, offset + 12);
+        const t7 = u8to16(data, offset + 14);
         let h0 = h[0] + (t0 & 8191);
         let h1 = h[1] + ((t0 >>> 13 | t1 << 3) & 8191);
         let h2 = h[2] + ((t1 >>> 10 | t2 << 6) & 8191);
@@ -51076,15 +51076,15 @@ var init_pbkdf2 = __esm({
 });
 
 // node_modules/@noble/hashes/scrypt.js
-function XorAndSalsa(prev2, pi, input, ii, out, oi) {
-  let y00 = prev2[pi++] ^ input[ii++], y01 = prev2[pi++] ^ input[ii++];
-  let y02 = prev2[pi++] ^ input[ii++], y03 = prev2[pi++] ^ input[ii++];
-  let y04 = prev2[pi++] ^ input[ii++], y05 = prev2[pi++] ^ input[ii++];
-  let y06 = prev2[pi++] ^ input[ii++], y07 = prev2[pi++] ^ input[ii++];
-  let y08 = prev2[pi++] ^ input[ii++], y09 = prev2[pi++] ^ input[ii++];
-  let y10 = prev2[pi++] ^ input[ii++], y11 = prev2[pi++] ^ input[ii++];
-  let y12 = prev2[pi++] ^ input[ii++], y13 = prev2[pi++] ^ input[ii++];
-  let y14 = prev2[pi++] ^ input[ii++], y15 = prev2[pi++] ^ input[ii++];
+function XorAndSalsa(prev, pi, input, ii, out, oi) {
+  let y00 = prev[pi++] ^ input[ii++], y01 = prev[pi++] ^ input[ii++];
+  let y02 = prev[pi++] ^ input[ii++], y03 = prev[pi++] ^ input[ii++];
+  let y04 = prev[pi++] ^ input[ii++], y05 = prev[pi++] ^ input[ii++];
+  let y06 = prev[pi++] ^ input[ii++], y07 = prev[pi++] ^ input[ii++];
+  let y08 = prev[pi++] ^ input[ii++], y09 = prev[pi++] ^ input[ii++];
+  let y10 = prev[pi++] ^ input[ii++], y11 = prev[pi++] ^ input[ii++];
+  let y12 = prev[pi++] ^ input[ii++], y13 = prev[pi++] ^ input[ii++];
+  let y14 = prev[pi++] ^ input[ii++], y15 = prev[pi++] ^ input[ii++];
   let x00 = y00, x01 = y01, x02 = y02, x03 = y03, x04 = y04, x05 = y05, x06 = y06, x07 = y07, x08 = y08, x09 = y09, x10 = y10, x11 = y11, x12 = y12, x13 = y13, x14 = y14, x15 = y15;
   for (let i = 0; i < 8; i += 2) {
     x04 ^= rotl(x00 + x12 | 0, 7);
@@ -51816,8 +51816,8 @@ var init_dist5 = __esm({
     __name(detectRuntime, "detectRuntime");
     __name(detectEnvironment, "detectEnvironment");
     __name(hashToBase64, "hashToBase64");
-    generateId2 = /* @__PURE__ */ __name((size3) => {
-      return createRandomStringGenerator("a-z", "A-Z", "0-9")(size3 || 32);
+    generateId2 = /* @__PURE__ */ __name((size) => {
+      return createRandomStringGenerator("a-z", "A-Z", "0-9")(size || 32);
     }, "generateId");
     projectIdCached = null;
     __name(getProjectId, "getProjectId");
@@ -52332,8 +52332,8 @@ var init_common = __esm({
       }
       foreignKeyConfigs = [];
       static [entityKind] = "PgColumnBuilder";
-      array(size3) {
-        return new PgArrayBuilder(this.config.name, this, size3);
+      array(size) {
+        return new PgArrayBuilder(this.config.name, this, size);
       }
       references(ref2, actions = {}) {
         this.foreignKeyConfigs.push({ ref: ref2, actions });
@@ -52482,10 +52482,10 @@ var init_common = __esm({
         __name(this, "PgArrayBuilder");
       }
       static [entityKind] = "PgArrayBuilder";
-      constructor(name, baseBuilder, size3) {
+      constructor(name, baseBuilder, size) {
         super(name, "array", "PgArray");
         this.config.baseBuilder = baseBuilder;
-        this.config.size = size3;
+        this.config.size = size;
       }
       /** @internal */
       build(table3) {
@@ -53783,17 +53783,17 @@ function exists(subquery) {
 function notExists(subquery) {
   return sql2`not exists ${subquery}`;
 }
-function between(column, min2, max2) {
-  return sql2`${column} between ${bindIfParam(min2, column)} and ${bindIfParam(
-    max2,
+function between(column, min, max) {
+  return sql2`${column} between ${bindIfParam(min, column)} and ${bindIfParam(
+    max,
     column
   )}`;
 }
-function notBetween(column, min2, max2) {
+function notBetween(column, min, max) {
   return sql2`${column} not between ${bindIfParam(
-    min2,
+    min,
     column
-  )} and ${bindIfParam(max2, column)}`;
+  )} and ${bindIfParam(max, column)}`;
 }
 function like(column, value) {
   return sql2`${column} like ${value}`;
@@ -55803,7 +55803,7 @@ var init_dialect2 = __esm({
         orderBy,
         groupBy,
         limit,
-        offset: offset3,
+        offset,
         distinct,
         setOperators
       }) {
@@ -55838,7 +55838,7 @@ var init_dialect2 = __esm({
         const groupBySql = groupByList.length > 0 ? sql2` group by ${sql2.join(groupByList)}` : void 0;
         const orderBySql = this.buildOrderBy(orderBy);
         const limitSql = this.buildLimit(limit);
-        const offsetSql = offset3 ? sql2` offset ${offset3}` : void 0;
+        const offsetSql = offset ? sql2` offset ${offset}` : void 0;
         const finalQuery = sql2`${withSql}select${distinctSql} ${selection} from ${tableSql}${joinsSql}${whereSql}${groupBySql}${havingSql}${orderBySql}${limitSql}${offsetSql}`;
         if (setOperators.length > 0) {
           return this.buildSetOperations(finalQuery, setOperators);
@@ -55860,7 +55860,7 @@ var init_dialect2 = __esm({
       }
       buildSetOperationQuery({
         leftSelect,
-        setOperator: { type, isAll, rightSelect, limit, orderBy, offset: offset3 }
+        setOperator: { type, isAll, rightSelect, limit, orderBy, offset }
       }) {
         const leftChunk = sql2`${leftSelect.getSQL()} `;
         const rightChunk = sql2`${rightSelect.getSQL()}`;
@@ -55886,7 +55886,7 @@ var init_dialect2 = __esm({
         }
         const limitSql = typeof limit === "object" || typeof limit === "number" && limit >= 0 ? sql2` limit ${limit}` : void 0;
         const operatorChunk = sql2.raw(`${type} ${isAll ? "all " : ""}`);
-        const offsetSql = offset3 ? sql2` offset ${offset3}` : void 0;
+        const offsetSql = offset ? sql2` offset ${offset}` : void 0;
         return sql2`${leftChunk}${operatorChunk}${rightChunk}${orderBySql}${limitSql}${offsetSql}`;
       }
       buildInsertQuery({ table: table3, values: valuesOrSelect, onConflict, returning, withList, select }) {
@@ -55961,7 +55961,7 @@ var init_dialect2 = __esm({
         joinOn
       }) {
         let selection = [];
-        let limit, offset3, orderBy = [], where;
+        let limit, offset, orderBy = [], where;
         const joins = [];
         if (config4 === true) {
           const selectionEntries = Object.entries(tableConfig.columns);
@@ -56041,7 +56041,7 @@ var init_dialect2 = __esm({
             return mapColumnsInSQLToAlias(orderByValue, tableAlias);
           });
           limit = config4.limit;
-          offset3 = config4.offset;
+          offset = config4.offset;
           for (const {
             tsKey: selectedRelationTsKey,
             queryConfig: selectedRelationConfigValue,
@@ -56106,7 +56106,7 @@ var init_dialect2 = __esm({
             relationTableTsKey: tableConfig.tsName,
             selection
           }];
-          const needsSubquery = limit !== void 0 || offset3 !== void 0 || orderBy.length > 0;
+          const needsSubquery = limit !== void 0 || offset !== void 0 || orderBy.length > 0;
           if (needsSubquery) {
             result = this.buildSelectQuery({
               table: aliasedTable(table3, tableAlias),
@@ -56119,13 +56119,13 @@ var init_dialect2 = __esm({
               ],
               where,
               limit,
-              offset: offset3,
+              offset,
               orderBy,
               setOperators: []
             });
             where = void 0;
             limit = void 0;
-            offset3 = void 0;
+            offset = void 0;
             orderBy = void 0;
           } else {
             result = aliasedTable(table3, tableAlias);
@@ -56140,7 +56140,7 @@ var init_dialect2 = __esm({
             joins,
             where,
             limit,
-            offset: offset3,
+            offset,
             orderBy,
             setOperators: []
           });
@@ -56155,7 +56155,7 @@ var init_dialect2 = __esm({
             joins,
             where,
             limit,
-            offset: offset3,
+            offset,
             orderBy,
             setOperators: []
           });
@@ -56854,11 +56854,11 @@ var init_select2 = __esm({
        * await db.select().from(people).offset(10).limit(10);
        * ```
        */
-      offset(offset3) {
+      offset(offset) {
         if (this.config.setOperators.length > 0) {
-          this.config.setOperators.at(-1).offset = offset3;
+          this.config.setOperators.at(-1).offset = offset;
         } else {
-          this.config.offset = offset3;
+          this.config.offset = offset;
         }
         return this;
       }
@@ -59181,19 +59181,19 @@ var init_index2 = __esm({
               }
               return res[0] || null;
             }, "findOne"),
-            findMany: /* @__PURE__ */ __name(async ({ model, where, sortBy, limit, offset: offset3, join }) => {
+            findMany: /* @__PURE__ */ __name(async ({ model, where, sortBy, limit, offset, join }) => {
               let res = convertWhereClause(where || [], model, join);
               if (join) {
                 const resArray = res;
                 if (!resArray.length) return [];
                 applySortToRecords(resArray, sortBy, model);
                 let paginatedRecords = resArray;
-                if (offset3 !== void 0) paginatedRecords = paginatedRecords.slice(offset3);
+                if (offset !== void 0) paginatedRecords = paginatedRecords.slice(offset);
                 if (limit !== void 0) paginatedRecords = paginatedRecords.slice(0, limit);
                 return paginatedRecords;
               }
               let table3 = applySortToRecords(res, sortBy, model);
-              if (offset3 !== void 0) table3 = table3.slice(offset3);
+              if (offset !== void 0) table3 = table3.slice(offset);
               if (limit !== void 0) table3 = table3.slice(0, limit);
               return table3 || [];
             }, "findMany"),
@@ -59440,21 +59440,21 @@ var init_index3 = __esm({
               if (join) return processJoinedResults(res, join, allSelectsStr)[0];
               return row;
             },
-            async findMany({ model, where, limit, offset: offset3, sortBy, join }) {
+            async findMany({ model, where, limit, offset, sortBy, join }) {
               const { and: and2, or: or2 } = convertWhereClause(model, where);
               let query2 = db$1.selectFrom((eb) => {
                 let b = eb.selectFrom(model);
                 if (config4?.type === "mssql") {
-                  if (offset3 !== void 0) {
+                  if (offset !== void 0) {
                     if (!sortBy) b = b.orderBy(getFieldName({
                       model,
                       field: "id"
                     }));
-                    b = b.offset(offset3).fetch(limit || 100);
+                    b = b.offset(offset).fetch(limit || 100);
                   } else if (limit !== void 0) b = b.top(limit);
                 } else {
                   if (limit !== void 0) b = b.limit(limit);
-                  if (offset3 !== void 0) b = b.offset(offset3);
+                  if (offset !== void 0) b = b.offset(offset);
                 }
                 if (sortBy?.field) b = b.orderBy(`${getFieldName({
                   model,
@@ -60206,10 +60206,10 @@ function wildcardMatch(pattern2, options2) {
   fn.regexp = regexp;
   return fn;
 }
-function shouldRateLimit(max2, window2, rateLimitData) {
+function shouldRateLimit(max, window2, rateLimitData) {
   const now22 = Date.now();
   const windowInMs = window2 * 1e3;
-  return now22 - rateLimitData.lastRequest < windowInMs && rateLimitData.count >= max2;
+  return now22 - rateLimitData.lastRequest < windowInMs && rateLimitData.count >= max;
 }
 function rateLimitResponse(retryAfter) {
   return new Response(JSON.stringify({ message: "Too many requests. Please try again later." }), {
@@ -60292,20 +60292,20 @@ async function onRequestRateLimit(req, ctx) {
   if (!ctx.rateLimit.enabled) return;
   const path = new URL(req.url).pathname.replace(ctx.options.basePath || "/api/auth", "");
   let window2 = ctx.rateLimit.window;
-  let max2 = ctx.rateLimit.max;
+  let max = ctx.rateLimit.max;
   const ip = getIp(req, ctx.options);
   if (!ip) return;
   const key2 = ip + path;
   const specialRule = getDefaultSpecialRules().find((rule) => rule.pathMatcher(path));
   if (specialRule) {
     window2 = specialRule.window;
-    max2 = specialRule.max;
+    max = specialRule.max;
   }
   for (const plugin of ctx.options.plugins || []) if (plugin.rateLimit) {
     const matchedRule = plugin.rateLimit.find((rule) => rule.pathMatcher(path));
     if (matchedRule) {
       window2 = matchedRule.window;
-      max2 = matchedRule.max;
+      max = matchedRule.max;
       break;
     }
   }
@@ -60319,7 +60319,7 @@ async function onRequestRateLimit(req, ctx) {
       const resolved = typeof customRule === "function" ? await customRule(req) : customRule;
       if (resolved) {
         window2 = resolved.window;
-        max2 = resolved.max;
+        max = resolved.max;
       }
       if (resolved === false) return;
     }
@@ -60334,7 +60334,7 @@ async function onRequestRateLimit(req, ctx) {
   });
   else {
     const timeSinceLastRequest = now22 - data.lastRequest;
-    if (shouldRateLimit(max2, window2, data)) return rateLimitResponse(getRetryAfter(data.lastRequest, window2));
+    if (shouldRateLimit(max, window2, data)) return rateLimitResponse(getRetryAfter(data.lastRequest, window2));
     else if (timeSinceLastRequest > window2 * 1e3) await storage.set(key2, {
       ...data,
       count: 1,
@@ -61911,16 +61911,16 @@ async function createAuthContext(adapter, options2, getDatabaseType) {
     provider.disableImplicitSignUp = config22.disableImplicitSignUp;
     return provider;
   }).filter((x) => x !== null);
-  const generateIdFunc = /* @__PURE__ */ __name(({ model, size: size3 }) => {
+  const generateIdFunc = /* @__PURE__ */ __name(({ model, size }) => {
     if (typeof options2.advanced?.generateId === "function") return options2.advanced.generateId({
       model,
-      size: size3
+      size
     });
     if (typeof options2?.advanced?.database?.generateId === "function") return options2.advanced.database.generateId({
       model,
-      size: size3
+      size
     });
-    return generateId(size3);
+    return generateId(size);
   }, "generateIdFunc");
   const { publish } = await createTelemetry(options2, {
     adapter: adapter.id,
@@ -62399,11 +62399,11 @@ var init_auth = __esm({
             }]
           });
         }, "listSessions"),
-        listUsers: /* @__PURE__ */ __name(async (limit, offset3, sortBy, where) => {
+        listUsers: /* @__PURE__ */ __name(async (limit, offset, sortBy, where) => {
           return await (await getCurrentAdapter(adapter)).findMany({
             model: "user",
             limit,
-            offset: offset3,
+            offset,
             sortBy,
             where
           });
@@ -66125,7 +66125,7 @@ ${custom2?.disableBackgroundGrid ? "" : `
             if (!res.length) return null;
             return res[0];
           },
-          async findMany({ model, where, sortBy, limit, offset: offset3, join }) {
+          async findMany({ model, where, sortBy, limit, offset, join }) {
             const schemaModel = getSchema2(model);
             const clause = where ? convertWhereClause(where, model) : [];
             const sortFn = sortBy?.direction === "desc" ? desc : asc;
@@ -66155,7 +66155,7 @@ ${custom2?.disableBackgroundGrid ? "" : `
                 where: clause[0],
                 with: includes,
                 limit: limit ?? 100,
-                offset: offset3 ?? 0,
+                offset: offset ?? 0,
                 orderBy
               });
               if (res) for (const item of res) for (const pluralJoinResult of pluralJoinResults) {
@@ -66168,7 +66168,7 @@ ${custom2?.disableBackgroundGrid ? "" : `
             }
             let builder = db$1.select().from(schemaModel);
             const effectiveLimit = limit;
-            const effectiveOffset = offset3;
+            const effectiveOffset = offset;
             if (typeof effectiveLimit !== "undefined") builder = builder.limit(effectiveLimit);
             if (typeof effectiveOffset !== "undefined") builder = builder.offset(effectiveOffset);
             if (sortBy?.field) builder = builder.orderBy(sortFn(schemaModel[getFieldName({
@@ -66526,9 +66526,9 @@ var require_set_cookie = __commonJS({
         value
       };
       parts.forEach(function(part) {
-        var sides2 = part.split("=");
-        var key2 = sides2.shift().trimLeft().toLowerCase();
-        var value2 = sides2.join("=");
+        var sides = part.split("=");
+        var key2 = sides.shift().trimLeft().toLowerCase();
+        var value2 = sides.join("=");
         if (key2 === "expires") {
           cookie.expires = new Date(value2);
         } else if (key2 === "max-age") {
@@ -66936,6 +66936,96 @@ var init_chunks = __esm({
   }
 });
 
+// .svelte-kit/output/server/chunks/Icon.js
+function Icon($$renderer, $$props) {
+  $$renderer.component(($$renderer2) => {
+    const {
+      name,
+      color = "currentColor",
+      size = 24,
+      strokeWidth = 2,
+      absoluteStrokeWidth = false,
+      iconNode = [],
+      children,
+      $$slots,
+      $$events,
+      ...props
+    } = $$props;
+    $$renderer2.push(`<svg${attributes(
+      {
+        ...defaultAttributes,
+        ...props,
+        width: size,
+        height: size,
+        stroke: color,
+        "stroke-width": absoluteStrokeWidth ? Number(strokeWidth) * 24 / Number(size) : strokeWidth,
+        class: clsx2(["lucide-icon lucide", name && `lucide-${name}`, props.class])
+      },
+      void 0,
+      void 0,
+      void 0,
+      3
+    )}><!--[-->`);
+    const each_array = ensure_array_like(iconNode);
+    for (let $$index = 0, $$length = each_array.length; $$index < $$length; $$index++) {
+      let [tag2, attrs] = each_array[$$index];
+      element($$renderer2, tag2, () => {
+        $$renderer2.push(`${attributes({ ...attrs }, void 0, void 0, void 0, 3)}`);
+      });
+    }
+    $$renderer2.push(`<!--]-->`);
+    children?.($$renderer2);
+    $$renderer2.push(`<!----></svg>`);
+  });
+}
+var defaultAttributes;
+var init_Icon = __esm({
+  ".svelte-kit/output/server/chunks/Icon.js"() {
+    init_virtual_unenv_global_polyfill_cloudflare_unenv_preset_node_process();
+    init_virtual_unenv_global_polyfill_cloudflare_unenv_preset_node_console();
+    init_performance2();
+    init_async();
+    defaultAttributes = {
+      xmlns: "http://www.w3.org/2000/svg",
+      width: 24,
+      height: 24,
+      viewBox: "0 0 24 24",
+      fill: "none",
+      stroke: "currentColor",
+      "stroke-width": 2,
+      "stroke-linecap": "round",
+      "stroke-linejoin": "round"
+    };
+    __name(Icon, "Icon");
+  }
+});
+
+// .svelte-kit/output/server/chunks/index-server.js
+function onDestroy(fn) {
+  ssr_context.r.on_destroy(fn);
+}
+function mount2() {
+  lifecycle_function_unavailable("mount");
+}
+function unmount2() {
+  lifecycle_function_unavailable("unmount");
+}
+async function tick() {
+}
+var init_index_server = __esm({
+  ".svelte-kit/output/server/chunks/index-server.js"() {
+    init_virtual_unenv_global_polyfill_cloudflare_unenv_preset_node_process();
+    init_virtual_unenv_global_polyfill_cloudflare_unenv_preset_node_console();
+    init_performance2();
+    init_async();
+    init_clsx();
+    __name(onDestroy, "onDestroy");
+    __name(mount2, "mount");
+    __name(unmount2, "unmount");
+    __name(tick, "tick");
+  }
+});
+
 // node_modules/tailwind-merge/dist/bundle-mjs.mjs
 var concatArrays, createClassValidatorObject, createClassPartObject, CLASS_PART_SEPARATOR, EMPTY_CONFLICTS, ARBITRARY_PROPERTY_PREFIX, createClassGroupUtils, getGroupRecursive, getGroupIdForArbitraryProperty, createClassMap, processClassGroups, processClassesRecursively, processClassDefinition, processStringDefinition, processFunctionDefinition, processObjectDefinition, getPart, isThemeGetter, createLruCache, IMPORTANT_MODIFIER, MODIFIER_SEPARATOR, EMPTY_MODIFIERS, createResultObject, createParseClassName, createSortModifiers, createConfigUtils, SPLIT_CLASSES_REGEX, mergeClassList, twJoin, toValue, createTailwindMerge, fallbackThemeArr, fromTheme, arbitraryValueRegex, arbitraryVariableRegex, fractionRegex, tshirtUnitRegex, lengthUnitRegex, colorFunctionRegex, shadowRegex, imageRegex, isFraction, isNumber2, isInteger, isPercent, isTshirtSize, isAny, isLengthOnly, isNever, isShadow, isImage, isAnyNonArbitrary, isArbitrarySize, isArbitraryValue, isArbitraryLength, isArbitraryNumber, isArbitraryPosition, isArbitraryImage, isArbitraryShadow, isArbitraryVariable, isArbitraryVariableLength, isArbitraryVariableFamilyName, isArbitraryVariablePosition, isArbitraryVariableSize, isArbitraryVariableImage, isArbitraryVariableShadow, getIsArbitraryValue, getIsArbitraryVariable, isLabelPosition, isLabelImage, isLabelSize, isLabelLength, isLabelNumber, isLabelFamilyName, isLabelShadow, getDefaultConfig, mergeConfigs, overrideProperty, overrideConfigProperties, mergeConfigProperties, mergeArrayProperties, extendTailwindMerge, twMerge;
 var init_bundle_mjs = __esm({
@@ -67090,12 +67180,12 @@ var init_bundle_mjs = __esm({
       const len = parts.length;
       for (let i = 0; i < len; i++) {
         const part = parts[i];
-        let next3 = current2.nextPart.get(part);
-        if (!next3) {
-          next3 = createClassPartObject();
-          current2.nextPart.set(part, next3);
+        let next2 = current2.nextPart.get(part);
+        if (!next2) {
+          next2 = createClassPartObject();
+          current2.nextPart.set(part, next2);
         }
-        current2 = next3;
+        current2 = next2;
       }
       return current2;
     }, "getPart");
@@ -70433,7 +70523,7 @@ function Button($$renderer, $$props) {
     let {
       class: className,
       variant = "default",
-      size: size3 = "default",
+      size = "default",
       ref: ref2 = null,
       href = void 0,
       type = "button",
@@ -70447,7 +70537,7 @@ function Button($$renderer, $$props) {
       $$renderer2.push("<!--[-->");
       $$renderer2.push(`<a${attributes({
         "data-slot": "button",
-        class: clsx2(cn(buttonVariants({ variant, size: size3 }), className)),
+        class: clsx2(cn(buttonVariants({ variant, size }), className)),
         href: disabled ? void 0 : href,
         "aria-disabled": disabled,
         role: disabled ? "link" : void 0,
@@ -70460,7 +70550,7 @@ function Button($$renderer, $$props) {
       $$renderer2.push("<!--[!-->");
       $$renderer2.push(`<button${attributes({
         "data-slot": "button",
-        class: clsx2(cn(buttonVariants({ variant, size: size3 }), className)),
+        class: clsx2(cn(buttonVariants({ variant, size }), className)),
         type,
         disabled,
         ...restProps
@@ -70506,70 +70596,6 @@ var init_button = __esm({
       defaultVariants: { variant: "default", size: "default" }
     });
     __name(Button, "Button");
-  }
-});
-
-// .svelte-kit/output/server/chunks/Icon.js
-function Icon($$renderer, $$props) {
-  $$renderer.component(($$renderer2) => {
-    const {
-      name,
-      color = "currentColor",
-      size: size3 = 24,
-      strokeWidth = 2,
-      absoluteStrokeWidth = false,
-      iconNode = [],
-      children,
-      $$slots,
-      $$events,
-      ...props
-    } = $$props;
-    $$renderer2.push(`<svg${attributes(
-      {
-        ...defaultAttributes,
-        ...props,
-        width: size3,
-        height: size3,
-        stroke: color,
-        "stroke-width": absoluteStrokeWidth ? Number(strokeWidth) * 24 / Number(size3) : strokeWidth,
-        class: clsx2(["lucide-icon lucide", name && `lucide-${name}`, props.class])
-      },
-      void 0,
-      void 0,
-      void 0,
-      3
-    )}><!--[-->`);
-    const each_array = ensure_array_like(iconNode);
-    for (let $$index = 0, $$length = each_array.length; $$index < $$length; $$index++) {
-      let [tag2, attrs] = each_array[$$index];
-      element($$renderer2, tag2, () => {
-        $$renderer2.push(`${attributes({ ...attrs }, void 0, void 0, void 0, 3)}`);
-      });
-    }
-    $$renderer2.push(`<!--]-->`);
-    children?.($$renderer2);
-    $$renderer2.push(`<!----></svg>`);
-  });
-}
-var defaultAttributes;
-var init_Icon = __esm({
-  ".svelte-kit/output/server/chunks/Icon.js"() {
-    init_virtual_unenv_global_polyfill_cloudflare_unenv_preset_node_process();
-    init_virtual_unenv_global_polyfill_cloudflare_unenv_preset_node_console();
-    init_performance2();
-    init_async();
-    defaultAttributes = {
-      xmlns: "http://www.w3.org/2000/svg",
-      width: 24,
-      height: 24,
-      viewBox: "0 0 24 24",
-      fill: "none",
-      stroke: "currentColor",
-      "stroke-width": 2,
-      "stroke-linecap": "round",
-      "stroke-linejoin": "round"
-    };
-    __name(Icon, "Icon");
   }
 });
 
@@ -71107,23 +71133,487 @@ var init_index_esm = __esm({
   }
 });
 
-// .svelte-kit/output/server/chunks/input.js
+// .svelte-kit/output/server/entries/pages/_layout.svelte.js
+var layout_svelte_exports = {};
+__export(layout_svelte_exports, {
+  default: () => _layout
+});
 function createAttachmentKey() {
   return Symbol(ATTACHMENT_KEY);
 }
-function onDestroy(fn) {
-  ssr_context.r.on_destroy(fn);
+function getGlobalBroadcastChannel(name = "better-auth.message") {
+  if (!globalThis[kBroadcastChannel]) globalThis[kBroadcastChannel] = new WindowBroadcastChannel(name);
+  return globalThis[kBroadcastChannel];
 }
-function mount2() {
-  lifecycle_function_unavailable("mount");
+function getGlobalFocusManager() {
+  if (!globalThis[kFocusManager]) globalThis[kFocusManager] = new WindowFocusManager();
+  return globalThis[kFocusManager];
 }
-function unmount2() {
-  lifecycle_function_unavailable("unmount");
+function getGlobalOnlineManager() {
+  if (!globalThis[kOnlineManager]) globalThis[kOnlineManager] = new WindowOnlineManager();
+  return globalThis[kOnlineManager];
 }
-async function tick() {
+function createSessionRefreshManager(opts) {
+  const { sessionAtom, sessionSignal, $fetch, options: options2 = {} } = opts;
+  const refetchInterval = options2.sessionOptions?.refetchInterval ?? 0;
+  const refetchOnWindowFocus = options2.sessionOptions?.refetchOnWindowFocus ?? true;
+  const refetchWhenOffline = options2.sessionOptions?.refetchWhenOffline ?? false;
+  const state3 = {
+    lastSync: 0,
+    lastSessionRequest: 0,
+    cachedSession: void 0
+  };
+  const shouldRefetch = /* @__PURE__ */ __name(() => {
+    return refetchWhenOffline || getGlobalOnlineManager().isOnline;
+  }, "shouldRefetch");
+  const triggerRefetch = /* @__PURE__ */ __name((event) => {
+    if (!shouldRefetch()) return;
+    if (event?.event === "storage") {
+      state3.lastSync = now2();
+      sessionSignal.set(!sessionSignal.get());
+      return;
+    }
+    const currentSession = sessionAtom.get();
+    if (event?.event === "poll") {
+      state3.lastSessionRequest = now2();
+      $fetch("/get-session").then((res) => {
+        sessionAtom.set({
+          ...currentSession,
+          data: res.data,
+          error: res.error || null
+        });
+        state3.lastSync = now2();
+        sessionSignal.set(!sessionSignal.get());
+      }).catch(() => {
+      });
+      return;
+    }
+    if (event?.event === "visibilitychange") {
+      if (now2() - state3.lastSessionRequest < FOCUS_REFETCH_RATE_LIMIT_SECONDS && currentSession?.data !== null && currentSession?.data !== void 0) return;
+    }
+    if (currentSession?.data === null || currentSession?.data === void 0 || event?.event === "visibilitychange") {
+      if (event?.event === "visibilitychange") state3.lastSessionRequest = now2();
+      state3.lastSync = now2();
+      sessionSignal.set(!sessionSignal.get());
+    }
+  }, "triggerRefetch");
+  const broadcastSessionUpdate = /* @__PURE__ */ __name((trigger) => {
+    getGlobalBroadcastChannel().post({
+      event: "session",
+      data: { trigger },
+      clientId: Math.random().toString(36).substring(7)
+    });
+  }, "broadcastSessionUpdate");
+  const setupPolling = /* @__PURE__ */ __name(() => {
+    if (refetchInterval && refetchInterval > 0) state3.pollInterval = setInterval(() => {
+      if (sessionAtom.get()?.data) triggerRefetch({ event: "poll" });
+    }, refetchInterval * 1e3);
+  }, "setupPolling");
+  const setupBroadcast = /* @__PURE__ */ __name(() => {
+    state3.unsubscribeBroadcast = getGlobalBroadcastChannel().subscribe(() => {
+      triggerRefetch({ event: "storage" });
+    });
+  }, "setupBroadcast");
+  const setupFocusRefetch = /* @__PURE__ */ __name(() => {
+    if (!refetchOnWindowFocus) return;
+    state3.unsubscribeFocus = getGlobalFocusManager().subscribe(() => {
+      triggerRefetch({ event: "visibilitychange" });
+    });
+  }, "setupFocusRefetch");
+  const setupOnlineRefetch = /* @__PURE__ */ __name(() => {
+    state3.unsubscribeOnline = getGlobalOnlineManager().subscribe((online) => {
+      if (online) triggerRefetch({ event: "visibilitychange" });
+    });
+  }, "setupOnlineRefetch");
+  const init3 = /* @__PURE__ */ __name(() => {
+    setupPolling();
+    setupBroadcast();
+    setupFocusRefetch();
+    setupOnlineRefetch();
+    getGlobalBroadcastChannel().setup();
+    getGlobalFocusManager().setup();
+    getGlobalOnlineManager().setup();
+  }, "init");
+  const cleanup = /* @__PURE__ */ __name(() => {
+    if (state3.pollInterval) {
+      clearInterval(state3.pollInterval);
+      state3.pollInterval = void 0;
+    }
+    if (state3.unsubscribeBroadcast) {
+      state3.unsubscribeBroadcast();
+      state3.unsubscribeBroadcast = void 0;
+    }
+    if (state3.unsubscribeFocus) {
+      state3.unsubscribeFocus();
+      state3.unsubscribeFocus = void 0;
+    }
+    if (state3.unsubscribeOnline) {
+      state3.unsubscribeOnline();
+      state3.unsubscribeOnline = void 0;
+    }
+    state3.lastSync = 0;
+    state3.lastSessionRequest = 0;
+    state3.cachedSession = void 0;
+  }, "cleanup");
+  return {
+    init: init3,
+    cleanup,
+    triggerRefetch,
+    broadcastSessionUpdate
+  };
 }
-function isFunction3(value) {
-  return typeof value === "function";
+function isValidDate(date5) {
+  return date5 instanceof Date && !isNaN(date5.getTime());
+}
+function parseISODate(value) {
+  const match = ISO_DATE_REGEX.exec(value);
+  if (!match) return null;
+  const [, year2, month, day2, hour2, minute2, second, ms, offsetSign, offsetHour, offsetMinute] = match;
+  let date5 = new Date(Date.UTC(parseInt(year2, 10), parseInt(month, 10) - 1, parseInt(day2, 10), parseInt(hour2, 10), parseInt(minute2, 10), parseInt(second, 10), ms ? parseInt(ms.padEnd(3, "0"), 10) : 0));
+  if (offsetSign) {
+    const offset = (parseInt(offsetHour, 10) * 60 + parseInt(offsetMinute, 10)) * (offsetSign === "+" ? -1 : 1);
+    date5.setUTCMinutes(date5.getUTCMinutes() + offset);
+  }
+  return isValidDate(date5) ? date5 : null;
+}
+function betterJSONParse(value, options2 = {}) {
+  const { strict = false, warnings = false, reviver, parseDates = true } = options2;
+  if (typeof value !== "string") return value;
+  const trimmed = value.trim();
+  if (trimmed.length > 0 && trimmed[0] === '"' && trimmed.endsWith('"') && !trimmed.slice(1, -1).includes('"')) return trimmed.slice(1, -1);
+  const lowerValue = trimmed.toLowerCase();
+  if (lowerValue.length <= 9 && lowerValue in SPECIAL_VALUES) return SPECIAL_VALUES[lowerValue];
+  if (!JSON_SIGNATURE.test(trimmed)) {
+    if (strict) throw new SyntaxError("[better-json] Invalid JSON");
+    return value;
+  }
+  if (Object.entries(PROTO_POLLUTION_PATTERNS).some(([key2, pattern2]) => {
+    const matches2 = pattern2.test(trimmed);
+    if (matches2 && warnings) console.warn(`[better-json] Detected potential prototype pollution attempt using ${key2} pattern`);
+    return matches2;
+  }) && strict) throw new Error("[better-json] Potential prototype pollution attempt detected");
+  try {
+    const secureReviver = /* @__PURE__ */ __name((key2, value$1) => {
+      if (key2 === "__proto__" || key2 === "constructor" && value$1 && typeof value$1 === "object" && "prototype" in value$1) {
+        if (warnings) console.warn(`[better-json] Dropping "${key2}" key to prevent prototype pollution`);
+        return;
+      }
+      if (parseDates && typeof value$1 === "string") {
+        const date5 = parseISODate(value$1);
+        if (date5) return date5;
+      }
+      return reviver ? reviver(key2, value$1) : value$1;
+    }, "secureReviver");
+    return JSON.parse(trimmed, secureReviver);
+  } catch (error50) {
+    if (strict) throw error50;
+    return value;
+  }
+}
+function parseJSON(value, options2 = { strict: true }) {
+  return betterJSONParse(value, options2);
+}
+function getSessionAtom($fetch, options2) {
+  const $signal = atom(false);
+  const session2 = useAuthQuery($signal, "/get-session", $fetch, { method: "GET" });
+  onMount(session2, () => {
+    const refreshManager = createSessionRefreshManager({
+      sessionAtom: session2,
+      sessionSignal: $signal,
+      $fetch,
+      options: options2
+    });
+    refreshManager.init();
+    return () => {
+      refreshManager.cleanup();
+    };
+  });
+  return {
+    session: session2,
+    $sessionSignal: $signal
+  };
+}
+function isAtom(value) {
+  return typeof value === "object" && value !== null && "get" in value && typeof value.get === "function" && "lc" in value && typeof value.lc === "number";
+}
+function getMethod2(path, knownPathMethods, args) {
+  const method = knownPathMethods[path];
+  const { fetchOptions, query: _query, ...body2 } = args || {};
+  if (method) return method;
+  if (fetchOptions?.method) return fetchOptions.method;
+  if (body2 && Object.keys(body2).length > 0) return "POST";
+  return "GET";
+}
+function createDynamicPathProxy(routes, client, knownPathMethods, atoms, atomListeners) {
+  function createProxy(path = []) {
+    return new Proxy(function() {
+    }, {
+      get(_, prop) {
+        if (typeof prop !== "string") return;
+        if (prop === "then" || prop === "catch" || prop === "finally") return;
+        const fullPath = [...path, prop];
+        let current2 = routes;
+        for (const segment of fullPath) if (current2 && typeof current2 === "object" && segment in current2) current2 = current2[segment];
+        else {
+          current2 = void 0;
+          break;
+        }
+        if (typeof current2 === "function") return current2;
+        if (isAtom(current2)) return current2;
+        return createProxy(fullPath);
+      },
+      apply: /* @__PURE__ */ __name(async (_, __, args) => {
+        const routePath = "/" + path.map((segment) => segment.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)).join("/");
+        const arg = args[0] || {};
+        const fetchOptions = args[1] || {};
+        const { query: query2, fetchOptions: argFetchOptions, ...body2 } = arg;
+        const options2 = {
+          ...fetchOptions,
+          ...argFetchOptions
+        };
+        const method = getMethod2(routePath, knownPathMethods, arg);
+        return await client(routePath, {
+          ...options2,
+          body: method === "GET" ? void 0 : {
+            ...body2,
+            ...options2?.body || {}
+          },
+          query: query2 || options2?.query,
+          method,
+          async onSuccess(context4) {
+            await options2?.onSuccess?.(context4);
+            if (!atomListeners || options2.disableSignal) return;
+            const matches2 = atomListeners.filter((s3) => s3.matcher(routePath));
+            if (!matches2.length) return;
+            for (const match of matches2) {
+              const signal = atoms[match.signal];
+              if (!signal) return;
+              const val = signal.get();
+              setTimeout(() => {
+                signal.set(!val);
+              }, 10);
+            }
+          }
+        });
+      }, "apply")
+    });
+  }
+  __name(createProxy, "createProxy");
+  return createProxy();
+}
+function createAuthClient(options2) {
+  const { pluginPathMethods, pluginsActions, pluginsAtoms, $fetch, atomListeners, $store } = getClientConfig(options2);
+  let resolvedHooks = {};
+  for (const [key2, value] of Object.entries(pluginsAtoms)) resolvedHooks[`use${capitalizeFirstLetter(key2)}`] = value;
+  return createDynamicPathProxy({
+    ...pluginsActions,
+    ...resolvedHooks,
+    $fetch,
+    $store
+  }, $fetch, pluginPathMethods, pluginsAtoms, atomListeners);
+}
+function Github($$renderer, $$props) {
+  $$renderer.component(($$renderer2) => {
+    let { $$slots, $$events, ...props } = $$props;
+    const iconNode = [
+      [
+        "path",
+        {
+          "d": "M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"
+        }
+      ],
+      ["path", { "d": "M9 18c-4.51 2-5-2-7-2" }]
+    ];
+    Icon($$renderer2, spread_props([
+      { name: "github" },
+      /**
+       * @component @name Github
+       * @description Lucide SVG icon component, renders SVG Element with children.
+       *
+       * @preview ![img](data:image/svg+xml;base64,PHN2ZyAgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIgogIHdpZHRoPSIyNCIKICBoZWlnaHQ9IjI0IgogIHZpZXdCb3g9IjAgMCAyNCAyNCIKICBmaWxsPSJub25lIgogIHN0cm9rZT0iIzAwMCIgc3R5bGU9ImJhY2tncm91bmQtY29sb3I6ICNmZmY7IGJvcmRlci1yYWRpdXM6IDJweCIKICBzdHJva2Utd2lkdGg9IjIiCiAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogIHN0cm9rZS1saW5lam9pbj0icm91bmQiCj4KICA8cGF0aCBkPSJNMTUgMjJ2LTRhNC44IDQuOCAwIDAgMC0xLTMuNWMzIDAgNi0yIDYtNS41LjA4LTEuMjUtLjI3LTIuNDgtMS0zLjUuMjgtMS4xNS4yOC0yLjM1IDAtMy41IDAgMC0xIDAtMyAxLjUtMi42NC0uNS01LjM2LS41LTggMEM2IDIgNSAyIDUgMmMtLjMgMS4xNS0uMyAyLjM1IDAgMy41QTUuNDAzIDUuNDAzIDAgMCAwIDQgOWMwIDMuNSAzIDUuNSA2IDUuNS0uMzkuNDktLjY4IDEuMDUtLjg1IDEuNjUtLjE3LjYtLjIyIDEuMjMtLjE1IDEuODV2NCIgLz4KICA8cGF0aCBkPSJNOSAxOGMtNC41MSAyLTUtMi03LTIiIC8+Cjwvc3ZnPgo=) - https://lucide.dev/icons/github
+       * @see https://lucide.dev/guide/packages/lucide-svelte - Documentation
+       *
+       * @param {Object} props - Lucide icons props and any valid SVG attribute
+       * @returns {FunctionalComponent} Svelte component
+       * @deprecated Brand icons have been deprecated and are due to be removed, please refer to https://github.com/lucide-icons/lucide/issues/670. We recommend using https://simpleicons.org/?q=github instead. This icon will be removed in v1.0
+       */
+      props,
+      {
+        iconNode,
+        children: /* @__PURE__ */ __name(($$renderer3) => {
+          props.children?.($$renderer3);
+          $$renderer3.push(`<!---->`);
+        }, "children"),
+        $$slots: { default: true }
+      }
+    ]));
+  });
+}
+function Nav($$renderer, $$props) {
+  $$renderer.component(($$renderer2) => {
+    let currentPath = page.url.pathname;
+    const navItems = [
+      {
+        href: "/docs",
+        label: "Docs",
+        isActive: /* @__PURE__ */ __name((path) => path.startsWith("/docs") && path !== "/docs/api", "isActive")
+      },
+      {
+        href: "/docs/api",
+        label: "API",
+        isActive: /* @__PURE__ */ __name((path) => path === "/docs/api", "isActive")
+      },
+      {
+        href: "/mission",
+        label: "Mission Control",
+        isActive: /* @__PURE__ */ __name((path) => path === "/mission", "isActive")
+      }
+    ];
+    $$renderer2.push(`<nav class="sticky top-0 z-50 border-b border-zinc-800/50 bg-zinc-950/80 backdrop-blur-xl"><div class="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between"><div class="flex items-center gap-3"><div class="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-500 to-amber-600 flex items-center justify-center"><svg class="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"${attr("stroke-width", 2.5)}><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></div> <a href="/" class="font-semibold tracking-tight text-zinc-100 hover:text-zinc-200 transition-colors">ironalarm</a></div> <div class="flex items-center gap-6"><!--[-->`);
+    const each_array = ensure_array_like(navItems);
+    for (let $$index = 0, $$length = each_array.length; $$index < $$length; $$index++) {
+      let item = each_array[$$index];
+      $$renderer2.push(`<a${attr("href", item.href)}${attr_class(`text-sm text-zinc-400 hover:text-zinc-200 transition-colors ${stringify2(item.isActive(currentPath) ? "text-zinc-200" : "")}`)}>${escape_html(item.label)}</a>`);
+    }
+    $$renderer2.push(`<!--]--> <a href="https://github.com/acoyfellow/ironalarm" target="_blank" rel="noopener noreferrer" class="text-sm text-zinc-400 hover:text-zinc-200 transition-colors flex items-center gap-1.5">`);
+    Github($$renderer2, { class: "w-4 h-4" });
+    $$renderer2.push(`<!----> <span>GitHub</span></a></div></div></nav>`);
+  });
+}
+function X($$renderer, $$props) {
+  $$renderer.component(($$renderer2) => {
+    let { $$slots, $$events, ...props } = $$props;
+    const iconNode = [
+      ["path", { "d": "M18 6 6 18" }],
+      ["path", { "d": "m6 6 12 12" }]
+    ];
+    Icon($$renderer2, spread_props([
+      { name: "x" },
+      /**
+       * @component @name X
+       * @description Lucide SVG icon component, renders SVG Element with children.
+       *
+       * @preview ![img](data:image/svg+xml;base64,PHN2ZyAgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIgogIHdpZHRoPSIyNCIKICBoZWlnaHQ9IjI0IgogIHZpZXdCb3g9IjAgMCAyNCAyNCIKICBmaWxsPSJub25lIgogIHN0cm9rZT0iIzAwMCIgc3R5bGU9ImJhY2tncm91bmQtY29sb3I6ICNmZmY7IGJvcmRlci1yYWRpdXM6IDJweCIKICBzdHJva2Utd2lkdGg9IjIiCiAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogIHN0cm9rZS1saW5lam9pbj0icm91bmQiCj4KICA8cGF0aCBkPSJNMTggNiA2IDE4IiAvPgogIDxwYXRoIGQ9Im02IDYgMTIgMTIiIC8+Cjwvc3ZnPgo=) - https://lucide.dev/icons/x
+       * @see https://lucide.dev/guide/packages/lucide-svelte - Documentation
+       *
+       * @param {Object} props - Lucide icons props and any valid SVG attribute
+       * @returns {FunctionalComponent} Svelte component
+       *
+       */
+      props,
+      {
+        iconNode,
+        children: /* @__PURE__ */ __name(($$renderer3) => {
+          props.children?.($$renderer3);
+          $$renderer3.push(`<!---->`);
+        }, "children"),
+        $$slots: { default: true }
+      }
+    ]));
+  });
+}
+function Upload($$renderer, $$props) {
+  $$renderer.component(($$renderer2) => {
+    let { $$slots, $$events, ...props } = $$props;
+    const iconNode = [
+      ["path", { "d": "M12 3v12" }],
+      ["path", { "d": "m17 8-5-5-5 5" }],
+      ["path", { "d": "M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" }]
+    ];
+    Icon($$renderer2, spread_props([
+      { name: "upload" },
+      /**
+       * @component @name Upload
+       * @description Lucide SVG icon component, renders SVG Element with children.
+       *
+       * @preview ![img](data:image/svg+xml;base64,PHN2ZyAgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIgogIHdpZHRoPSIyNCIKICBoZWlnaHQ9IjI0IgogIHZpZXdCb3g9IjAgMCAyNCAyNCIKICBmaWxsPSJub25lIgogIHN0cm9rZT0iIzAwMCIgc3R5bGU9ImJhY2tncm91bmQtY29sb3I6ICNmZmY7IGJvcmRlci1yYWRpdXM6IDJweCIKICBzdHJva2Utd2lkdGg9IjIiCiAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogIHN0cm9rZS1saW5lam9pbj0icm91bmQiCj4KICA8cGF0aCBkPSJNMTIgM3YxMiIgLz4KICA8cGF0aCBkPSJtMTcgOC01LTUtNSA1IiAvPgogIDxwYXRoIGQ9Ik0yMSAxNXY0YTIgMiAwIDAgMS0yIDJINWEyIDIgMCAwIDEtMi0ydi00IiAvPgo8L3N2Zz4K) - https://lucide.dev/icons/upload
+       * @see https://lucide.dev/guide/packages/lucide-svelte - Documentation
+       *
+       * @param {Object} props - Lucide icons props and any valid SVG attribute
+       * @returns {FunctionalComponent} Svelte component
+       *
+       */
+      props,
+      {
+        iconNode,
+        children: /* @__PURE__ */ __name(($$renderer3) => {
+          props.children?.($$renderer3);
+          $$renderer3.push(`<!---->`);
+        }, "children"),
+        $$slots: { default: true }
+      }
+    ]));
+  });
+}
+function Search($$renderer, $$props) {
+  $$renderer.component(($$renderer2) => {
+    let { $$slots, $$events, ...props } = $$props;
+    const iconNode = [
+      ["path", { "d": "m21 21-4.34-4.34" }],
+      ["circle", { "cx": "11", "cy": "11", "r": "8" }]
+    ];
+    Icon($$renderer2, spread_props([
+      { name: "search" },
+      /**
+       * @component @name Search
+       * @description Lucide SVG icon component, renders SVG Element with children.
+       *
+       * @preview ![img](data:image/svg+xml;base64,PHN2ZyAgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIgogIHdpZHRoPSIyNCIKICBoZWlnaHQ9IjI0IgogIHZpZXdCb3g9IjAgMCAyNCAyNCIKICBmaWxsPSJub25lIgogIHN0cm9rZT0iIzAwMCIgc3R5bGU9ImJhY2tncm91bmQtY29sb3I6ICNmZmY7IGJvcmRlci1yYWRpdXM6IDJweCIKICBzdHJva2Utd2lkdGg9IjIiCiAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogIHN0cm9rZS1saW5lam9pbj0icm91bmQiCj4KICA8cGF0aCBkPSJtMjEgMjEtNC4zNC00LjM0IiAvPgogIDxjaXJjbGUgY3g9IjExIiBjeT0iMTEiIHI9IjgiIC8+Cjwvc3ZnPgo=) - https://lucide.dev/icons/search
+       * @see https://lucide.dev/guide/packages/lucide-svelte - Documentation
+       *
+       * @param {Object} props - Lucide icons props and any valid SVG attribute
+       * @returns {FunctionalComponent} Svelte component
+       *
+       */
+      props,
+      {
+        iconNode,
+        children: /* @__PURE__ */ __name(($$renderer3) => {
+          props.children?.($$renderer3);
+          $$renderer3.push(`<!---->`);
+        }, "children"),
+        $$slots: { default: true }
+      }
+    ]));
+  });
+}
+function Loader($$renderer, $$props) {
+  $$renderer.component(($$renderer2) => {
+    let { $$slots, $$events, ...props } = $$props;
+    const iconNode = [
+      ["path", { "d": "M12 2v4" }],
+      ["path", { "d": "m16.2 7.8 2.9-2.9" }],
+      ["path", { "d": "M18 12h4" }],
+      ["path", { "d": "m16.2 16.2 2.9 2.9" }],
+      ["path", { "d": "M12 18v4" }],
+      ["path", { "d": "m4.9 19.1 2.9-2.9" }],
+      ["path", { "d": "M2 12h4" }],
+      ["path", { "d": "m4.9 4.9 2.9 2.9" }]
+    ];
+    Icon($$renderer2, spread_props([
+      { name: "loader" },
+      /**
+       * @component @name Loader
+       * @description Lucide SVG icon component, renders SVG Element with children.
+       *
+       * @preview ![img](data:image/svg+xml;base64,PHN2ZyAgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIgogIHdpZHRoPSIyNCIKICBoZWlnaHQ9IjI0IgogIHZpZXdCb3g9IjAgMCAyNCAyNCIKICBmaWxsPSJub25lIgogIHN0cm9rZT0iIzAwMCIgc3R5bGU9ImJhY2tncm91bmQtY29sb3I6ICNmZmY7IGJvcmRlci1yYWRpdXM6IDJweCIKICBzdHJva2Utd2lkdGg9IjIiCiAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogIHN0cm9rZS1saW5lam9pbj0icm91bmQiCj4KICA8cGF0aCBkPSJNMTIgMnY0IiAvPgogIDxwYXRoIGQ9Im0xNi4yIDcuOCAyLjktMi45IiAvPgogIDxwYXRoIGQ9Ik0xOCAxMmg0IiAvPgogIDxwYXRoIGQ9Im0xNi4yIDE2LjIgMi45IDIuOSIgLz4KICA8cGF0aCBkPSJNMTIgMTh2NCIgLz4KICA8cGF0aCBkPSJtNC45IDE5LjEgMi45LTIuOSIgLz4KICA8cGF0aCBkPSJNMiAxMmg0IiAvPgogIDxwYXRoIGQ9Im00LjkgNC45IDIuOSAyLjkiIC8+Cjwvc3ZnPgo=) - https://lucide.dev/icons/loader
+       * @see https://lucide.dev/guide/packages/lucide-svelte - Documentation
+       *
+       * @param {Object} props - Lucide icons props and any valid SVG attribute
+       * @returns {FunctionalComponent} Svelte component
+       *
+       */
+      props,
+      {
+        iconNode,
+        children: /* @__PURE__ */ __name(($$renderer3) => {
+          props.children?.($$renderer3);
+          $$renderer3.push(`<!---->`);
+        }, "children"),
+        $$slots: { default: true }
+      }
+    ]));
+  });
 }
 function isObject4(value) {
   return value !== null && typeof value === "object";
@@ -71165,11 +71655,6 @@ function boxWith(getter, setter) {
 }
 function isBox(value) {
   return isObject4(value) && BoxSymbol in value;
-}
-function boxFrom(value) {
-  if (isBox(value)) return value;
-  if (isFunction3(value)) return boxWith(value);
-  return simpleBox(value);
 }
 function simpleBox(initialValue) {
   let current2 = initialValue;
@@ -71417,11 +71902,11 @@ function contains(parent, child) {
   if (parent.contains(child))
     return true;
   if (rootNode && isShadowRoot(rootNode)) {
-    let next3 = child;
-    while (next3) {
-      if (parent === next3)
+    let next2 = child;
+    while (next2) {
+      if (parent === next2)
         return true;
-      next3 = next3.parentNode || next3.host;
+      next2 = next2.parentNode || next2.host;
     }
   }
   return false;
@@ -71432,15 +71917,6 @@ function getDocument(node) {
   if (isWindow(node))
     return node.document;
   return node?.ownerDocument ?? document;
-}
-function getWindow(node) {
-  if (isShadowRoot(node))
-    return getWindow(node.host);
-  if (isDocument(node))
-    return node.defaultView ?? window;
-  if (isHTMLElement$1(node))
-    return node.ownerDocument?.defaultView ?? window;
-  return window;
 }
 function getActiveElement$1(rootNode) {
   let activeElement = rootNode.activeElement;
@@ -71497,17 +71973,8 @@ function watch(sources, effect, options2) {
 function watchPre(sources, effect, options2) {
   runWatcher(sources, "pre", effect, options2);
 }
-function boolToStr(condition) {
-  return condition ? "true" : "false";
-}
-function boolToStrTrueOrUndef(condition) {
-  return condition ? "true" : void 0;
-}
 function boolToEmptyStrOrUndef(condition) {
   return condition ? "" : void 0;
-}
-function boolToTrueOrUndef(condition) {
-  return condition ? true : void 0;
 }
 function getDataOpenClosed(condition) {
   return condition ? "open" : "closed";
@@ -71530,13 +71997,43 @@ function isHTMLElement(element2) {
 function isElementOrSVGElement(element2) {
   return element2 instanceof Element || element2 instanceof SVGElement;
 }
-function isNotNull2(value) {
-  return value !== null;
-}
 function noop3() {
 }
 function createId(prefixOrUid, uid) {
   return `bits-${prefixOrUid}`;
+}
+function Dialog_title$1($$renderer, $$props) {
+  $$renderer.component(($$renderer2) => {
+    const uid = props_id($$renderer2);
+    let {
+      id = createId(uid),
+      ref: ref2 = null,
+      child,
+      children,
+      level = 2,
+      $$slots,
+      $$events,
+      ...restProps
+    } = $$props;
+    const titleState = DialogTitleState.create({
+      id: boxWith(() => id),
+      level: boxWith(() => level),
+      ref: boxWith(() => ref2, (v) => ref2 = v)
+    });
+    const mergedProps = mergeProps(restProps, titleState.props);
+    if (child) {
+      $$renderer2.push("<!--[-->");
+      child($$renderer2, { props: mergedProps });
+      $$renderer2.push(`<!---->`);
+    } else {
+      $$renderer2.push("<!--[!-->");
+      $$renderer2.push(`<div${attributes({ ...mergedProps })}>`);
+      children?.($$renderer2);
+      $$renderer2.push(`<!----></div>`);
+    }
+    $$renderer2.push(`<!--]-->`);
+    bind_props($$props, { ref: ref2 });
+  });
 }
 function getBitsConfig() {
   const fallback = new BitsConfigState(null, {});
@@ -71836,1701 +72333,6 @@ function Scroll_lock($$renderer, $$props) {
     if (preventScroll) {
       new BodyScrollLock(preventScroll, () => restoreScrollDelay);
     }
-  });
-}
-function Input($$renderer, $$props) {
-  $$renderer.component(($$renderer2) => {
-    let {
-      ref: ref2 = null,
-      value = void 0,
-      type,
-      files = void 0,
-      class: className,
-      "data-slot": dataSlot = "input",
-      $$slots,
-      $$events,
-      ...restProps
-    } = $$props;
-    if (type === "file") {
-      $$renderer2.push("<!--[-->");
-      $$renderer2.push(`<input${attributes(
-        {
-          "data-slot": dataSlot,
-          class: clsx2(cn("selection:bg-primary dark:bg-input/30 selection:text-primary-foreground border-input ring-offset-background placeholder:text-muted-foreground flex h-9 w-full min-w-0 rounded-md border bg-transparent px-3 pt-1.5 text-sm font-medium shadow-xs transition-[color,box-shadow] outline-none disabled:cursor-not-allowed disabled:opacity-50", "focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]", "aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive", className)),
-          type: "file",
-          ...restProps
-        },
-        void 0,
-        void 0,
-        void 0,
-        4
-      )}/>`);
-    } else {
-      $$renderer2.push("<!--[!-->");
-      $$renderer2.push(`<input${attributes(
-        {
-          "data-slot": dataSlot,
-          class: clsx2(cn("border-input bg-background selection:bg-primary dark:bg-input/30 selection:text-primary-foreground ring-offset-background placeholder:text-muted-foreground flex h-9 w-full min-w-0 rounded-md border px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm", "focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]", "aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive", className)),
-          type,
-          value,
-          ...restProps
-        },
-        void 0,
-        void 0,
-        void 0,
-        4
-      )}/>`);
-    }
-    $$renderer2.push(`<!--]-->`);
-    bind_props($$props, { ref: ref2, value, files });
-  });
-}
-var CLASS_VALUE_PRIMITIVE_TYPES, BoxSymbol, isWritableSymbol, NUMBER_CHAR_RE, STR_SPLITTERS, camelToKebab, EVENT_LIST, EVENT_LIST_SET, SvelteMap, ELEMENT_NODE, DOCUMENT_NODE, DOCUMENT_FRAGMENT_NODE, DOMContext, defaultWindow, ActiveElement, Context, BitsAttrs, ARROW_DOWN, ARROW_UP, END, ENTER, ESCAPE, HOME, PAGE_DOWN, PAGE_UP, SPACE, TAB, isBrowser, isIOS, AnimationsComplete, PresenceManager, BitsConfigContext, BitsConfigState, resolvePortalToProp, CONTEXT_MENU_TRIGGER_ATTR, CONTEXT_MENU_CONTENT_ATTR, DismissibleLayerState, EscapeLayerState, FocusScopeManager, FocusScope, TextSelectionLayerState, getUserSelect, SharedState, lockMap, initialBodyStyle, cleanupTimeoutId, isInCleanupTransition, anyLocked, cleanupScheduledAt, bodyLockStackCount, BodyScrollLock;
-var init_input = __esm({
-  ".svelte-kit/output/server/chunks/input.js"() {
-    init_virtual_unenv_global_polyfill_cloudflare_unenv_preset_node_process();
-    init_virtual_unenv_global_polyfill_cloudflare_unenv_preset_node_console();
-    init_performance2();
-    init_clsx();
-    init_esm3();
-    init_async();
-    init_events();
-    init_index_esm();
-    init_button();
-    __name(createAttachmentKey, "createAttachmentKey");
-    __name(onDestroy, "onDestroy");
-    __name(mount2, "mount");
-    __name(unmount2, "unmount");
-    __name(tick, "tick");
-    __name(isFunction3, "isFunction");
-    __name(isObject4, "isObject");
-    CLASS_VALUE_PRIMITIVE_TYPES = ["string", "number", "bigint", "boolean"];
-    __name(isClassValue, "isClassValue");
-    BoxSymbol = /* @__PURE__ */ Symbol("box");
-    isWritableSymbol = /* @__PURE__ */ Symbol("is-writable");
-    __name(boxWith, "boxWith");
-    __name(isBox, "isBox");
-    __name(boxFrom, "boxFrom");
-    __name(simpleBox, "simpleBox");
-    __name(composeHandlers, "composeHandlers");
-    NUMBER_CHAR_RE = /\d/;
-    STR_SPLITTERS = ["-", "_", "/", "."];
-    __name(isUppercase, "isUppercase");
-    __name(splitByCase, "splitByCase");
-    __name(pascalCase, "pascalCase");
-    __name(camelCase, "camelCase");
-    __name(upperFirst, "upperFirst");
-    __name(lowerFirst, "lowerFirst");
-    __name(cssToStyleObj, "cssToStyleObj");
-    __name(executeCallbacks, "executeCallbacks");
-    __name(createParser, "createParser");
-    camelToKebab = createParser(/[A-Z]/, (match) => `-${match.toLowerCase()}`);
-    __name(styleToCSS, "styleToCSS");
-    __name(styleToString, "styleToString");
-    EVENT_LIST = [
-      "onabort",
-      "onanimationcancel",
-      "onanimationend",
-      "onanimationiteration",
-      "onanimationstart",
-      "onauxclick",
-      "onbeforeinput",
-      "onbeforetoggle",
-      "onblur",
-      "oncancel",
-      "oncanplay",
-      "oncanplaythrough",
-      "onchange",
-      "onclick",
-      "onclose",
-      "oncompositionend",
-      "oncompositionstart",
-      "oncompositionupdate",
-      "oncontextlost",
-      "oncontextmenu",
-      "oncontextrestored",
-      "oncopy",
-      "oncuechange",
-      "oncut",
-      "ondblclick",
-      "ondrag",
-      "ondragend",
-      "ondragenter",
-      "ondragleave",
-      "ondragover",
-      "ondragstart",
-      "ondrop",
-      "ondurationchange",
-      "onemptied",
-      "onended",
-      "onerror",
-      "onfocus",
-      "onfocusin",
-      "onfocusout",
-      "onformdata",
-      "ongotpointercapture",
-      "oninput",
-      "oninvalid",
-      "onkeydown",
-      "onkeypress",
-      "onkeyup",
-      "onload",
-      "onloadeddata",
-      "onloadedmetadata",
-      "onloadstart",
-      "onlostpointercapture",
-      "onmousedown",
-      "onmouseenter",
-      "onmouseleave",
-      "onmousemove",
-      "onmouseout",
-      "onmouseover",
-      "onmouseup",
-      "onpaste",
-      "onpause",
-      "onplay",
-      "onplaying",
-      "onpointercancel",
-      "onpointerdown",
-      "onpointerenter",
-      "onpointerleave",
-      "onpointermove",
-      "onpointerout",
-      "onpointerover",
-      "onpointerup",
-      "onprogress",
-      "onratechange",
-      "onreset",
-      "onresize",
-      "onscroll",
-      "onscrollend",
-      "onsecuritypolicyviolation",
-      "onseeked",
-      "onseeking",
-      "onselect",
-      "onselectionchange",
-      "onselectstart",
-      "onslotchange",
-      "onstalled",
-      "onsubmit",
-      "onsuspend",
-      "ontimeupdate",
-      "ontoggle",
-      "ontouchcancel",
-      "ontouchend",
-      "ontouchmove",
-      "ontouchstart",
-      "ontransitioncancel",
-      "ontransitionend",
-      "ontransitionrun",
-      "ontransitionstart",
-      "onvolumechange",
-      "onwaiting",
-      "onwebkitanimationend",
-      "onwebkitanimationiteration",
-      "onwebkitanimationstart",
-      "onwebkittransitionend",
-      "onwheel"
-    ];
-    EVENT_LIST_SET = new Set(EVENT_LIST);
-    __name(isEventHandler, "isEventHandler");
-    __name(mergeProps, "mergeProps");
-    SvelteMap = globalThis.Map;
-    __name(createSubscriber2, "createSubscriber");
-    __name(afterSleep, "afterSleep");
-    __name(afterTick, "afterTick");
-    ELEMENT_NODE = 1;
-    DOCUMENT_NODE = 9;
-    DOCUMENT_FRAGMENT_NODE = 11;
-    __name(isHTMLElement$1, "isHTMLElement$1");
-    __name(isDocument, "isDocument");
-    __name(isWindow, "isWindow");
-    __name(isNode, "isNode");
-    __name(isShadowRoot, "isShadowRoot");
-    __name(contains, "contains");
-    __name(getDocument, "getDocument");
-    __name(getWindow, "getWindow");
-    __name(getActiveElement$1, "getActiveElement$1");
-    DOMContext = class {
-      static {
-        __name(this, "DOMContext");
-      }
-      element;
-      #root = derived(() => {
-        if (!this.element.current) return document;
-        const rootNode = this.element.current.getRootNode() ?? document;
-        return rootNode;
-      });
-      get root() {
-        return this.#root();
-      }
-      set root($$value) {
-        return this.#root($$value);
-      }
-      constructor(element2) {
-        if (typeof element2 === "function") {
-          this.element = boxWith(element2);
-        } else {
-          this.element = element2;
-        }
-      }
-      getDocument = /* @__PURE__ */ __name(() => {
-        return getDocument(this.root);
-      }, "getDocument");
-      getWindow = /* @__PURE__ */ __name(() => {
-        return this.getDocument().defaultView ?? window;
-      }, "getWindow");
-      getActiveElement = /* @__PURE__ */ __name(() => {
-        return getActiveElement$1(this.root);
-      }, "getActiveElement");
-      isActiveElement = /* @__PURE__ */ __name((node) => {
-        return node === this.getActiveElement();
-      }, "isActiveElement");
-      getElementById(id) {
-        return this.root.getElementById(id);
-      }
-      querySelector = /* @__PURE__ */ __name((selector) => {
-        if (!this.root) return null;
-        return this.root.querySelector(selector);
-      }, "querySelector");
-      querySelectorAll = /* @__PURE__ */ __name((selector) => {
-        if (!this.root) return [];
-        return this.root.querySelectorAll(selector);
-      }, "querySelectorAll");
-      setTimeout = /* @__PURE__ */ __name((callback, delay) => {
-        return this.getWindow().setTimeout(callback, delay);
-      }, "setTimeout");
-      clearTimeout = /* @__PURE__ */ __name((timeoutId) => {
-        return this.getWindow().clearTimeout(timeoutId);
-      }, "clearTimeout");
-    };
-    __name(attachRef, "attachRef");
-    defaultWindow = void 0;
-    __name(getActiveElement, "getActiveElement");
-    ActiveElement = class {
-      static {
-        __name(this, "ActiveElement");
-      }
-      #document;
-      #subscribe;
-      constructor(options2 = {}) {
-        const { window: window2 = defaultWindow, document: document2 = window2?.document } = options2;
-        if (window2 === void 0) return;
-        this.#document = document2;
-        this.#subscribe = createSubscriber2();
-      }
-      get current() {
-        this.#subscribe?.();
-        if (!this.#document) return null;
-        return getActiveElement(this.#document);
-      }
-    };
-    new ActiveElement();
-    Context = class {
-      static {
-        __name(this, "Context");
-      }
-      #name;
-      #key;
-      /**
-       * @param name The name of the context.
-       * This is used for generating the context key and error messages.
-       */
-      constructor(name) {
-        this.#name = name;
-        this.#key = Symbol(name);
-      }
-      /**
-       * The key used to get and set the context.
-       *
-       * It is not recommended to use this value directly.
-       * Instead, use the methods provided by this class.
-       */
-      get key() {
-        return this.#key;
-      }
-      /**
-       * Checks whether this has been set in the context of a parent component.
-       *
-       * Must be called during component initialisation.
-       */
-      exists() {
-        return hasContext(this.#key);
-      }
-      /**
-       * Retrieves the context that belongs to the closest parent component.
-       *
-       * Must be called during component initialisation.
-       *
-       * @throws An error if the context does not exist.
-       */
-      get() {
-        const context4 = getContext(this.#key);
-        if (context4 === void 0) {
-          throw new Error(`Context "${this.#name}" not found`);
-        }
-        return context4;
-      }
-      /**
-       * Retrieves the context that belongs to the closest parent component,
-       * or the given fallback value if the context does not exist.
-       *
-       * Must be called during component initialisation.
-       */
-      getOr(fallback) {
-        const context4 = getContext(this.#key);
-        if (context4 === void 0) {
-          return fallback;
-        }
-        return context4;
-      }
-      /**
-       * Associates the given value with the current component and returns it.
-       *
-       * Must be called during component initialisation.
-       */
-      set(context4) {
-        return setContext(this.#key, context4);
-      }
-    };
-    __name(runWatcher, "runWatcher");
-    __name(watch, "watch");
-    __name(watchPre, "watchPre");
-    watch.pre = watchPre;
-    __name(boolToStr, "boolToStr");
-    __name(boolToStrTrueOrUndef, "boolToStrTrueOrUndef");
-    __name(boolToEmptyStrOrUndef, "boolToEmptyStrOrUndef");
-    __name(boolToTrueOrUndef, "boolToTrueOrUndef");
-    __name(getDataOpenClosed, "getDataOpenClosed");
-    BitsAttrs = class {
-      static {
-        __name(this, "BitsAttrs");
-      }
-      #variant;
-      #prefix;
-      attrs;
-      constructor(config4) {
-        this.#variant = config4.getVariant ? config4.getVariant() : null;
-        this.#prefix = this.#variant ? `data-${this.#variant}-` : `data-${config4.component}-`;
-        this.getAttr = this.getAttr.bind(this);
-        this.selector = this.selector.bind(this);
-        this.attrs = Object.fromEntries(config4.parts.map((part) => [part, this.getAttr(part)]));
-      }
-      getAttr(part, variantOverride) {
-        if (variantOverride)
-          return `data-${variantOverride}-${part}`;
-        return `${this.#prefix}${part}`;
-      }
-      selector(part, variantOverride) {
-        return `[${this.getAttr(part, variantOverride)}]`;
-      }
-    };
-    __name(createBitsAttrs, "createBitsAttrs");
-    ARROW_DOWN = "ArrowDown";
-    ARROW_UP = "ArrowUp";
-    END = "End";
-    ENTER = "Enter";
-    ESCAPE = "Escape";
-    HOME = "Home";
-    PAGE_DOWN = "PageDown";
-    PAGE_UP = "PageUp";
-    SPACE = " ";
-    TAB = "Tab";
-    isBrowser = typeof document !== "undefined";
-    isIOS = getIsIOS();
-    __name(getIsIOS, "getIsIOS");
-    __name(isHTMLElement, "isHTMLElement");
-    __name(isElementOrSVGElement, "isElementOrSVGElement");
-    __name(isNotNull2, "isNotNull");
-    AnimationsComplete = class {
-      static {
-        __name(this, "AnimationsComplete");
-      }
-      #opts;
-      #currentFrame = null;
-      constructor(opts) {
-        this.#opts = opts;
-      }
-      #cleanup() {
-        if (!this.#currentFrame)
-          return;
-        window.cancelAnimationFrame(this.#currentFrame);
-        this.#currentFrame = null;
-      }
-      run(fn) {
-        this.#cleanup();
-        const node = this.#opts.ref.current;
-        if (!node)
-          return;
-        if (typeof node.getAnimations !== "function") {
-          this.#executeCallback(fn);
-          return;
-        }
-        this.#currentFrame = window.requestAnimationFrame(() => {
-          const animations = node.getAnimations();
-          if (animations.length === 0) {
-            this.#executeCallback(fn);
-            return;
-          }
-          Promise.allSettled(animations.map((animation) => animation.finished)).then(() => {
-            this.#executeCallback(fn);
-          });
-        });
-      }
-      #executeCallback(fn) {
-        const execute = /* @__PURE__ */ __name(() => {
-          fn();
-        }, "execute");
-        if (this.#opts.afterTick) {
-          afterTick(execute);
-        } else {
-          execute();
-        }
-      }
-    };
-    PresenceManager = class {
-      static {
-        __name(this, "PresenceManager");
-      }
-      #opts;
-      #enabled;
-      #afterAnimations;
-      #shouldRender = false;
-      constructor(opts) {
-        this.#opts = opts;
-        this.#shouldRender = opts.open.current;
-        this.#enabled = opts.enabled ?? true;
-        this.#afterAnimations = new AnimationsComplete({ ref: this.#opts.ref, afterTick: this.#opts.open });
-        watch(() => this.#opts.open.current, (isOpen) => {
-          if (isOpen) this.#shouldRender = true;
-          if (!this.#enabled) return;
-          this.#afterAnimations.run(() => {
-            if (isOpen === this.#opts.open.current) {
-              if (!this.#opts.open.current) {
-                this.#shouldRender = false;
-              }
-              this.#opts.onComplete?.();
-            }
-          });
-        });
-      }
-      get shouldRender() {
-        return this.#shouldRender;
-      }
-    };
-    __name(noop3, "noop");
-    __name(createId, "createId");
-    BitsConfigContext = new Context("BitsConfig");
-    __name(getBitsConfig, "getBitsConfig");
-    BitsConfigState = class {
-      static {
-        __name(this, "BitsConfigState");
-      }
-      opts;
-      constructor(parent, opts) {
-        const resolveConfigOption = createConfigResolver(parent, opts);
-        this.opts = {
-          defaultPortalTo: resolveConfigOption((config4) => config4.defaultPortalTo),
-          defaultLocale: resolveConfigOption((config4) => config4.defaultLocale)
-        };
-      }
-    };
-    __name(createConfigResolver, "createConfigResolver");
-    __name(createPropResolver, "createPropResolver");
-    resolvePortalToProp = createPropResolver((config4) => config4.defaultPortalTo, "body");
-    __name(Portal, "Portal");
-    __name(debounce, "debounce");
-    __name(isOrContainsTarget, "isOrContainsTarget");
-    __name(getOwnerDocument, "getOwnerDocument");
-    __name(isClickTrulyOutside, "isClickTrulyOutside");
-    CONTEXT_MENU_TRIGGER_ATTR = "data-context-menu-trigger";
-    CONTEXT_MENU_CONTENT_ATTR = "data-context-menu-content";
-    createBitsAttrs({
-      component: "menu",
-      parts: [
-        "trigger",
-        "content",
-        "sub-trigger",
-        "item",
-        "group",
-        "group-heading",
-        "checkbox-group",
-        "checkbox-item",
-        "radio-group",
-        "radio-item",
-        "separator",
-        "sub-content",
-        "arrow"
-      ]
-    });
-    globalThis.bitsDismissableLayers ??= /* @__PURE__ */ new Map();
-    DismissibleLayerState = class _DismissibleLayerState {
-      static {
-        __name(this, "DismissibleLayerState");
-      }
-      static create(opts) {
-        return new _DismissibleLayerState(opts);
-      }
-      opts;
-      #interactOutsideProp;
-      #behaviorType;
-      #interceptedEvents = { pointerdown: false };
-      #isResponsibleLayer = false;
-      #isFocusInsideDOMTree = false;
-      #documentObj = void 0;
-      #onFocusOutside;
-      #unsubClickListener = noop3;
-      constructor(opts) {
-        this.opts = opts;
-        this.#behaviorType = opts.interactOutsideBehavior;
-        this.#interactOutsideProp = opts.onInteractOutside;
-        this.#onFocusOutside = opts.onFocusOutside;
-        let unsubEvents = noop3;
-        const cleanup = /* @__PURE__ */ __name(() => {
-          this.#resetState();
-          globalThis.bitsDismissableLayers.delete(this);
-          this.#handleInteractOutside.destroy();
-          unsubEvents();
-        }, "cleanup");
-        watch([() => this.opts.enabled.current, () => this.opts.ref.current], () => {
-          if (!this.opts.enabled.current || !this.opts.ref.current) return;
-          afterSleep(1, () => {
-            if (!this.opts.ref.current) return;
-            globalThis.bitsDismissableLayers.set(this, this.#behaviorType);
-            unsubEvents();
-            unsubEvents = this.#addEventListeners();
-          });
-          return cleanup;
-        });
-      }
-      #handleFocus = /* @__PURE__ */ __name((event) => {
-        if (event.defaultPrevented) return;
-        if (!this.opts.ref.current) return;
-        afterTick(() => {
-          if (!this.opts.ref.current || this.#isTargetWithinLayer(event.target)) return;
-          if (event.target && !this.#isFocusInsideDOMTree) {
-            this.#onFocusOutside.current?.(event);
-          }
-        });
-      }, "#handleFocus");
-      #addEventListeners() {
-        return executeCallbacks(
-          /**
-           * CAPTURE INTERACTION START
-           * mark interaction-start event as intercepted.
-           * mark responsible layer during interaction start
-           * to avoid checking if is responsible layer during interaction end
-           * when a new floating element may have been opened.
-           */
-          on2(this.#documentObj, "pointerdown", executeCallbacks(this.#markInterceptedEvent, this.#markResponsibleLayer), { capture: true }),
-          /**
-           * BUBBLE INTERACTION START
-           * Mark interaction-start event as non-intercepted. Debounce `onInteractOutsideStart`
-           * to avoid prematurely checking if other events were intercepted.
-           */
-          on2(this.#documentObj, "pointerdown", executeCallbacks(this.#markNonInterceptedEvent, this.#handleInteractOutside)),
-          /**
-           * HANDLE FOCUS OUTSIDE
-           */
-          on2(this.#documentObj, "focusin", this.#handleFocus)
-        );
-      }
-      #handleDismiss = /* @__PURE__ */ __name((e3) => {
-        let event = e3;
-        if (event.defaultPrevented) {
-          event = createWrappedEvent(e3);
-        }
-        this.#interactOutsideProp.current(e3);
-      }, "#handleDismiss");
-      #handleInteractOutside = debounce(
-        (e3) => {
-          if (!this.opts.ref.current) {
-            this.#unsubClickListener();
-            return;
-          }
-          const isEventValid = this.opts.isValidEvent.current(e3, this.opts.ref.current) || isValidEvent(e3, this.opts.ref.current);
-          if (!this.#isResponsibleLayer || this.#isAnyEventIntercepted() || !isEventValid) {
-            this.#unsubClickListener();
-            return;
-          }
-          let event = e3;
-          if (event.defaultPrevented) {
-            event = createWrappedEvent(event);
-          }
-          if (this.#behaviorType.current !== "close" && this.#behaviorType.current !== "defer-otherwise-close") {
-            this.#unsubClickListener();
-            return;
-          }
-          if (e3.pointerType === "touch") {
-            this.#unsubClickListener();
-            this.#unsubClickListener = on2(this.#documentObj, "click", this.#handleDismiss, { once: true });
-          } else {
-            this.#interactOutsideProp.current(event);
-          }
-        },
-        10
-      );
-      #markInterceptedEvent = /* @__PURE__ */ __name((e3) => {
-        this.#interceptedEvents[e3.type] = true;
-      }, "#markInterceptedEvent");
-      #markNonInterceptedEvent = /* @__PURE__ */ __name((e3) => {
-        this.#interceptedEvents[e3.type] = false;
-      }, "#markNonInterceptedEvent");
-      #markResponsibleLayer = /* @__PURE__ */ __name(() => {
-        if (!this.opts.ref.current) return;
-        this.#isResponsibleLayer = isResponsibleLayer(this.opts.ref.current);
-      }, "#markResponsibleLayer");
-      #isTargetWithinLayer = /* @__PURE__ */ __name((target) => {
-        if (!this.opts.ref.current) return false;
-        return isOrContainsTarget(this.opts.ref.current, target);
-      }, "#isTargetWithinLayer");
-      #resetState = debounce(
-        () => {
-          for (const eventType in this.#interceptedEvents) {
-            this.#interceptedEvents[eventType] = false;
-          }
-          this.#isResponsibleLayer = false;
-        },
-        20
-      );
-      #isAnyEventIntercepted() {
-        const i = Object.values(this.#interceptedEvents).some(Boolean);
-        return i;
-      }
-      #onfocuscapture = /* @__PURE__ */ __name(() => {
-        this.#isFocusInsideDOMTree = true;
-      }, "#onfocuscapture");
-      #onblurcapture = /* @__PURE__ */ __name(() => {
-        this.#isFocusInsideDOMTree = false;
-      }, "#onblurcapture");
-      props = {
-        onfocuscapture: this.#onfocuscapture,
-        onblurcapture: this.#onblurcapture
-      };
-    };
-    __name(getTopMostDismissableLayer, "getTopMostDismissableLayer");
-    __name(isResponsibleLayer, "isResponsibleLayer");
-    __name(isValidEvent, "isValidEvent");
-    __name(createWrappedEvent, "createWrappedEvent");
-    __name(Dismissible_layer, "Dismissible_layer");
-    globalThis.bitsEscapeLayers ??= /* @__PURE__ */ new Map();
-    EscapeLayerState = class _EscapeLayerState {
-      static {
-        __name(this, "EscapeLayerState");
-      }
-      static create(opts) {
-        return new _EscapeLayerState(opts);
-      }
-      opts;
-      domContext;
-      constructor(opts) {
-        this.opts = opts;
-        this.domContext = new DOMContext(this.opts.ref);
-        let unsubEvents = noop3;
-        watch(() => opts.enabled.current, (enabled) => {
-          if (enabled) {
-            globalThis.bitsEscapeLayers.set(this, opts.escapeKeydownBehavior);
-            unsubEvents = this.#addEventListener();
-          }
-          return () => {
-            unsubEvents();
-            globalThis.bitsEscapeLayers.delete(this);
-          };
-        });
-      }
-      #addEventListener = /* @__PURE__ */ __name(() => {
-        return on2(this.domContext.getDocument(), "keydown", this.#onkeydown, { passive: false });
-      }, "#addEventListener");
-      #onkeydown = /* @__PURE__ */ __name((e3) => {
-        if (e3.key !== ESCAPE || !isResponsibleEscapeLayer(this)) return;
-        const clonedEvent = new KeyboardEvent(e3.type, e3);
-        e3.preventDefault();
-        const behaviorType = this.opts.escapeKeydownBehavior.current;
-        if (behaviorType !== "close" && behaviorType !== "defer-otherwise-close") return;
-        this.opts.onEscapeKeydown.current(clonedEvent);
-      }, "#onkeydown");
-    };
-    __name(isResponsibleEscapeLayer, "isResponsibleEscapeLayer");
-    __name(Escape_layer, "Escape_layer");
-    FocusScopeManager = class _FocusScopeManager {
-      static {
-        __name(this, "FocusScopeManager");
-      }
-      static instance;
-      #scopeStack = simpleBox([]);
-      #focusHistory = /* @__PURE__ */ new WeakMap();
-      #preFocusHistory = /* @__PURE__ */ new WeakMap();
-      static getInstance() {
-        if (!this.instance) {
-          this.instance = new _FocusScopeManager();
-        }
-        return this.instance;
-      }
-      register(scope) {
-        const current2 = this.getActive();
-        if (current2 && current2 !== scope) {
-          current2.pause();
-        }
-        const activeElement = document.activeElement;
-        if (activeElement && activeElement !== document.body) {
-          this.#preFocusHistory.set(scope, activeElement);
-        }
-        this.#scopeStack.current = this.#scopeStack.current.filter((s3) => s3 !== scope);
-        this.#scopeStack.current.unshift(scope);
-      }
-      unregister(scope) {
-        this.#scopeStack.current = this.#scopeStack.current.filter((s3) => s3 !== scope);
-        const next3 = this.getActive();
-        if (next3) {
-          next3.resume();
-        }
-      }
-      getActive() {
-        return this.#scopeStack.current[0];
-      }
-      setFocusMemory(scope, element2) {
-        this.#focusHistory.set(scope, element2);
-      }
-      getFocusMemory(scope) {
-        return this.#focusHistory.get(scope);
-      }
-      isActiveScope(scope) {
-        return this.getActive() === scope;
-      }
-      setPreFocusMemory(scope, element2) {
-        this.#preFocusHistory.set(scope, element2);
-      }
-      getPreFocusMemory(scope) {
-        return this.#preFocusHistory.get(scope);
-      }
-      clearPreFocusMemory(scope) {
-        this.#preFocusHistory.delete(scope);
-      }
-    };
-    FocusScope = class _FocusScope {
-      static {
-        __name(this, "FocusScope");
-      }
-      #paused = false;
-      #container = null;
-      #manager = FocusScopeManager.getInstance();
-      #cleanupFns = [];
-      #opts;
-      constructor(opts) {
-        this.#opts = opts;
-      }
-      get paused() {
-        return this.#paused;
-      }
-      pause() {
-        this.#paused = true;
-      }
-      resume() {
-        this.#paused = false;
-      }
-      #cleanup() {
-        for (const fn of this.#cleanupFns) {
-          fn();
-        }
-        this.#cleanupFns = [];
-      }
-      mount(container) {
-        if (this.#container) {
-          this.unmount();
-        }
-        this.#container = container;
-        this.#manager.register(this);
-        this.#setupEventListeners();
-        this.#handleOpenAutoFocus();
-      }
-      unmount() {
-        if (!this.#container) return;
-        this.#cleanup();
-        this.#handleCloseAutoFocus();
-        this.#manager.unregister(this);
-        this.#manager.clearPreFocusMemory(this);
-        this.#container = null;
-      }
-      #handleOpenAutoFocus() {
-        if (!this.#container) return;
-        const event = new CustomEvent("focusScope.onOpenAutoFocus", { bubbles: false, cancelable: true });
-        this.#opts.onOpenAutoFocus.current(event);
-        if (!event.defaultPrevented) {
-          requestAnimationFrame(() => {
-            if (!this.#container) return;
-            const firstTabbable = this.#getFirstTabbable();
-            if (firstTabbable) {
-              firstTabbable.focus();
-              this.#manager.setFocusMemory(this, firstTabbable);
-            } else {
-              this.#container.focus();
-            }
-          });
-        }
-      }
-      #handleCloseAutoFocus() {
-        const event = new CustomEvent("focusScope.onCloseAutoFocus", { bubbles: false, cancelable: true });
-        this.#opts.onCloseAutoFocus.current?.(event);
-        if (!event.defaultPrevented) {
-          const preFocusedElement = this.#manager.getPreFocusMemory(this);
-          if (preFocusedElement && document.contains(preFocusedElement)) {
-            try {
-              preFocusedElement.focus();
-            } catch {
-              document.body.focus();
-            }
-          }
-        }
-      }
-      #setupEventListeners() {
-        if (!this.#container || !this.#opts.trap.current) return;
-        const container = this.#container;
-        const doc = container.ownerDocument;
-        const handleFocus = /* @__PURE__ */ __name((e3) => {
-          if (this.#paused || !this.#manager.isActiveScope(this)) return;
-          const target = e3.target;
-          if (!target) return;
-          const isInside = container.contains(target);
-          if (isInside) {
-            this.#manager.setFocusMemory(this, target);
-          } else {
-            const lastFocused = this.#manager.getFocusMemory(this);
-            if (lastFocused && container.contains(lastFocused) && isFocusable(lastFocused)) {
-              e3.preventDefault();
-              lastFocused.focus();
-            } else {
-              const firstTabbable = this.#getFirstTabbable();
-              const firstFocusable = this.#getAllFocusables()[0];
-              (firstTabbable || firstFocusable || container).focus();
-            }
-          }
-        }, "handleFocus");
-        const handleKeydown = /* @__PURE__ */ __name((e3) => {
-          if (!this.#opts.loop || this.#paused || e3.key !== "Tab") return;
-          if (!this.#manager.isActiveScope(this)) return;
-          const tabbables = this.#getTabbables();
-          if (tabbables.length < 2) return;
-          const first = tabbables[0];
-          const last = tabbables[tabbables.length - 1];
-          if (!e3.shiftKey && doc.activeElement === last) {
-            e3.preventDefault();
-            first.focus();
-          } else if (e3.shiftKey && doc.activeElement === first) {
-            e3.preventDefault();
-            last.focus();
-          }
-        }, "handleKeydown");
-        this.#cleanupFns.push(on2(doc, "focusin", handleFocus, { capture: true }), on2(container, "keydown", handleKeydown));
-        const observer = new MutationObserver(() => {
-          const lastFocused = this.#manager.getFocusMemory(this);
-          if (lastFocused && !container.contains(lastFocused)) {
-            const firstTabbable = this.#getFirstTabbable();
-            const firstFocusable = this.#getAllFocusables()[0];
-            const elementToFocus = firstTabbable || firstFocusable;
-            if (elementToFocus) {
-              elementToFocus.focus();
-              this.#manager.setFocusMemory(this, elementToFocus);
-            } else {
-              container.focus();
-            }
-          }
-        });
-        observer.observe(container, { childList: true, subtree: true });
-        this.#cleanupFns.push(() => observer.disconnect());
-      }
-      #getTabbables() {
-        if (!this.#container) return [];
-        return tabbable(this.#container, { includeContainer: false, getShadowRoot: true });
-      }
-      #getFirstTabbable() {
-        const tabbables = this.#getTabbables();
-        return tabbables[0] || null;
-      }
-      #getAllFocusables() {
-        if (!this.#container) return [];
-        return focusable(this.#container, { includeContainer: false, getShadowRoot: true });
-      }
-      static use(opts) {
-        let scope = null;
-        watch([() => opts.ref.current, () => opts.enabled.current], ([ref2, enabled]) => {
-          if (ref2 && enabled) {
-            if (!scope) {
-              scope = new _FocusScope(opts);
-            }
-            scope.mount(ref2);
-          } else if (scope) {
-            scope.unmount();
-            scope = null;
-          }
-        });
-        return {
-          get props() {
-            return { tabindex: -1 };
-          }
-        };
-      }
-    };
-    __name(Focus_scope, "Focus_scope");
-    globalThis.bitsTextSelectionLayers ??= /* @__PURE__ */ new Map();
-    TextSelectionLayerState = class _TextSelectionLayerState {
-      static {
-        __name(this, "TextSelectionLayerState");
-      }
-      static create(opts) {
-        return new _TextSelectionLayerState(opts);
-      }
-      opts;
-      domContext;
-      #unsubSelectionLock = noop3;
-      constructor(opts) {
-        this.opts = opts;
-        this.domContext = new DOMContext(opts.ref);
-        let unsubEvents = noop3;
-        watch(() => this.opts.enabled.current, (isEnabled) => {
-          if (isEnabled) {
-            globalThis.bitsTextSelectionLayers.set(this, this.opts.enabled);
-            unsubEvents();
-            unsubEvents = this.#addEventListeners();
-          }
-          return () => {
-            unsubEvents();
-            this.#resetSelectionLock();
-            globalThis.bitsTextSelectionLayers.delete(this);
-          };
-        });
-      }
-      #addEventListeners() {
-        return executeCallbacks(on2(this.domContext.getDocument(), "pointerdown", this.#pointerdown), on2(this.domContext.getDocument(), "pointerup", composeHandlers(this.#resetSelectionLock, this.opts.onPointerUp.current)));
-      }
-      #pointerdown = /* @__PURE__ */ __name((e3) => {
-        const node = this.opts.ref.current;
-        const target = e3.target;
-        if (!isHTMLElement(node) || !isHTMLElement(target) || !this.opts.enabled.current) return;
-        if (!isHighestLayer(this) || !contains(node, target)) return;
-        this.opts.onPointerDown.current(e3);
-        if (e3.defaultPrevented) return;
-        this.#unsubSelectionLock = preventTextSelectionOverflow(node, this.domContext.getDocument().body);
-      }, "#pointerdown");
-      #resetSelectionLock = /* @__PURE__ */ __name(() => {
-        this.#unsubSelectionLock();
-        this.#unsubSelectionLock = noop3;
-      }, "#resetSelectionLock");
-    };
-    getUserSelect = /* @__PURE__ */ __name((node) => node.style.userSelect || node.style.webkitUserSelect, "getUserSelect");
-    __name(preventTextSelectionOverflow, "preventTextSelectionOverflow");
-    __name(setUserSelect, "setUserSelect");
-    __name(isHighestLayer, "isHighestLayer");
-    __name(Text_selection_layer, "Text_selection_layer");
-    globalThis.bitsIdCounter ??= { current: 0 };
-    __name(useId, "useId");
-    SharedState = class {
-      static {
-        __name(this, "SharedState");
-      }
-      #factory;
-      #subscribers = 0;
-      #state;
-      #scope;
-      constructor(factory) {
-        this.#factory = factory;
-      }
-      #dispose() {
-        this.#subscribers -= 1;
-        if (this.#scope && this.#subscribers <= 0) {
-          this.#scope();
-          this.#state = void 0;
-          this.#scope = void 0;
-        }
-      }
-      get(...args) {
-        this.#subscribers += 1;
-        if (this.#state === void 0) {
-          this.#scope = () => {
-          };
-        }
-        return this.#state;
-      }
-    };
-    lockMap = new SvelteMap();
-    initialBodyStyle = null;
-    cleanupTimeoutId = null;
-    isInCleanupTransition = false;
-    anyLocked = boxWith(() => {
-      for (const value of lockMap.values()) {
-        if (value) return true;
-      }
-      return false;
-    });
-    cleanupScheduledAt = null;
-    bodyLockStackCount = new SharedState(() => {
-      function resetBodyStyle() {
-        return;
-      }
-      __name(resetBodyStyle, "resetBodyStyle");
-      function cancelPendingCleanup() {
-        if (cleanupTimeoutId === null) return;
-        window.clearTimeout(cleanupTimeoutId);
-        cleanupTimeoutId = null;
-      }
-      __name(cancelPendingCleanup, "cancelPendingCleanup");
-      function scheduleCleanupIfNoNewLocks(delay, callback) {
-        cancelPendingCleanup();
-        isInCleanupTransition = true;
-        cleanupScheduledAt = Date.now();
-        const currentCleanupId = cleanupScheduledAt;
-        const cleanupFn = /* @__PURE__ */ __name(() => {
-          cleanupTimeoutId = null;
-          if (cleanupScheduledAt !== currentCleanupId) return;
-          if (!isAnyLocked(lockMap)) {
-            isInCleanupTransition = false;
-            callback();
-          } else {
-            isInCleanupTransition = false;
-          }
-        }, "cleanupFn");
-        const actualDelay = delay === null ? 24 : delay;
-        cleanupTimeoutId = window.setTimeout(cleanupFn, actualDelay);
-      }
-      __name(scheduleCleanupIfNoNewLocks, "scheduleCleanupIfNoNewLocks");
-      function ensureInitialStyleCaptured() {
-        if (initialBodyStyle === null && lockMap.size === 0 && !isInCleanupTransition) {
-          initialBodyStyle = document.body.getAttribute("style");
-        }
-      }
-      __name(ensureInitialStyleCaptured, "ensureInitialStyleCaptured");
-      watch(() => anyLocked.current, () => {
-        if (!anyLocked.current) return;
-        ensureInitialStyleCaptured();
-        isInCleanupTransition = false;
-        const bodyStyle = getComputedStyle(document.body);
-        const verticalScrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
-        const paddingRight = Number.parseInt(bodyStyle.paddingRight ?? "0", 10);
-        const config4 = {
-          padding: paddingRight + verticalScrollbarWidth,
-          margin: Number.parseInt(bodyStyle.marginRight ?? "0", 10)
-        };
-        if (verticalScrollbarWidth > 0) {
-          document.body.style.paddingRight = `${config4.padding}px`;
-          document.body.style.marginRight = `${config4.margin}px`;
-          document.body.style.setProperty("--scrollbar-width", `${verticalScrollbarWidth}px`);
-          document.body.style.overflow = "hidden";
-        }
-        if (isIOS) {
-          on2(
-            document,
-            "touchmove",
-            (e3) => {
-              if (e3.target !== document.documentElement) return;
-              if (e3.touches.length > 1) return;
-              e3.preventDefault();
-            },
-            { passive: false }
-          );
-        }
-        afterTick(() => {
-          document.body.style.pointerEvents = "none";
-          document.body.style.overflow = "hidden";
-        });
-      });
-      return {
-        get lockMap() {
-          return lockMap;
-        },
-        resetBodyStyle,
-        scheduleCleanupIfNoNewLocks,
-        cancelPendingCleanup,
-        ensureInitialStyleCaptured
-      };
-    });
-    BodyScrollLock = class {
-      static {
-        __name(this, "BodyScrollLock");
-      }
-      #id = useId();
-      #initialState;
-      #restoreScrollDelay = /* @__PURE__ */ __name(() => null, "#restoreScrollDelay");
-      #countState;
-      locked;
-      constructor(initialState, restoreScrollDelay = () => null) {
-        this.#initialState = initialState;
-        this.#restoreScrollDelay = restoreScrollDelay;
-        this.#countState = bodyLockStackCount.get();
-        if (!this.#countState) return;
-        this.#countState.cancelPendingCleanup();
-        this.#countState.ensureInitialStyleCaptured();
-        this.#countState.lockMap.set(this.#id, this.#initialState ?? false);
-        this.locked = boxWith(() => this.#countState.lockMap.get(this.#id) ?? false, (v) => this.#countState.lockMap.set(this.#id, v));
-      }
-    };
-    __name(isAnyLocked, "isAnyLocked");
-    __name(Scroll_lock, "Scroll_lock");
-    __name(Input, "Input");
-  }
-});
-
-// .svelte-kit/output/server/entries/pages/_layout.svelte.js
-var layout_svelte_exports = {};
-__export(layout_svelte_exports, {
-  default: () => _layout
-});
-function getGlobalBroadcastChannel(name = "better-auth.message") {
-  if (!globalThis[kBroadcastChannel]) globalThis[kBroadcastChannel] = new WindowBroadcastChannel(name);
-  return globalThis[kBroadcastChannel];
-}
-function getGlobalFocusManager() {
-  if (!globalThis[kFocusManager]) globalThis[kFocusManager] = new WindowFocusManager();
-  return globalThis[kFocusManager];
-}
-function getGlobalOnlineManager() {
-  if (!globalThis[kOnlineManager]) globalThis[kOnlineManager] = new WindowOnlineManager();
-  return globalThis[kOnlineManager];
-}
-function createSessionRefreshManager(opts) {
-  const { sessionAtom, sessionSignal, $fetch, options: options2 = {} } = opts;
-  const refetchInterval = options2.sessionOptions?.refetchInterval ?? 0;
-  const refetchOnWindowFocus = options2.sessionOptions?.refetchOnWindowFocus ?? true;
-  const refetchWhenOffline = options2.sessionOptions?.refetchWhenOffline ?? false;
-  const state3 = {
-    lastSync: 0,
-    lastSessionRequest: 0,
-    cachedSession: void 0
-  };
-  const shouldRefetch = /* @__PURE__ */ __name(() => {
-    return refetchWhenOffline || getGlobalOnlineManager().isOnline;
-  }, "shouldRefetch");
-  const triggerRefetch = /* @__PURE__ */ __name((event) => {
-    if (!shouldRefetch()) return;
-    if (event?.event === "storage") {
-      state3.lastSync = now2();
-      sessionSignal.set(!sessionSignal.get());
-      return;
-    }
-    const currentSession = sessionAtom.get();
-    if (event?.event === "poll") {
-      state3.lastSessionRequest = now2();
-      $fetch("/get-session").then((res) => {
-        sessionAtom.set({
-          ...currentSession,
-          data: res.data,
-          error: res.error || null
-        });
-        state3.lastSync = now2();
-        sessionSignal.set(!sessionSignal.get());
-      }).catch(() => {
-      });
-      return;
-    }
-    if (event?.event === "visibilitychange") {
-      if (now2() - state3.lastSessionRequest < FOCUS_REFETCH_RATE_LIMIT_SECONDS && currentSession?.data !== null && currentSession?.data !== void 0) return;
-    }
-    if (currentSession?.data === null || currentSession?.data === void 0 || event?.event === "visibilitychange") {
-      if (event?.event === "visibilitychange") state3.lastSessionRequest = now2();
-      state3.lastSync = now2();
-      sessionSignal.set(!sessionSignal.get());
-    }
-  }, "triggerRefetch");
-  const broadcastSessionUpdate = /* @__PURE__ */ __name((trigger) => {
-    getGlobalBroadcastChannel().post({
-      event: "session",
-      data: { trigger },
-      clientId: Math.random().toString(36).substring(7)
-    });
-  }, "broadcastSessionUpdate");
-  const setupPolling = /* @__PURE__ */ __name(() => {
-    if (refetchInterval && refetchInterval > 0) state3.pollInterval = setInterval(() => {
-      if (sessionAtom.get()?.data) triggerRefetch({ event: "poll" });
-    }, refetchInterval * 1e3);
-  }, "setupPolling");
-  const setupBroadcast = /* @__PURE__ */ __name(() => {
-    state3.unsubscribeBroadcast = getGlobalBroadcastChannel().subscribe(() => {
-      triggerRefetch({ event: "storage" });
-    });
-  }, "setupBroadcast");
-  const setupFocusRefetch = /* @__PURE__ */ __name(() => {
-    if (!refetchOnWindowFocus) return;
-    state3.unsubscribeFocus = getGlobalFocusManager().subscribe(() => {
-      triggerRefetch({ event: "visibilitychange" });
-    });
-  }, "setupFocusRefetch");
-  const setupOnlineRefetch = /* @__PURE__ */ __name(() => {
-    state3.unsubscribeOnline = getGlobalOnlineManager().subscribe((online) => {
-      if (online) triggerRefetch({ event: "visibilitychange" });
-    });
-  }, "setupOnlineRefetch");
-  const init3 = /* @__PURE__ */ __name(() => {
-    setupPolling();
-    setupBroadcast();
-    setupFocusRefetch();
-    setupOnlineRefetch();
-    getGlobalBroadcastChannel().setup();
-    getGlobalFocusManager().setup();
-    getGlobalOnlineManager().setup();
-  }, "init");
-  const cleanup = /* @__PURE__ */ __name(() => {
-    if (state3.pollInterval) {
-      clearInterval(state3.pollInterval);
-      state3.pollInterval = void 0;
-    }
-    if (state3.unsubscribeBroadcast) {
-      state3.unsubscribeBroadcast();
-      state3.unsubscribeBroadcast = void 0;
-    }
-    if (state3.unsubscribeFocus) {
-      state3.unsubscribeFocus();
-      state3.unsubscribeFocus = void 0;
-    }
-    if (state3.unsubscribeOnline) {
-      state3.unsubscribeOnline();
-      state3.unsubscribeOnline = void 0;
-    }
-    state3.lastSync = 0;
-    state3.lastSessionRequest = 0;
-    state3.cachedSession = void 0;
-  }, "cleanup");
-  return {
-    init: init3,
-    cleanup,
-    triggerRefetch,
-    broadcastSessionUpdate
-  };
-}
-function isValidDate(date5) {
-  return date5 instanceof Date && !isNaN(date5.getTime());
-}
-function parseISODate(value) {
-  const match = ISO_DATE_REGEX.exec(value);
-  if (!match) return null;
-  const [, year2, month, day2, hour2, minute2, second, ms, offsetSign, offsetHour, offsetMinute] = match;
-  let date5 = new Date(Date.UTC(parseInt(year2, 10), parseInt(month, 10) - 1, parseInt(day2, 10), parseInt(hour2, 10), parseInt(minute2, 10), parseInt(second, 10), ms ? parseInt(ms.padEnd(3, "0"), 10) : 0));
-  if (offsetSign) {
-    const offset3 = (parseInt(offsetHour, 10) * 60 + parseInt(offsetMinute, 10)) * (offsetSign === "+" ? -1 : 1);
-    date5.setUTCMinutes(date5.getUTCMinutes() + offset3);
-  }
-  return isValidDate(date5) ? date5 : null;
-}
-function betterJSONParse(value, options2 = {}) {
-  const { strict = false, warnings = false, reviver, parseDates = true } = options2;
-  if (typeof value !== "string") return value;
-  const trimmed = value.trim();
-  if (trimmed.length > 0 && trimmed[0] === '"' && trimmed.endsWith('"') && !trimmed.slice(1, -1).includes('"')) return trimmed.slice(1, -1);
-  const lowerValue = trimmed.toLowerCase();
-  if (lowerValue.length <= 9 && lowerValue in SPECIAL_VALUES) return SPECIAL_VALUES[lowerValue];
-  if (!JSON_SIGNATURE.test(trimmed)) {
-    if (strict) throw new SyntaxError("[better-json] Invalid JSON");
-    return value;
-  }
-  if (Object.entries(PROTO_POLLUTION_PATTERNS).some(([key2, pattern2]) => {
-    const matches2 = pattern2.test(trimmed);
-    if (matches2 && warnings) console.warn(`[better-json] Detected potential prototype pollution attempt using ${key2} pattern`);
-    return matches2;
-  }) && strict) throw new Error("[better-json] Potential prototype pollution attempt detected");
-  try {
-    const secureReviver = /* @__PURE__ */ __name((key2, value$1) => {
-      if (key2 === "__proto__" || key2 === "constructor" && value$1 && typeof value$1 === "object" && "prototype" in value$1) {
-        if (warnings) console.warn(`[better-json] Dropping "${key2}" key to prevent prototype pollution`);
-        return;
-      }
-      if (parseDates && typeof value$1 === "string") {
-        const date5 = parseISODate(value$1);
-        if (date5) return date5;
-      }
-      return reviver ? reviver(key2, value$1) : value$1;
-    }, "secureReviver");
-    return JSON.parse(trimmed, secureReviver);
-  } catch (error50) {
-    if (strict) throw error50;
-    return value;
-  }
-}
-function parseJSON(value, options2 = { strict: true }) {
-  return betterJSONParse(value, options2);
-}
-function getSessionAtom($fetch, options2) {
-  const $signal = atom(false);
-  const session2 = useAuthQuery($signal, "/get-session", $fetch, { method: "GET" });
-  onMount(session2, () => {
-    const refreshManager = createSessionRefreshManager({
-      sessionAtom: session2,
-      sessionSignal: $signal,
-      $fetch,
-      options: options2
-    });
-    refreshManager.init();
-    return () => {
-      refreshManager.cleanup();
-    };
-  });
-  return {
-    session: session2,
-    $sessionSignal: $signal
-  };
-}
-function isAtom(value) {
-  return typeof value === "object" && value !== null && "get" in value && typeof value.get === "function" && "lc" in value && typeof value.lc === "number";
-}
-function getMethod2(path, knownPathMethods, args) {
-  const method = knownPathMethods[path];
-  const { fetchOptions, query: _query, ...body2 } = args || {};
-  if (method) return method;
-  if (fetchOptions?.method) return fetchOptions.method;
-  if (body2 && Object.keys(body2).length > 0) return "POST";
-  return "GET";
-}
-function createDynamicPathProxy(routes, client, knownPathMethods, atoms, atomListeners) {
-  function createProxy(path = []) {
-    return new Proxy(function() {
-    }, {
-      get(_, prop) {
-        if (typeof prop !== "string") return;
-        if (prop === "then" || prop === "catch" || prop === "finally") return;
-        const fullPath = [...path, prop];
-        let current2 = routes;
-        for (const segment of fullPath) if (current2 && typeof current2 === "object" && segment in current2) current2 = current2[segment];
-        else {
-          current2 = void 0;
-          break;
-        }
-        if (typeof current2 === "function") return current2;
-        if (isAtom(current2)) return current2;
-        return createProxy(fullPath);
-      },
-      apply: /* @__PURE__ */ __name(async (_, __, args) => {
-        const routePath = "/" + path.map((segment) => segment.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)).join("/");
-        const arg = args[0] || {};
-        const fetchOptions = args[1] || {};
-        const { query: query2, fetchOptions: argFetchOptions, ...body2 } = arg;
-        const options2 = {
-          ...fetchOptions,
-          ...argFetchOptions
-        };
-        const method = getMethod2(routePath, knownPathMethods, arg);
-        return await client(routePath, {
-          ...options2,
-          body: method === "GET" ? void 0 : {
-            ...body2,
-            ...options2?.body || {}
-          },
-          query: query2 || options2?.query,
-          method,
-          async onSuccess(context4) {
-            await options2?.onSuccess?.(context4);
-            if (!atomListeners || options2.disableSignal) return;
-            const matches2 = atomListeners.filter((s3) => s3.matcher(routePath));
-            if (!matches2.length) return;
-            for (const match of matches2) {
-              const signal = atoms[match.signal];
-              if (!signal) return;
-              const val = signal.get();
-              setTimeout(() => {
-                signal.set(!val);
-              }, 10);
-            }
-          }
-        });
-      }, "apply")
-    });
-  }
-  __name(createProxy, "createProxy");
-  return createProxy();
-}
-function createAuthClient(options2) {
-  const { pluginPathMethods, pluginsActions, pluginsAtoms, $fetch, atomListeners, $store } = getClientConfig(options2);
-  let resolvedHooks = {};
-  for (const [key2, value] of Object.entries(pluginsAtoms)) resolvedHooks[`use${capitalizeFirstLetter(key2)}`] = value;
-  return createDynamicPathProxy({
-    ...pluginsActions,
-    ...resolvedHooks,
-    $fetch,
-    $store
-  }, $fetch, pluginPathMethods, pluginsAtoms, atomListeners);
-}
-function Github($$renderer, $$props) {
-  $$renderer.component(($$renderer2) => {
-    let { $$slots, $$events, ...props } = $$props;
-    const iconNode = [
-      [
-        "path",
-        {
-          "d": "M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"
-        }
-      ],
-      ["path", { "d": "M9 18c-4.51 2-5-2-7-2" }]
-    ];
-    Icon($$renderer2, spread_props([
-      { name: "github" },
-      /**
-       * @component @name Github
-       * @description Lucide SVG icon component, renders SVG Element with children.
-       *
-       * @preview ![img](data:image/svg+xml;base64,PHN2ZyAgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIgogIHdpZHRoPSIyNCIKICBoZWlnaHQ9IjI0IgogIHZpZXdCb3g9IjAgMCAyNCAyNCIKICBmaWxsPSJub25lIgogIHN0cm9rZT0iIzAwMCIgc3R5bGU9ImJhY2tncm91bmQtY29sb3I6ICNmZmY7IGJvcmRlci1yYWRpdXM6IDJweCIKICBzdHJva2Utd2lkdGg9IjIiCiAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogIHN0cm9rZS1saW5lam9pbj0icm91bmQiCj4KICA8cGF0aCBkPSJNMTUgMjJ2LTRhNC44IDQuOCAwIDAgMC0xLTMuNWMzIDAgNi0yIDYtNS41LjA4LTEuMjUtLjI3LTIuNDgtMS0zLjUuMjgtMS4xNS4yOC0yLjM1IDAtMy41IDAgMC0xIDAtMyAxLjUtMi42NC0uNS01LjM2LS41LTggMEM2IDIgNSAyIDUgMmMtLjMgMS4xNS0uMyAyLjM1IDAgMy41QTUuNDAzIDUuNDAzIDAgMCAwIDQgOWMwIDMuNSAzIDUuNSA2IDUuNS0uMzkuNDktLjY4IDEuMDUtLjg1IDEuNjUtLjE3LjYtLjIyIDEuMjMtLjE1IDEuODV2NCIgLz4KICA8cGF0aCBkPSJNOSAxOGMtNC41MSAyLTUtMi03LTIiIC8+Cjwvc3ZnPgo=) - https://lucide.dev/icons/github
-       * @see https://lucide.dev/guide/packages/lucide-svelte - Documentation
-       *
-       * @param {Object} props - Lucide icons props and any valid SVG attribute
-       * @returns {FunctionalComponent} Svelte component
-       * @deprecated Brand icons have been deprecated and are due to be removed, please refer to https://github.com/lucide-icons/lucide/issues/670. We recommend using https://simpleicons.org/?q=github instead. This icon will be removed in v1.0
-       */
-      props,
-      {
-        iconNode,
-        children: /* @__PURE__ */ __name(($$renderer3) => {
-          props.children?.($$renderer3);
-          $$renderer3.push(`<!---->`);
-        }, "children"),
-        $$slots: { default: true }
-      }
-    ]));
-  });
-}
-function Package($$renderer, $$props) {
-  $$renderer.component(($$renderer2) => {
-    let { $$slots, $$events, ...props } = $$props;
-    const iconNode = [
-      [
-        "path",
-        {
-          "d": "M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"
-        }
-      ],
-      ["path", { "d": "M12 22V12" }],
-      ["polyline", { "points": "3.29 7 12 12 20.71 7" }],
-      ["path", { "d": "m7.5 4.27 9 5.15" }]
-    ];
-    Icon($$renderer2, spread_props([
-      { name: "package" },
-      /**
-       * @component @name Package
-       * @description Lucide SVG icon component, renders SVG Element with children.
-       *
-       * @preview ![img](data:image/svg+xml;base64,PHN2ZyAgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIgogIHdpZHRoPSIyNCIKICBoZWlnaHQ9IjI0IgogIHZpZXdCb3g9IjAgMCAyNCAyNCIKICBmaWxsPSJub25lIgogIHN0cm9rZT0iIzAwMCIgc3R5bGU9ImJhY2tncm91bmQtY29sb3I6ICNmZmY7IGJvcmRlci1yYWRpdXM6IDJweCIKICBzdHJva2Utd2lkdGg9IjIiCiAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogIHN0cm9rZS1saW5lam9pbj0icm91bmQiCj4KICA8cGF0aCBkPSJNMTEgMjEuNzNhMiAyIDAgMCAwIDIgMGw3LTRBMiAyIDAgMCAwIDIxIDE2VjhhMiAyIDAgMCAwLTEtMS43M2wtNy00YTIgMiAwIDAgMC0yIDBsLTcgNEEyIDIgMCAwIDAgMyA4djhhMiAyIDAgMCAwIDEgMS43M3oiIC8+CiAgPHBhdGggZD0iTTEyIDIyVjEyIiAvPgogIDxwb2x5bGluZSBwb2ludHM9IjMuMjkgNyAxMiAxMiAyMC43MSA3IiAvPgogIDxwYXRoIGQ9Im03LjUgNC4yNyA5IDUuMTUiIC8+Cjwvc3ZnPgo=) - https://lucide.dev/icons/package
-       * @see https://lucide.dev/guide/packages/lucide-svelte - Documentation
-       *
-       * @param {Object} props - Lucide icons props and any valid SVG attribute
-       * @returns {FunctionalComponent} Svelte component
-       *
-       */
-      props,
-      {
-        iconNode,
-        children: /* @__PURE__ */ __name(($$renderer3) => {
-          props.children?.($$renderer3);
-          $$renderer3.push(`<!---->`);
-        }, "children"),
-        $$slots: { default: true }
-      }
-    ]));
-  });
-}
-function Nav($$renderer, $$props) {
-  $$renderer.component(($$renderer2) => {
-    let currentPath = page.url.pathname;
-    const navItems = [
-      { href: "/", label: "Home", isActive: /* @__PURE__ */ __name((path) => path === "/", "isActive") },
-      {
-        href: "/docs",
-        label: "Docs",
-        isActive: /* @__PURE__ */ __name((path) => path === "/docs", "isActive")
-      },
-      {
-        href: "/docs/api",
-        label: "API",
-        isActive: /* @__PURE__ */ __name((path) => path === "/docs/api", "isActive")
-      },
-      {
-        href: "/mission",
-        label: "Mission Control",
-        isActive: /* @__PURE__ */ __name((path) => path === "/mission", "isActive")
-      }
-    ];
-    $$renderer2.push(`<header class="border-b bg-background relative z-50"><div class="container mx-auto px-6 py-4"><div class="flex items-center justify-between"><div class="flex items-center gap-8"><a href="/" class="flex items-center gap-2 hover:opacity-80 transition-opacity">`);
-    Package($$renderer2, { class: "h-5 w-5" });
-    $$renderer2.push(`<!----> <span class="font-mono text-lg font-semibold">ironalarm</span></a> <nav class="hidden md:flex items-center gap-6 text-sm"><!--[-->`);
-    const each_array = ensure_array_like(navItems);
-    for (let $$index = 0, $$length = each_array.length; $$index < $$length; $$index++) {
-      let item = each_array[$$index];
-      $$renderer2.push(`<a${attr("href", item.href)}${attr_class(`hover:text-foreground transition-colors ${stringify2(item.isActive(currentPath) ? "text-foreground font-medium" : "text-muted-foreground")}`)}>${escape_html(item.label)}</a>`);
-    }
-    $$renderer2.push(`<!--]--></nav></div> `);
-    Button($$renderer2, {
-      variant: "outline",
-      size: "sm",
-      href: "https://github.com/acoyfellow/ironalarm",
-      target: "_blank",
-      rel: "noopener noreferrer",
-      children: /* @__PURE__ */ __name(($$renderer3) => {
-        Github($$renderer3, { class: "h-4 w-4" });
-        $$renderer3.push(`<!----> <span class="hidden sm:inline ml-2">GitHub</span>`);
-      }, "children"),
-      $$slots: { default: true }
-    });
-    $$renderer2.push(`<!----></div></div></header>`);
-  });
-}
-function X($$renderer, $$props) {
-  $$renderer.component(($$renderer2) => {
-    let { $$slots, $$events, ...props } = $$props;
-    const iconNode = [
-      ["path", { "d": "M18 6 6 18" }],
-      ["path", { "d": "m6 6 12 12" }]
-    ];
-    Icon($$renderer2, spread_props([
-      { name: "x" },
-      /**
-       * @component @name X
-       * @description Lucide SVG icon component, renders SVG Element with children.
-       *
-       * @preview ![img](data:image/svg+xml;base64,PHN2ZyAgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIgogIHdpZHRoPSIyNCIKICBoZWlnaHQ9IjI0IgogIHZpZXdCb3g9IjAgMCAyNCAyNCIKICBmaWxsPSJub25lIgogIHN0cm9rZT0iIzAwMCIgc3R5bGU9ImJhY2tncm91bmQtY29sb3I6ICNmZmY7IGJvcmRlci1yYWRpdXM6IDJweCIKICBzdHJva2Utd2lkdGg9IjIiCiAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogIHN0cm9rZS1saW5lam9pbj0icm91bmQiCj4KICA8cGF0aCBkPSJNMTggNiA2IDE4IiAvPgogIDxwYXRoIGQ9Im02IDYgMTIgMTIiIC8+Cjwvc3ZnPgo=) - https://lucide.dev/icons/x
-       * @see https://lucide.dev/guide/packages/lucide-svelte - Documentation
-       *
-       * @param {Object} props - Lucide icons props and any valid SVG attribute
-       * @returns {FunctionalComponent} Svelte component
-       *
-       */
-      props,
-      {
-        iconNode,
-        children: /* @__PURE__ */ __name(($$renderer3) => {
-          props.children?.($$renderer3);
-          $$renderer3.push(`<!---->`);
-        }, "children"),
-        $$slots: { default: true }
-      }
-    ]));
-  });
-}
-function Upload($$renderer, $$props) {
-  $$renderer.component(($$renderer2) => {
-    let { $$slots, $$events, ...props } = $$props;
-    const iconNode = [
-      ["path", { "d": "M12 3v12" }],
-      ["path", { "d": "m17 8-5-5-5 5" }],
-      ["path", { "d": "M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" }]
-    ];
-    Icon($$renderer2, spread_props([
-      { name: "upload" },
-      /**
-       * @component @name Upload
-       * @description Lucide SVG icon component, renders SVG Element with children.
-       *
-       * @preview ![img](data:image/svg+xml;base64,PHN2ZyAgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIgogIHdpZHRoPSIyNCIKICBoZWlnaHQ9IjI0IgogIHZpZXdCb3g9IjAgMCAyNCAyNCIKICBmaWxsPSJub25lIgogIHN0cm9rZT0iIzAwMCIgc3R5bGU9ImJhY2tncm91bmQtY29sb3I6ICNmZmY7IGJvcmRlci1yYWRpdXM6IDJweCIKICBzdHJva2Utd2lkdGg9IjIiCiAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogIHN0cm9rZS1saW5lam9pbj0icm91bmQiCj4KICA8cGF0aCBkPSJNMTIgM3YxMiIgLz4KICA8cGF0aCBkPSJtMTcgOC01LTUtNSA1IiAvPgogIDxwYXRoIGQ9Ik0yMSAxNXY0YTIgMiAwIDAgMS0yIDJINWEyIDIgMCAwIDEtMi0ydi00IiAvPgo8L3N2Zz4K) - https://lucide.dev/icons/upload
-       * @see https://lucide.dev/guide/packages/lucide-svelte - Documentation
-       *
-       * @param {Object} props - Lucide icons props and any valid SVG attribute
-       * @returns {FunctionalComponent} Svelte component
-       *
-       */
-      props,
-      {
-        iconNode,
-        children: /* @__PURE__ */ __name(($$renderer3) => {
-          props.children?.($$renderer3);
-          $$renderer3.push(`<!---->`);
-        }, "children"),
-        $$slots: { default: true }
-      }
-    ]));
-  });
-}
-function Search($$renderer, $$props) {
-  $$renderer.component(($$renderer2) => {
-    let { $$slots, $$events, ...props } = $$props;
-    const iconNode = [
-      ["path", { "d": "m21 21-4.34-4.34" }],
-      ["circle", { "cx": "11", "cy": "11", "r": "8" }]
-    ];
-    Icon($$renderer2, spread_props([
-      { name: "search" },
-      /**
-       * @component @name Search
-       * @description Lucide SVG icon component, renders SVG Element with children.
-       *
-       * @preview ![img](data:image/svg+xml;base64,PHN2ZyAgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIgogIHdpZHRoPSIyNCIKICBoZWlnaHQ9IjI0IgogIHZpZXdCb3g9IjAgMCAyNCAyNCIKICBmaWxsPSJub25lIgogIHN0cm9rZT0iIzAwMCIgc3R5bGU9ImJhY2tncm91bmQtY29sb3I6ICNmZmY7IGJvcmRlci1yYWRpdXM6IDJweCIKICBzdHJva2Utd2lkdGg9IjIiCiAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogIHN0cm9rZS1saW5lam9pbj0icm91bmQiCj4KICA8cGF0aCBkPSJtMjEgMjEtNC4zNC00LjM0IiAvPgogIDxjaXJjbGUgY3g9IjExIiBjeT0iMTEiIHI9IjgiIC8+Cjwvc3ZnPgo=) - https://lucide.dev/icons/search
-       * @see https://lucide.dev/guide/packages/lucide-svelte - Documentation
-       *
-       * @param {Object} props - Lucide icons props and any valid SVG attribute
-       * @returns {FunctionalComponent} Svelte component
-       *
-       */
-      props,
-      {
-        iconNode,
-        children: /* @__PURE__ */ __name(($$renderer3) => {
-          props.children?.($$renderer3);
-          $$renderer3.push(`<!---->`);
-        }, "children"),
-        $$slots: { default: true }
-      }
-    ]));
-  });
-}
-function Loader($$renderer, $$props) {
-  $$renderer.component(($$renderer2) => {
-    let { $$slots, $$events, ...props } = $$props;
-    const iconNode = [
-      ["path", { "d": "M12 2v4" }],
-      ["path", { "d": "m16.2 7.8 2.9-2.9" }],
-      ["path", { "d": "M18 12h4" }],
-      ["path", { "d": "m16.2 16.2 2.9 2.9" }],
-      ["path", { "d": "M12 18v4" }],
-      ["path", { "d": "m4.9 19.1 2.9-2.9" }],
-      ["path", { "d": "M2 12h4" }],
-      ["path", { "d": "m4.9 4.9 2.9 2.9" }]
-    ];
-    Icon($$renderer2, spread_props([
-      { name: "loader" },
-      /**
-       * @component @name Loader
-       * @description Lucide SVG icon component, renders SVG Element with children.
-       *
-       * @preview ![img](data:image/svg+xml;base64,PHN2ZyAgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIgogIHdpZHRoPSIyNCIKICBoZWlnaHQ9IjI0IgogIHZpZXdCb3g9IjAgMCAyNCAyNCIKICBmaWxsPSJub25lIgogIHN0cm9rZT0iIzAwMCIgc3R5bGU9ImJhY2tncm91bmQtY29sb3I6ICNmZmY7IGJvcmRlci1yYWRpdXM6IDJweCIKICBzdHJva2Utd2lkdGg9IjIiCiAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogIHN0cm9rZS1saW5lam9pbj0icm91bmQiCj4KICA8cGF0aCBkPSJNMTIgMnY0IiAvPgogIDxwYXRoIGQ9Im0xNi4yIDcuOCAyLjktMi45IiAvPgogIDxwYXRoIGQ9Ik0xOCAxMmg0IiAvPgogIDxwYXRoIGQ9Im0xNi4yIDE2LjIgMi45IDIuOSIgLz4KICA8cGF0aCBkPSJNMTIgMTh2NCIgLz4KICA8cGF0aCBkPSJtNC45IDE5LjEgMi45LTIuOSIgLz4KICA8cGF0aCBkPSJNMiAxMmg0IiAvPgogIDxwYXRoIGQ9Im00LjkgNC45IDIuOSAyLjkiIC8+Cjwvc3ZnPgo=) - https://lucide.dev/icons/loader
-       * @see https://lucide.dev/guide/packages/lucide-svelte - Documentation
-       *
-       * @param {Object} props - Lucide icons props and any valid SVG attribute
-       * @returns {FunctionalComponent} Svelte component
-       *
-       */
-      props,
-      {
-        iconNode,
-        children: /* @__PURE__ */ __name(($$renderer3) => {
-          props.children?.($$renderer3);
-          $$renderer3.push(`<!---->`);
-        }, "children"),
-        $$slots: { default: true }
-      }
-    ]));
-  });
-}
-function Dialog_title$1($$renderer, $$props) {
-  $$renderer.component(($$renderer2) => {
-    const uid = props_id($$renderer2);
-    let {
-      id = createId(uid),
-      ref: ref2 = null,
-      child,
-      children,
-      level = 2,
-      $$slots,
-      $$events,
-      ...restProps
-    } = $$props;
-    const titleState = DialogTitleState.create({
-      id: boxWith(() => id),
-      level: boxWith(() => level),
-      ref: boxWith(() => ref2, (v) => ref2 = v)
-    });
-    const mergedProps = mergeProps(restProps, titleState.props);
-    if (child) {
-      $$renderer2.push("<!--[-->");
-      child($$renderer2, { props: mergedProps });
-      $$renderer2.push(`<!---->`);
-    } else {
-      $$renderer2.push("<!--[!-->");
-      $$renderer2.push(`<div${attributes({ ...mergedProps })}>`);
-      children?.($$renderer2);
-      $$renderer2.push(`<!----></div>`);
-    }
-    $$renderer2.push(`<!--]-->`);
-    bind_props($$props, { ref: ref2 });
   });
 }
 function Dialog_overlay$1($$renderer, $$props) {
@@ -73967,6 +72769,53 @@ function Dialog_content($$renderer, $$props) {
     } while (!$$settled);
     $$renderer2.subsume($$inner_renderer);
     bind_props($$props, { ref: ref2 });
+  });
+}
+function Input($$renderer, $$props) {
+  $$renderer.component(($$renderer2) => {
+    let {
+      ref: ref2 = null,
+      value = void 0,
+      type,
+      files = void 0,
+      class: className,
+      "data-slot": dataSlot = "input",
+      $$slots,
+      $$events,
+      ...restProps
+    } = $$props;
+    if (type === "file") {
+      $$renderer2.push("<!--[-->");
+      $$renderer2.push(`<input${attributes(
+        {
+          "data-slot": dataSlot,
+          class: clsx2(cn("selection:bg-primary dark:bg-input/30 selection:text-primary-foreground border-input ring-offset-background placeholder:text-muted-foreground flex h-9 w-full min-w-0 rounded-md border bg-transparent px-3 pt-1.5 text-sm font-medium shadow-xs transition-[color,box-shadow] outline-none disabled:cursor-not-allowed disabled:opacity-50", "focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]", "aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive", className)),
+          type: "file",
+          ...restProps
+        },
+        void 0,
+        void 0,
+        void 0,
+        4
+      )}/>`);
+    } else {
+      $$renderer2.push("<!--[!-->");
+      $$renderer2.push(`<input${attributes(
+        {
+          "data-slot": dataSlot,
+          class: clsx2(cn("border-input bg-background selection:bg-primary dark:bg-input/30 selection:text-primary-foreground ring-offset-background placeholder:text-muted-foreground flex h-9 w-full min-w-0 rounded-md border px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm", "focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]", "aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive", className)),
+          type,
+          value,
+          ...restProps
+        },
+        void 0,
+        void 0,
+        void 0,
+        4
+      )}/>`);
+    }
+    $$renderer2.push(`<!--]-->`);
+    bind_props($$props, { ref: ref2, value, files });
   });
 }
 function Textarea($$renderer, $$props) {
@@ -74902,15 +73751,16 @@ function Alert($$renderer, $$props) {
 function _layout($$renderer, $$props) {
   $$renderer.component(($$renderer2) => {
     let { data, children } = $$props;
+    $$renderer2.push(`<div class="min-h-screen bg-zinc-950 text-zinc-100">`);
     Nav($$renderer2);
     $$renderer2.push(`<!----> `);
     children($$renderer2);
     $$renderer2.push(`<!----> `);
     Alert($$renderer2, {});
-    $$renderer2.push(`<!---->`);
+    $$renderer2.push(`<!----></div>`);
   });
 }
-var kBroadcastChannel, now$1, WindowBroadcastChannel, kFocusManager, WindowFocusManager, kOnlineManager, WindowOnlineManager, isServer, useAuthQuery, now2, FOCUS_REFETCH_RATE_LIMIT_SECONDS, redirectPlugin, PROTO_POLLUTION_PATTERNS, JSON_SIGNATURE, SPECIAL_VALUES, ISO_DATE_REGEX, getClientConfig, authClient, signIn, signOut2, signUp, useSession, dialogAttrs, DialogRootContext, DialogRootState, DialogCloseState, DialogTitleState, DialogContentState, DialogOverlayState;
+var kBroadcastChannel, now$1, WindowBroadcastChannel, kFocusManager, WindowFocusManager, kOnlineManager, WindowOnlineManager, isServer, useAuthQuery, now2, FOCUS_REFETCH_RATE_LIMIT_SECONDS, redirectPlugin, PROTO_POLLUTION_PATTERNS, JSON_SIGNATURE, SPECIAL_VALUES, ISO_DATE_REGEX, getClientConfig, authClient, signIn, signOut2, signUp, useSession, CLASS_VALUE_PRIMITIVE_TYPES, BoxSymbol, isWritableSymbol, NUMBER_CHAR_RE, STR_SPLITTERS, camelToKebab, EVENT_LIST, EVENT_LIST_SET, SvelteMap, ELEMENT_NODE, DOCUMENT_NODE, DOCUMENT_FRAGMENT_NODE, DOMContext, defaultWindow, ActiveElement, Context, BitsAttrs, ENTER, ESCAPE, SPACE, isBrowser, isIOS, AnimationsComplete, PresenceManager, dialogAttrs, DialogRootContext, DialogRootState, DialogCloseState, DialogTitleState, DialogContentState, DialogOverlayState, BitsConfigContext, BitsConfigState, resolvePortalToProp, CONTEXT_MENU_TRIGGER_ATTR, CONTEXT_MENU_CONTENT_ATTR, DismissibleLayerState, EscapeLayerState, FocusScopeManager, FocusScope, TextSelectionLayerState, getUserSelect, SharedState, lockMap, initialBodyStyle, cleanupTimeoutId, isInCleanupTransition, anyLocked, cleanupScheduledAt, bodyLockStackCount, BodyScrollLock;
 var init_layout_svelte = __esm({
   ".svelte-kit/output/server/entries/pages/_layout.svelte.js"() {
     init_virtual_unenv_global_polyfill_cloudflare_unenv_preset_node_process();
@@ -74923,9 +73773,13 @@ var init_layout_svelte = __esm({
     init_dist4();
     init_utils5();
     init_chunks();
-    init_button();
     init_Icon();
-    init_input();
+    init_index_server();
+    init_button();
+    init_esm3();
+    init_events();
+    init_index_esm();
+    __name(createAttachmentKey, "createAttachmentKey");
     kBroadcastChannel = /* @__PURE__ */ Symbol.for("better-auth:broadcast-channel");
     now$1 = /* @__PURE__ */ __name(() => Math.floor(Date.now() / 1e3), "now$1");
     WindowBroadcastChannel = class {
@@ -75245,12 +74099,415 @@ var init_layout_svelte = __esm({
     });
     ({ signIn, signOut: signOut2, signUp, useSession } = authClient);
     __name(Github, "Github");
-    __name(Package, "Package");
     __name(Nav, "Nav");
     __name(X, "X");
     __name(Upload, "Upload");
     __name(Search, "Search");
     __name(Loader, "Loader");
+    __name(isObject4, "isObject");
+    CLASS_VALUE_PRIMITIVE_TYPES = ["string", "number", "bigint", "boolean"];
+    __name(isClassValue, "isClassValue");
+    BoxSymbol = /* @__PURE__ */ Symbol("box");
+    isWritableSymbol = /* @__PURE__ */ Symbol("is-writable");
+    __name(boxWith, "boxWith");
+    __name(isBox, "isBox");
+    __name(simpleBox, "simpleBox");
+    __name(composeHandlers, "composeHandlers");
+    NUMBER_CHAR_RE = /\d/;
+    STR_SPLITTERS = ["-", "_", "/", "."];
+    __name(isUppercase, "isUppercase");
+    __name(splitByCase, "splitByCase");
+    __name(pascalCase, "pascalCase");
+    __name(camelCase, "camelCase");
+    __name(upperFirst, "upperFirst");
+    __name(lowerFirst, "lowerFirst");
+    __name(cssToStyleObj, "cssToStyleObj");
+    __name(executeCallbacks, "executeCallbacks");
+    __name(createParser, "createParser");
+    camelToKebab = createParser(/[A-Z]/, (match) => `-${match.toLowerCase()}`);
+    __name(styleToCSS, "styleToCSS");
+    __name(styleToString, "styleToString");
+    EVENT_LIST = [
+      "onabort",
+      "onanimationcancel",
+      "onanimationend",
+      "onanimationiteration",
+      "onanimationstart",
+      "onauxclick",
+      "onbeforeinput",
+      "onbeforetoggle",
+      "onblur",
+      "oncancel",
+      "oncanplay",
+      "oncanplaythrough",
+      "onchange",
+      "onclick",
+      "onclose",
+      "oncompositionend",
+      "oncompositionstart",
+      "oncompositionupdate",
+      "oncontextlost",
+      "oncontextmenu",
+      "oncontextrestored",
+      "oncopy",
+      "oncuechange",
+      "oncut",
+      "ondblclick",
+      "ondrag",
+      "ondragend",
+      "ondragenter",
+      "ondragleave",
+      "ondragover",
+      "ondragstart",
+      "ondrop",
+      "ondurationchange",
+      "onemptied",
+      "onended",
+      "onerror",
+      "onfocus",
+      "onfocusin",
+      "onfocusout",
+      "onformdata",
+      "ongotpointercapture",
+      "oninput",
+      "oninvalid",
+      "onkeydown",
+      "onkeypress",
+      "onkeyup",
+      "onload",
+      "onloadeddata",
+      "onloadedmetadata",
+      "onloadstart",
+      "onlostpointercapture",
+      "onmousedown",
+      "onmouseenter",
+      "onmouseleave",
+      "onmousemove",
+      "onmouseout",
+      "onmouseover",
+      "onmouseup",
+      "onpaste",
+      "onpause",
+      "onplay",
+      "onplaying",
+      "onpointercancel",
+      "onpointerdown",
+      "onpointerenter",
+      "onpointerleave",
+      "onpointermove",
+      "onpointerout",
+      "onpointerover",
+      "onpointerup",
+      "onprogress",
+      "onratechange",
+      "onreset",
+      "onresize",
+      "onscroll",
+      "onscrollend",
+      "onsecuritypolicyviolation",
+      "onseeked",
+      "onseeking",
+      "onselect",
+      "onselectionchange",
+      "onselectstart",
+      "onslotchange",
+      "onstalled",
+      "onsubmit",
+      "onsuspend",
+      "ontimeupdate",
+      "ontoggle",
+      "ontouchcancel",
+      "ontouchend",
+      "ontouchmove",
+      "ontouchstart",
+      "ontransitioncancel",
+      "ontransitionend",
+      "ontransitionrun",
+      "ontransitionstart",
+      "onvolumechange",
+      "onwaiting",
+      "onwebkitanimationend",
+      "onwebkitanimationiteration",
+      "onwebkitanimationstart",
+      "onwebkittransitionend",
+      "onwheel"
+    ];
+    EVENT_LIST_SET = new Set(EVENT_LIST);
+    __name(isEventHandler, "isEventHandler");
+    __name(mergeProps, "mergeProps");
+    SvelteMap = globalThis.Map;
+    __name(createSubscriber2, "createSubscriber");
+    __name(afterSleep, "afterSleep");
+    __name(afterTick, "afterTick");
+    ELEMENT_NODE = 1;
+    DOCUMENT_NODE = 9;
+    DOCUMENT_FRAGMENT_NODE = 11;
+    __name(isHTMLElement$1, "isHTMLElement$1");
+    __name(isDocument, "isDocument");
+    __name(isWindow, "isWindow");
+    __name(isNode, "isNode");
+    __name(isShadowRoot, "isShadowRoot");
+    __name(contains, "contains");
+    __name(getDocument, "getDocument");
+    __name(getActiveElement$1, "getActiveElement$1");
+    DOMContext = class {
+      static {
+        __name(this, "DOMContext");
+      }
+      element;
+      #root = derived(() => {
+        if (!this.element.current) return document;
+        const rootNode = this.element.current.getRootNode() ?? document;
+        return rootNode;
+      });
+      get root() {
+        return this.#root();
+      }
+      set root($$value) {
+        return this.#root($$value);
+      }
+      constructor(element2) {
+        if (typeof element2 === "function") {
+          this.element = boxWith(element2);
+        } else {
+          this.element = element2;
+        }
+      }
+      getDocument = /* @__PURE__ */ __name(() => {
+        return getDocument(this.root);
+      }, "getDocument");
+      getWindow = /* @__PURE__ */ __name(() => {
+        return this.getDocument().defaultView ?? window;
+      }, "getWindow");
+      getActiveElement = /* @__PURE__ */ __name(() => {
+        return getActiveElement$1(this.root);
+      }, "getActiveElement");
+      isActiveElement = /* @__PURE__ */ __name((node) => {
+        return node === this.getActiveElement();
+      }, "isActiveElement");
+      getElementById(id) {
+        return this.root.getElementById(id);
+      }
+      querySelector = /* @__PURE__ */ __name((selector) => {
+        if (!this.root) return null;
+        return this.root.querySelector(selector);
+      }, "querySelector");
+      querySelectorAll = /* @__PURE__ */ __name((selector) => {
+        if (!this.root) return [];
+        return this.root.querySelectorAll(selector);
+      }, "querySelectorAll");
+      setTimeout = /* @__PURE__ */ __name((callback, delay) => {
+        return this.getWindow().setTimeout(callback, delay);
+      }, "setTimeout");
+      clearTimeout = /* @__PURE__ */ __name((timeoutId) => {
+        return this.getWindow().clearTimeout(timeoutId);
+      }, "clearTimeout");
+    };
+    __name(attachRef, "attachRef");
+    defaultWindow = void 0;
+    __name(getActiveElement, "getActiveElement");
+    ActiveElement = class {
+      static {
+        __name(this, "ActiveElement");
+      }
+      #document;
+      #subscribe;
+      constructor(options2 = {}) {
+        const { window: window2 = defaultWindow, document: document2 = window2?.document } = options2;
+        if (window2 === void 0) return;
+        this.#document = document2;
+        this.#subscribe = createSubscriber2();
+      }
+      get current() {
+        this.#subscribe?.();
+        if (!this.#document) return null;
+        return getActiveElement(this.#document);
+      }
+    };
+    new ActiveElement();
+    Context = class {
+      static {
+        __name(this, "Context");
+      }
+      #name;
+      #key;
+      /**
+       * @param name The name of the context.
+       * This is used for generating the context key and error messages.
+       */
+      constructor(name) {
+        this.#name = name;
+        this.#key = Symbol(name);
+      }
+      /**
+       * The key used to get and set the context.
+       *
+       * It is not recommended to use this value directly.
+       * Instead, use the methods provided by this class.
+       */
+      get key() {
+        return this.#key;
+      }
+      /**
+       * Checks whether this has been set in the context of a parent component.
+       *
+       * Must be called during component initialisation.
+       */
+      exists() {
+        return hasContext(this.#key);
+      }
+      /**
+       * Retrieves the context that belongs to the closest parent component.
+       *
+       * Must be called during component initialisation.
+       *
+       * @throws An error if the context does not exist.
+       */
+      get() {
+        const context4 = getContext(this.#key);
+        if (context4 === void 0) {
+          throw new Error(`Context "${this.#name}" not found`);
+        }
+        return context4;
+      }
+      /**
+       * Retrieves the context that belongs to the closest parent component,
+       * or the given fallback value if the context does not exist.
+       *
+       * Must be called during component initialisation.
+       */
+      getOr(fallback) {
+        const context4 = getContext(this.#key);
+        if (context4 === void 0) {
+          return fallback;
+        }
+        return context4;
+      }
+      /**
+       * Associates the given value with the current component and returns it.
+       *
+       * Must be called during component initialisation.
+       */
+      set(context4) {
+        return setContext(this.#key, context4);
+      }
+    };
+    __name(runWatcher, "runWatcher");
+    __name(watch, "watch");
+    __name(watchPre, "watchPre");
+    watch.pre = watchPre;
+    __name(boolToEmptyStrOrUndef, "boolToEmptyStrOrUndef");
+    __name(getDataOpenClosed, "getDataOpenClosed");
+    BitsAttrs = class {
+      static {
+        __name(this, "BitsAttrs");
+      }
+      #variant;
+      #prefix;
+      attrs;
+      constructor(config4) {
+        this.#variant = config4.getVariant ? config4.getVariant() : null;
+        this.#prefix = this.#variant ? `data-${this.#variant}-` : `data-${config4.component}-`;
+        this.getAttr = this.getAttr.bind(this);
+        this.selector = this.selector.bind(this);
+        this.attrs = Object.fromEntries(config4.parts.map((part) => [part, this.getAttr(part)]));
+      }
+      getAttr(part, variantOverride) {
+        if (variantOverride)
+          return `data-${variantOverride}-${part}`;
+        return `${this.#prefix}${part}`;
+      }
+      selector(part, variantOverride) {
+        return `[${this.getAttr(part, variantOverride)}]`;
+      }
+    };
+    __name(createBitsAttrs, "createBitsAttrs");
+    ENTER = "Enter";
+    ESCAPE = "Escape";
+    SPACE = " ";
+    isBrowser = typeof document !== "undefined";
+    isIOS = getIsIOS();
+    __name(getIsIOS, "getIsIOS");
+    __name(isHTMLElement, "isHTMLElement");
+    __name(isElementOrSVGElement, "isElementOrSVGElement");
+    AnimationsComplete = class {
+      static {
+        __name(this, "AnimationsComplete");
+      }
+      #opts;
+      #currentFrame = null;
+      constructor(opts) {
+        this.#opts = opts;
+      }
+      #cleanup() {
+        if (!this.#currentFrame)
+          return;
+        window.cancelAnimationFrame(this.#currentFrame);
+        this.#currentFrame = null;
+      }
+      run(fn) {
+        this.#cleanup();
+        const node = this.#opts.ref.current;
+        if (!node)
+          return;
+        if (typeof node.getAnimations !== "function") {
+          this.#executeCallback(fn);
+          return;
+        }
+        this.#currentFrame = window.requestAnimationFrame(() => {
+          const animations = node.getAnimations();
+          if (animations.length === 0) {
+            this.#executeCallback(fn);
+            return;
+          }
+          Promise.allSettled(animations.map((animation) => animation.finished)).then(() => {
+            this.#executeCallback(fn);
+          });
+        });
+      }
+      #executeCallback(fn) {
+        const execute = /* @__PURE__ */ __name(() => {
+          fn();
+        }, "execute");
+        if (this.#opts.afterTick) {
+          afterTick(execute);
+        } else {
+          execute();
+        }
+      }
+    };
+    PresenceManager = class {
+      static {
+        __name(this, "PresenceManager");
+      }
+      #opts;
+      #enabled;
+      #afterAnimations;
+      #shouldRender = false;
+      constructor(opts) {
+        this.#opts = opts;
+        this.#shouldRender = opts.open.current;
+        this.#enabled = opts.enabled ?? true;
+        this.#afterAnimations = new AnimationsComplete({ ref: this.#opts.ref, afterTick: this.#opts.open });
+        watch(() => this.#opts.open.current, (isOpen) => {
+          if (isOpen) this.#shouldRender = true;
+          if (!this.#enabled) return;
+          this.#afterAnimations.run(() => {
+            if (isOpen === this.#opts.open.current) {
+              if (!this.#opts.open.current) {
+                this.#shouldRender = false;
+              }
+              this.#opts.onComplete?.();
+            }
+          });
+        });
+      }
+      get shouldRender() {
+        return this.#shouldRender;
+      }
+    };
+    __name(noop3, "noop");
+    __name(createId, "createId");
     dialogAttrs = createBitsAttrs({
       component: "dialog",
       parts: [
@@ -75528,6 +74785,650 @@ var init_layout_svelte = __esm({
       }
     };
     __name(Dialog_title$1, "Dialog_title$1");
+    BitsConfigContext = new Context("BitsConfig");
+    __name(getBitsConfig, "getBitsConfig");
+    BitsConfigState = class {
+      static {
+        __name(this, "BitsConfigState");
+      }
+      opts;
+      constructor(parent, opts) {
+        const resolveConfigOption = createConfigResolver(parent, opts);
+        this.opts = {
+          defaultPortalTo: resolveConfigOption((config4) => config4.defaultPortalTo),
+          defaultLocale: resolveConfigOption((config4) => config4.defaultLocale)
+        };
+      }
+    };
+    __name(createConfigResolver, "createConfigResolver");
+    __name(createPropResolver, "createPropResolver");
+    resolvePortalToProp = createPropResolver((config4) => config4.defaultPortalTo, "body");
+    __name(Portal, "Portal");
+    __name(debounce, "debounce");
+    __name(isOrContainsTarget, "isOrContainsTarget");
+    __name(getOwnerDocument, "getOwnerDocument");
+    __name(isClickTrulyOutside, "isClickTrulyOutside");
+    CONTEXT_MENU_TRIGGER_ATTR = "data-context-menu-trigger";
+    CONTEXT_MENU_CONTENT_ATTR = "data-context-menu-content";
+    createBitsAttrs({
+      component: "menu",
+      parts: [
+        "trigger",
+        "content",
+        "sub-trigger",
+        "item",
+        "group",
+        "group-heading",
+        "checkbox-group",
+        "checkbox-item",
+        "radio-group",
+        "radio-item",
+        "separator",
+        "sub-content",
+        "arrow"
+      ]
+    });
+    globalThis.bitsDismissableLayers ??= /* @__PURE__ */ new Map();
+    DismissibleLayerState = class _DismissibleLayerState {
+      static {
+        __name(this, "DismissibleLayerState");
+      }
+      static create(opts) {
+        return new _DismissibleLayerState(opts);
+      }
+      opts;
+      #interactOutsideProp;
+      #behaviorType;
+      #interceptedEvents = { pointerdown: false };
+      #isResponsibleLayer = false;
+      #isFocusInsideDOMTree = false;
+      #documentObj = void 0;
+      #onFocusOutside;
+      #unsubClickListener = noop3;
+      constructor(opts) {
+        this.opts = opts;
+        this.#behaviorType = opts.interactOutsideBehavior;
+        this.#interactOutsideProp = opts.onInteractOutside;
+        this.#onFocusOutside = opts.onFocusOutside;
+        let unsubEvents = noop3;
+        const cleanup = /* @__PURE__ */ __name(() => {
+          this.#resetState();
+          globalThis.bitsDismissableLayers.delete(this);
+          this.#handleInteractOutside.destroy();
+          unsubEvents();
+        }, "cleanup");
+        watch([() => this.opts.enabled.current, () => this.opts.ref.current], () => {
+          if (!this.opts.enabled.current || !this.opts.ref.current) return;
+          afterSleep(1, () => {
+            if (!this.opts.ref.current) return;
+            globalThis.bitsDismissableLayers.set(this, this.#behaviorType);
+            unsubEvents();
+            unsubEvents = this.#addEventListeners();
+          });
+          return cleanup;
+        });
+      }
+      #handleFocus = /* @__PURE__ */ __name((event) => {
+        if (event.defaultPrevented) return;
+        if (!this.opts.ref.current) return;
+        afterTick(() => {
+          if (!this.opts.ref.current || this.#isTargetWithinLayer(event.target)) return;
+          if (event.target && !this.#isFocusInsideDOMTree) {
+            this.#onFocusOutside.current?.(event);
+          }
+        });
+      }, "#handleFocus");
+      #addEventListeners() {
+        return executeCallbacks(
+          /**
+           * CAPTURE INTERACTION START
+           * mark interaction-start event as intercepted.
+           * mark responsible layer during interaction start
+           * to avoid checking if is responsible layer during interaction end
+           * when a new floating element may have been opened.
+           */
+          on2(this.#documentObj, "pointerdown", executeCallbacks(this.#markInterceptedEvent, this.#markResponsibleLayer), { capture: true }),
+          /**
+           * BUBBLE INTERACTION START
+           * Mark interaction-start event as non-intercepted. Debounce `onInteractOutsideStart`
+           * to avoid prematurely checking if other events were intercepted.
+           */
+          on2(this.#documentObj, "pointerdown", executeCallbacks(this.#markNonInterceptedEvent, this.#handleInteractOutside)),
+          /**
+           * HANDLE FOCUS OUTSIDE
+           */
+          on2(this.#documentObj, "focusin", this.#handleFocus)
+        );
+      }
+      #handleDismiss = /* @__PURE__ */ __name((e3) => {
+        let event = e3;
+        if (event.defaultPrevented) {
+          event = createWrappedEvent(e3);
+        }
+        this.#interactOutsideProp.current(e3);
+      }, "#handleDismiss");
+      #handleInteractOutside = debounce(
+        (e3) => {
+          if (!this.opts.ref.current) {
+            this.#unsubClickListener();
+            return;
+          }
+          const isEventValid = this.opts.isValidEvent.current(e3, this.opts.ref.current) || isValidEvent(e3, this.opts.ref.current);
+          if (!this.#isResponsibleLayer || this.#isAnyEventIntercepted() || !isEventValid) {
+            this.#unsubClickListener();
+            return;
+          }
+          let event = e3;
+          if (event.defaultPrevented) {
+            event = createWrappedEvent(event);
+          }
+          if (this.#behaviorType.current !== "close" && this.#behaviorType.current !== "defer-otherwise-close") {
+            this.#unsubClickListener();
+            return;
+          }
+          if (e3.pointerType === "touch") {
+            this.#unsubClickListener();
+            this.#unsubClickListener = on2(this.#documentObj, "click", this.#handleDismiss, { once: true });
+          } else {
+            this.#interactOutsideProp.current(event);
+          }
+        },
+        10
+      );
+      #markInterceptedEvent = /* @__PURE__ */ __name((e3) => {
+        this.#interceptedEvents[e3.type] = true;
+      }, "#markInterceptedEvent");
+      #markNonInterceptedEvent = /* @__PURE__ */ __name((e3) => {
+        this.#interceptedEvents[e3.type] = false;
+      }, "#markNonInterceptedEvent");
+      #markResponsibleLayer = /* @__PURE__ */ __name(() => {
+        if (!this.opts.ref.current) return;
+        this.#isResponsibleLayer = isResponsibleLayer(this.opts.ref.current);
+      }, "#markResponsibleLayer");
+      #isTargetWithinLayer = /* @__PURE__ */ __name((target) => {
+        if (!this.opts.ref.current) return false;
+        return isOrContainsTarget(this.opts.ref.current, target);
+      }, "#isTargetWithinLayer");
+      #resetState = debounce(
+        () => {
+          for (const eventType in this.#interceptedEvents) {
+            this.#interceptedEvents[eventType] = false;
+          }
+          this.#isResponsibleLayer = false;
+        },
+        20
+      );
+      #isAnyEventIntercepted() {
+        const i = Object.values(this.#interceptedEvents).some(Boolean);
+        return i;
+      }
+      #onfocuscapture = /* @__PURE__ */ __name(() => {
+        this.#isFocusInsideDOMTree = true;
+      }, "#onfocuscapture");
+      #onblurcapture = /* @__PURE__ */ __name(() => {
+        this.#isFocusInsideDOMTree = false;
+      }, "#onblurcapture");
+      props = {
+        onfocuscapture: this.#onfocuscapture,
+        onblurcapture: this.#onblurcapture
+      };
+    };
+    __name(getTopMostDismissableLayer, "getTopMostDismissableLayer");
+    __name(isResponsibleLayer, "isResponsibleLayer");
+    __name(isValidEvent, "isValidEvent");
+    __name(createWrappedEvent, "createWrappedEvent");
+    __name(Dismissible_layer, "Dismissible_layer");
+    globalThis.bitsEscapeLayers ??= /* @__PURE__ */ new Map();
+    EscapeLayerState = class _EscapeLayerState {
+      static {
+        __name(this, "EscapeLayerState");
+      }
+      static create(opts) {
+        return new _EscapeLayerState(opts);
+      }
+      opts;
+      domContext;
+      constructor(opts) {
+        this.opts = opts;
+        this.domContext = new DOMContext(this.opts.ref);
+        let unsubEvents = noop3;
+        watch(() => opts.enabled.current, (enabled) => {
+          if (enabled) {
+            globalThis.bitsEscapeLayers.set(this, opts.escapeKeydownBehavior);
+            unsubEvents = this.#addEventListener();
+          }
+          return () => {
+            unsubEvents();
+            globalThis.bitsEscapeLayers.delete(this);
+          };
+        });
+      }
+      #addEventListener = /* @__PURE__ */ __name(() => {
+        return on2(this.domContext.getDocument(), "keydown", this.#onkeydown, { passive: false });
+      }, "#addEventListener");
+      #onkeydown = /* @__PURE__ */ __name((e3) => {
+        if (e3.key !== ESCAPE || !isResponsibleEscapeLayer(this)) return;
+        const clonedEvent = new KeyboardEvent(e3.type, e3);
+        e3.preventDefault();
+        const behaviorType = this.opts.escapeKeydownBehavior.current;
+        if (behaviorType !== "close" && behaviorType !== "defer-otherwise-close") return;
+        this.opts.onEscapeKeydown.current(clonedEvent);
+      }, "#onkeydown");
+    };
+    __name(isResponsibleEscapeLayer, "isResponsibleEscapeLayer");
+    __name(Escape_layer, "Escape_layer");
+    FocusScopeManager = class _FocusScopeManager {
+      static {
+        __name(this, "FocusScopeManager");
+      }
+      static instance;
+      #scopeStack = simpleBox([]);
+      #focusHistory = /* @__PURE__ */ new WeakMap();
+      #preFocusHistory = /* @__PURE__ */ new WeakMap();
+      static getInstance() {
+        if (!this.instance) {
+          this.instance = new _FocusScopeManager();
+        }
+        return this.instance;
+      }
+      register(scope) {
+        const current2 = this.getActive();
+        if (current2 && current2 !== scope) {
+          current2.pause();
+        }
+        const activeElement = document.activeElement;
+        if (activeElement && activeElement !== document.body) {
+          this.#preFocusHistory.set(scope, activeElement);
+        }
+        this.#scopeStack.current = this.#scopeStack.current.filter((s3) => s3 !== scope);
+        this.#scopeStack.current.unshift(scope);
+      }
+      unregister(scope) {
+        this.#scopeStack.current = this.#scopeStack.current.filter((s3) => s3 !== scope);
+        const next2 = this.getActive();
+        if (next2) {
+          next2.resume();
+        }
+      }
+      getActive() {
+        return this.#scopeStack.current[0];
+      }
+      setFocusMemory(scope, element2) {
+        this.#focusHistory.set(scope, element2);
+      }
+      getFocusMemory(scope) {
+        return this.#focusHistory.get(scope);
+      }
+      isActiveScope(scope) {
+        return this.getActive() === scope;
+      }
+      setPreFocusMemory(scope, element2) {
+        this.#preFocusHistory.set(scope, element2);
+      }
+      getPreFocusMemory(scope) {
+        return this.#preFocusHistory.get(scope);
+      }
+      clearPreFocusMemory(scope) {
+        this.#preFocusHistory.delete(scope);
+      }
+    };
+    FocusScope = class _FocusScope {
+      static {
+        __name(this, "FocusScope");
+      }
+      #paused = false;
+      #container = null;
+      #manager = FocusScopeManager.getInstance();
+      #cleanupFns = [];
+      #opts;
+      constructor(opts) {
+        this.#opts = opts;
+      }
+      get paused() {
+        return this.#paused;
+      }
+      pause() {
+        this.#paused = true;
+      }
+      resume() {
+        this.#paused = false;
+      }
+      #cleanup() {
+        for (const fn of this.#cleanupFns) {
+          fn();
+        }
+        this.#cleanupFns = [];
+      }
+      mount(container) {
+        if (this.#container) {
+          this.unmount();
+        }
+        this.#container = container;
+        this.#manager.register(this);
+        this.#setupEventListeners();
+        this.#handleOpenAutoFocus();
+      }
+      unmount() {
+        if (!this.#container) return;
+        this.#cleanup();
+        this.#handleCloseAutoFocus();
+        this.#manager.unregister(this);
+        this.#manager.clearPreFocusMemory(this);
+        this.#container = null;
+      }
+      #handleOpenAutoFocus() {
+        if (!this.#container) return;
+        const event = new CustomEvent("focusScope.onOpenAutoFocus", { bubbles: false, cancelable: true });
+        this.#opts.onOpenAutoFocus.current(event);
+        if (!event.defaultPrevented) {
+          requestAnimationFrame(() => {
+            if (!this.#container) return;
+            const firstTabbable = this.#getFirstTabbable();
+            if (firstTabbable) {
+              firstTabbable.focus();
+              this.#manager.setFocusMemory(this, firstTabbable);
+            } else {
+              this.#container.focus();
+            }
+          });
+        }
+      }
+      #handleCloseAutoFocus() {
+        const event = new CustomEvent("focusScope.onCloseAutoFocus", { bubbles: false, cancelable: true });
+        this.#opts.onCloseAutoFocus.current?.(event);
+        if (!event.defaultPrevented) {
+          const preFocusedElement = this.#manager.getPreFocusMemory(this);
+          if (preFocusedElement && document.contains(preFocusedElement)) {
+            try {
+              preFocusedElement.focus();
+            } catch {
+              document.body.focus();
+            }
+          }
+        }
+      }
+      #setupEventListeners() {
+        if (!this.#container || !this.#opts.trap.current) return;
+        const container = this.#container;
+        const doc = container.ownerDocument;
+        const handleFocus = /* @__PURE__ */ __name((e3) => {
+          if (this.#paused || !this.#manager.isActiveScope(this)) return;
+          const target = e3.target;
+          if (!target) return;
+          const isInside = container.contains(target);
+          if (isInside) {
+            this.#manager.setFocusMemory(this, target);
+          } else {
+            const lastFocused = this.#manager.getFocusMemory(this);
+            if (lastFocused && container.contains(lastFocused) && isFocusable(lastFocused)) {
+              e3.preventDefault();
+              lastFocused.focus();
+            } else {
+              const firstTabbable = this.#getFirstTabbable();
+              const firstFocusable = this.#getAllFocusables()[0];
+              (firstTabbable || firstFocusable || container).focus();
+            }
+          }
+        }, "handleFocus");
+        const handleKeydown = /* @__PURE__ */ __name((e3) => {
+          if (!this.#opts.loop || this.#paused || e3.key !== "Tab") return;
+          if (!this.#manager.isActiveScope(this)) return;
+          const tabbables = this.#getTabbables();
+          if (tabbables.length < 2) return;
+          const first = tabbables[0];
+          const last = tabbables[tabbables.length - 1];
+          if (!e3.shiftKey && doc.activeElement === last) {
+            e3.preventDefault();
+            first.focus();
+          } else if (e3.shiftKey && doc.activeElement === first) {
+            e3.preventDefault();
+            last.focus();
+          }
+        }, "handleKeydown");
+        this.#cleanupFns.push(on2(doc, "focusin", handleFocus, { capture: true }), on2(container, "keydown", handleKeydown));
+        const observer = new MutationObserver(() => {
+          const lastFocused = this.#manager.getFocusMemory(this);
+          if (lastFocused && !container.contains(lastFocused)) {
+            const firstTabbable = this.#getFirstTabbable();
+            const firstFocusable = this.#getAllFocusables()[0];
+            const elementToFocus = firstTabbable || firstFocusable;
+            if (elementToFocus) {
+              elementToFocus.focus();
+              this.#manager.setFocusMemory(this, elementToFocus);
+            } else {
+              container.focus();
+            }
+          }
+        });
+        observer.observe(container, { childList: true, subtree: true });
+        this.#cleanupFns.push(() => observer.disconnect());
+      }
+      #getTabbables() {
+        if (!this.#container) return [];
+        return tabbable(this.#container, { includeContainer: false, getShadowRoot: true });
+      }
+      #getFirstTabbable() {
+        const tabbables = this.#getTabbables();
+        return tabbables[0] || null;
+      }
+      #getAllFocusables() {
+        if (!this.#container) return [];
+        return focusable(this.#container, { includeContainer: false, getShadowRoot: true });
+      }
+      static use(opts) {
+        let scope = null;
+        watch([() => opts.ref.current, () => opts.enabled.current], ([ref2, enabled]) => {
+          if (ref2 && enabled) {
+            if (!scope) {
+              scope = new _FocusScope(opts);
+            }
+            scope.mount(ref2);
+          } else if (scope) {
+            scope.unmount();
+            scope = null;
+          }
+        });
+        return {
+          get props() {
+            return { tabindex: -1 };
+          }
+        };
+      }
+    };
+    __name(Focus_scope, "Focus_scope");
+    globalThis.bitsTextSelectionLayers ??= /* @__PURE__ */ new Map();
+    TextSelectionLayerState = class _TextSelectionLayerState {
+      static {
+        __name(this, "TextSelectionLayerState");
+      }
+      static create(opts) {
+        return new _TextSelectionLayerState(opts);
+      }
+      opts;
+      domContext;
+      #unsubSelectionLock = noop3;
+      constructor(opts) {
+        this.opts = opts;
+        this.domContext = new DOMContext(opts.ref);
+        let unsubEvents = noop3;
+        watch(() => this.opts.enabled.current, (isEnabled) => {
+          if (isEnabled) {
+            globalThis.bitsTextSelectionLayers.set(this, this.opts.enabled);
+            unsubEvents();
+            unsubEvents = this.#addEventListeners();
+          }
+          return () => {
+            unsubEvents();
+            this.#resetSelectionLock();
+            globalThis.bitsTextSelectionLayers.delete(this);
+          };
+        });
+      }
+      #addEventListeners() {
+        return executeCallbacks(on2(this.domContext.getDocument(), "pointerdown", this.#pointerdown), on2(this.domContext.getDocument(), "pointerup", composeHandlers(this.#resetSelectionLock, this.opts.onPointerUp.current)));
+      }
+      #pointerdown = /* @__PURE__ */ __name((e3) => {
+        const node = this.opts.ref.current;
+        const target = e3.target;
+        if (!isHTMLElement(node) || !isHTMLElement(target) || !this.opts.enabled.current) return;
+        if (!isHighestLayer(this) || !contains(node, target)) return;
+        this.opts.onPointerDown.current(e3);
+        if (e3.defaultPrevented) return;
+        this.#unsubSelectionLock = preventTextSelectionOverflow(node, this.domContext.getDocument().body);
+      }, "#pointerdown");
+      #resetSelectionLock = /* @__PURE__ */ __name(() => {
+        this.#unsubSelectionLock();
+        this.#unsubSelectionLock = noop3;
+      }, "#resetSelectionLock");
+    };
+    getUserSelect = /* @__PURE__ */ __name((node) => node.style.userSelect || node.style.webkitUserSelect, "getUserSelect");
+    __name(preventTextSelectionOverflow, "preventTextSelectionOverflow");
+    __name(setUserSelect, "setUserSelect");
+    __name(isHighestLayer, "isHighestLayer");
+    __name(Text_selection_layer, "Text_selection_layer");
+    globalThis.bitsIdCounter ??= { current: 0 };
+    __name(useId, "useId");
+    SharedState = class {
+      static {
+        __name(this, "SharedState");
+      }
+      #factory;
+      #subscribers = 0;
+      #state;
+      #scope;
+      constructor(factory) {
+        this.#factory = factory;
+      }
+      #dispose() {
+        this.#subscribers -= 1;
+        if (this.#scope && this.#subscribers <= 0) {
+          this.#scope();
+          this.#state = void 0;
+          this.#scope = void 0;
+        }
+      }
+      get(...args) {
+        this.#subscribers += 1;
+        if (this.#state === void 0) {
+          this.#scope = () => {
+          };
+        }
+        return this.#state;
+      }
+    };
+    lockMap = new SvelteMap();
+    initialBodyStyle = null;
+    cleanupTimeoutId = null;
+    isInCleanupTransition = false;
+    anyLocked = boxWith(() => {
+      for (const value of lockMap.values()) {
+        if (value) return true;
+      }
+      return false;
+    });
+    cleanupScheduledAt = null;
+    bodyLockStackCount = new SharedState(() => {
+      function resetBodyStyle() {
+        return;
+      }
+      __name(resetBodyStyle, "resetBodyStyle");
+      function cancelPendingCleanup() {
+        if (cleanupTimeoutId === null) return;
+        window.clearTimeout(cleanupTimeoutId);
+        cleanupTimeoutId = null;
+      }
+      __name(cancelPendingCleanup, "cancelPendingCleanup");
+      function scheduleCleanupIfNoNewLocks(delay, callback) {
+        cancelPendingCleanup();
+        isInCleanupTransition = true;
+        cleanupScheduledAt = Date.now();
+        const currentCleanupId = cleanupScheduledAt;
+        const cleanupFn = /* @__PURE__ */ __name(() => {
+          cleanupTimeoutId = null;
+          if (cleanupScheduledAt !== currentCleanupId) return;
+          if (!isAnyLocked(lockMap)) {
+            isInCleanupTransition = false;
+            callback();
+          } else {
+            isInCleanupTransition = false;
+          }
+        }, "cleanupFn");
+        const actualDelay = delay === null ? 24 : delay;
+        cleanupTimeoutId = window.setTimeout(cleanupFn, actualDelay);
+      }
+      __name(scheduleCleanupIfNoNewLocks, "scheduleCleanupIfNoNewLocks");
+      function ensureInitialStyleCaptured() {
+        if (initialBodyStyle === null && lockMap.size === 0 && !isInCleanupTransition) {
+          initialBodyStyle = document.body.getAttribute("style");
+        }
+      }
+      __name(ensureInitialStyleCaptured, "ensureInitialStyleCaptured");
+      watch(() => anyLocked.current, () => {
+        if (!anyLocked.current) return;
+        ensureInitialStyleCaptured();
+        isInCleanupTransition = false;
+        const bodyStyle = getComputedStyle(document.body);
+        const verticalScrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+        const paddingRight = Number.parseInt(bodyStyle.paddingRight ?? "0", 10);
+        const config4 = {
+          padding: paddingRight + verticalScrollbarWidth,
+          margin: Number.parseInt(bodyStyle.marginRight ?? "0", 10)
+        };
+        if (verticalScrollbarWidth > 0) {
+          document.body.style.paddingRight = `${config4.padding}px`;
+          document.body.style.marginRight = `${config4.margin}px`;
+          document.body.style.setProperty("--scrollbar-width", `${verticalScrollbarWidth}px`);
+          document.body.style.overflow = "hidden";
+        }
+        if (isIOS) {
+          on2(
+            document,
+            "touchmove",
+            (e3) => {
+              if (e3.target !== document.documentElement) return;
+              if (e3.touches.length > 1) return;
+              e3.preventDefault();
+            },
+            { passive: false }
+          );
+        }
+        afterTick(() => {
+          document.body.style.pointerEvents = "none";
+          document.body.style.overflow = "hidden";
+        });
+      });
+      return {
+        get lockMap() {
+          return lockMap;
+        },
+        resetBodyStyle,
+        scheduleCleanupIfNoNewLocks,
+        cancelPendingCleanup,
+        ensureInitialStyleCaptured
+      };
+    });
+    BodyScrollLock = class {
+      static {
+        __name(this, "BodyScrollLock");
+      }
+      #id = useId();
+      #initialState;
+      #restoreScrollDelay = /* @__PURE__ */ __name(() => null, "#restoreScrollDelay");
+      #countState;
+      locked;
+      constructor(initialState, restoreScrollDelay = () => null) {
+        this.#initialState = initialState;
+        this.#restoreScrollDelay = restoreScrollDelay;
+        this.#countState = bodyLockStackCount.get();
+        if (!this.#countState) return;
+        this.#countState.cancelPendingCleanup();
+        this.#countState.ensureInitialStyleCaptured();
+        this.#countState.lockMap.set(this.#id, this.#initialState ?? false);
+        this.locked = boxWith(() => this.#countState.lockMap.get(this.#id) ?? false, (v) => this.#countState.lockMap.set(this.#id, v));
+      }
+    };
+    __name(isAnyLocked, "isAnyLocked");
+    __name(Scroll_lock, "Scroll_lock");
     __name(Dialog_overlay$1, "Dialog_overlay$1");
     __name(Dialog$1, "Dialog$1");
     __name(Dialog_close, "Dialog_close");
@@ -75539,6 +75440,7 @@ var init_layout_svelte = __esm({
     __name(Dialog_header, "Dialog_header");
     __name(Dialog_overlay, "Dialog_overlay");
     __name(Dialog_content, "Dialog_content");
+    __name(Input, "Input");
     __name(Textarea, "Textarea");
     __name(Alert, "Alert");
     __name(_layout, "_layout");
@@ -75566,8 +75468,8 @@ var init__ = __esm({
     index2 = 0;
     component = /* @__PURE__ */ __name(async () => component_cache ??= (await Promise.resolve().then(() => (init_layout_svelte(), layout_svelte_exports))).default, "component");
     server_id = "src/routes/+layout.server.ts";
-    imports = ["_app/immutable/nodes/0.BAmV5ftT.js", "_app/immutable/chunks/CDtJAJDW.js", "_app/immutable/chunks/43DoFiGK.js", "_app/immutable/chunks/B5-rS708.js", "_app/immutable/chunks/BC2wu9jn.js", "_app/immutable/chunks/C-T-am70.js", "_app/immutable/chunks/DnayzfWM.js", "_app/immutable/chunks/DcIzPOfe.js", "_app/immutable/chunks/BqN1ELlW.js", "_app/immutable/chunks/B4gfF3h4.js"];
-    stylesheets = ["_app/immutable/assets/0.SmRA5ebc.css"];
+    imports = ["_app/immutable/nodes/0.CUC7tKH1.js", "_app/immutable/chunks/DQV5tA9x.js", "_app/immutable/chunks/CcNfbX7c.js", "_app/immutable/chunks/eKz8nVri.js", "_app/immutable/chunks/DpJMuPu_.js", "_app/immutable/chunks/pjtpxPnz.js", "_app/immutable/chunks/hjW-poWs.js", "_app/immutable/chunks/CH4swi6y.js", "_app/immutable/chunks/CsL-fT1w.js", "_app/immutable/chunks/fukTWLM2.js"];
+    stylesheets = ["_app/immutable/assets/0.BobJevVB.css"];
     fonts = [];
   }
 });
@@ -75725,43 +75627,13 @@ function _error($$renderer, $$props) {
     SEO($$renderer2, {
       path: page.url.pathname
     });
-    $$renderer2.push(`<!----> <div class="min-h-screen flex items-center justify-center px-8 py-20 text-center gap-4 flex-col"><h1 class="text-6xl font-bold text-primary-600">${escape_html(page.status)}</h1> <p class="text-2xl font-semibold text-zinc-900">${escape_html(errorMessage)}</p> <p class="text-xl text-zinc-800 text-balance max-w-lg mx-auto">${escape_html(errorDescription)}</p> <div class="flex gap-4 justify-center py-10 flex-col md:flex-row">`);
-    Button($$renderer2, {
-      color: "alternative",
-      size: "lg",
-      onclick: /* @__PURE__ */ __name(() => history.back(), "onclick"),
-      class: "flex items-center gap-2 cursor-pointer",
-      children: /* @__PURE__ */ __name(($$renderer3) => {
-        Arrow_left($$renderer3, { class: "w-4 h-4" });
-        $$renderer3.push(`<!----> Go Back`);
-      }, "children"),
-      $$slots: { default: true }
-    });
-    $$renderer2.push(`<!----> `);
-    Button($$renderer2, {
-      color: "alternative",
-      size: "lg",
-      onclick: /* @__PURE__ */ __name(() => location.reload(), "onclick"),
-      class: "flex items-center gap-2 cursor-pointer",
-      children: /* @__PURE__ */ __name(($$renderer3) => {
-        Refresh_ccw($$renderer3, { class: "w-4 h-4" });
-        $$renderer3.push(`<!----> Try Again`);
-      }, "children"),
-      $$slots: { default: true }
-    });
-    $$renderer2.push(`<!----> `);
-    Button($$renderer2, {
-      color: "primary",
-      size: "lg",
-      href: "/",
-      class: "flex items-center gap-2",
-      children: /* @__PURE__ */ __name(($$renderer3) => {
-        House($$renderer3, { class: "w-4 h-4" });
-        $$renderer3.push(`<!----> Go Home`);
-      }, "children"),
-      $$slots: { default: true }
-    });
-    $$renderer2.push(`<!----></div></div>`);
+    $$renderer2.push(`<!----> <div class="min-h-screen flex items-center justify-center px-8 py-20 text-center gap-4 flex-col bg-zinc-950"><h1 class="text-6xl font-bold text-orange-400">${escape_html(page.status)}</h1> <p class="text-2xl font-semibold text-zinc-100">${escape_html(errorMessage)}</p> <p class="text-xl text-zinc-500 text-balance max-w-lg mx-auto">${escape_html(errorDescription)}</p> <div class="flex gap-4 justify-center py-10 flex-col md:flex-row"><button class="px-4 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-medium text-sm rounded-lg transition-all flex items-center gap-2">`);
+    Arrow_left($$renderer2, { class: "w-4 h-4" });
+    $$renderer2.push(`<!----> Go Back</button> <button class="px-4 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-medium text-sm rounded-lg transition-all flex items-center gap-2">`);
+    Refresh_ccw($$renderer2, { class: "w-4 h-4" });
+    $$renderer2.push(`<!----> Try Again</button> <a href="/" class="px-4 py-2.5 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 text-zinc-950 font-medium text-sm rounded-lg transition-all flex items-center gap-2">`);
+    House($$renderer2, { class: "w-4 h-4" });
+    $$renderer2.push(`<!----> Go Home</a></div></div>`);
   });
 }
 var init_error_svelte = __esm({
@@ -75799,7 +75671,7 @@ var init__2 = __esm({
     init_performance2();
     index3 = 1;
     component2 = /* @__PURE__ */ __name(async () => component_cache2 ??= (await Promise.resolve().then(() => (init_error_svelte(), error_svelte_exports))).default, "component");
-    imports2 = ["_app/immutable/nodes/1.BeMfBL-M.js", "_app/immutable/chunks/CDtJAJDW.js", "_app/immutable/chunks/43DoFiGK.js", "_app/immutable/chunks/BC2wu9jn.js", "_app/immutable/chunks/C-T-am70.js", "_app/immutable/chunks/DnayzfWM.js", "_app/immutable/chunks/B5-rS708.js", "_app/immutable/chunks/DcIzPOfe.js", "_app/immutable/chunks/CdqBHIUe.js"];
+    imports2 = ["_app/immutable/nodes/1.Ct3lMFqw.js", "_app/immutable/chunks/DQV5tA9x.js", "_app/immutable/chunks/CcNfbX7c.js", "_app/immutable/chunks/DpJMuPu_.js", "_app/immutable/chunks/pjtpxPnz.js", "_app/immutable/chunks/CsL-fT1w.js", "_app/immutable/chunks/eKz8nVri.js", "_app/immutable/chunks/fukTWLM2.js", "_app/immutable/chunks/CfNoEgQF.js"];
     stylesheets2 = [];
     fonts2 = [];
   }
@@ -75852,12 +75724,12 @@ var init_command = __esm({
 });
 
 // .svelte-kit/output/server/chunks/data.remote.js
-async function callWorker(platform3, endpoint, options2 = {}) {
-  return platform3.env.WORKER.fetch(new Request(`http://worker${endpoint}`, options2));
+async function callWorker(platform2, endpoint, options2 = {}) {
+  return platform2.env.WORKER.fetch(new Request(`http://worker${endpoint}`, options2));
 }
-async function callWorkerJSON(platform3, endpoint, options2) {
+async function callWorkerJSON(platform2, endpoint, options2) {
   try {
-    const response = await callWorker(platform3, endpoint, options2);
+    const response = await callWorker(platform2, endpoint, options2);
     if (!response.ok) {
       const errorText = await response.text().catch(() => "Service error");
       throw new Error(`Service error (${response.status}): ${errorText}`);
@@ -75918,9 +75790,9 @@ var init_data_remote = __esm({
     __name(callWorker, "callWorker");
     __name(callWorkerJSON, "callWorkerJSON");
     getHello = query("unchecked", async () => {
-      const platform3 = getRequestEvent().platform;
+      const platform2 = getRequestEvent().platform;
       try {
-        return await callWorkerJSON(platform3, "/api/storage/hello");
+        return await callWorkerJSON(platform2, "/api/storage/hello");
       } catch (err) {
         console.error("Failed to get hello:", err);
         return {
@@ -75930,14 +75802,14 @@ var init_data_remote = __esm({
       }
     });
     setMessage = command("unchecked", async (message2) => {
-      const platform3 = getRequestEvent().platform;
+      const platform2 = getRequestEvent().platform;
       const event = getRequestEvent();
       if (!event.locals.session) {
         throw new Error("Please sign in to set messages");
       }
       try {
         return await callWorkerJSON(
-          platform3,
+          platform2,
           "/api/storage/message",
           {
             method: "POST",
@@ -75953,9 +75825,9 @@ var init_data_remote = __esm({
     startTask = command(
       "unchecked",
       async (params) => {
-        const platform3 = getRequestEvent().platform;
+        const platform2 = getRequestEvent().platform;
         return await callWorkerJSON(
-          platform3,
+          platform2,
           "/task/start",
           {
             method: "POST",
@@ -75968,9 +75840,9 @@ var init_data_remote = __esm({
     getTaskStatus = query(
       "unchecked",
       async (taskId) => {
-        const platform3 = getRequestEvent().platform;
+        const platform2 = getRequestEvent().platform;
         return await callWorkerJSON(
-          platform3,
+          platform2,
           `/task/status?taskId=${encodeURIComponent(taskId)}`
         );
       }
@@ -75978,17 +75850,17 @@ var init_data_remote = __esm({
     getTasks = command(
       "unchecked",
       async (namespace) => {
-        const platform3 = getRequestEvent().platform;
+        const platform2 = getRequestEvent().platform;
         const url2 = namespace ? `/tasks?namespace=${encodeURIComponent(namespace)}` : "/tasks";
-        return await callWorkerJSON(platform3, url2);
+        return await callWorkerJSON(platform2, url2);
       }
     );
     pauseTask = command(
       "unchecked",
       async (taskId) => {
-        const platform3 = getRequestEvent().platform;
+        const platform2 = getRequestEvent().platform;
         return await callWorkerJSON(
-          platform3,
+          platform2,
           "/task/pause",
           {
             method: "POST",
@@ -76001,9 +75873,9 @@ var init_data_remote = __esm({
     resumeTask = command(
       "unchecked",
       async (taskId) => {
-        const platform3 = getRequestEvent().platform;
+        const platform2 = getRequestEvent().platform;
         return await callWorkerJSON(
-          platform3,
+          platform2,
           "/task/resume",
           {
             method: "POST",
@@ -76016,9 +75888,9 @@ var init_data_remote = __esm({
     cancelTask = command(
       "unchecked",
       async (taskId) => {
-        const platform3 = getRequestEvent().platform;
+        const platform2 = getRequestEvent().platform;
         return await callWorkerJSON(
-          platform3,
+          platform2,
           "/task/cancel",
           {
             method: "POST",
@@ -76031,9 +75903,9 @@ var init_data_remote = __esm({
     clearCompleted = command(
       "unchecked",
       async (_) => {
-        const platform3 = getRequestEvent().platform;
+        const platform2 = getRequestEvent().platform;
         return await callWorkerJSON(
-          platform3,
+          platform2,
           "/tasks/clear",
           {
             method: "POST",
@@ -76045,9 +75917,9 @@ var init_data_remote = __esm({
     resetLevel = command(
       "unchecked",
       async (namespace) => {
-        const platform3 = getRequestEvent().platform;
+        const platform2 = getRequestEvent().platform;
         return await callWorkerJSON(
-          platform3,
+          platform2,
           "/tasks/reset",
           {
             method: "POST",
@@ -76062,5591 +75934,6 @@ var init_data_remote = __esm({
       fn.__.id = "q5s0im/" + name;
       fn.__.name = name;
     }
-  }
-});
-
-// node_modules/@floating-ui/utils/dist/floating-ui.utils.mjs
-function clamp(start, value, end) {
-  return max(start, min(value, end));
-}
-function evaluate(value, param) {
-  return typeof value === "function" ? value(param) : value;
-}
-function getSide(placement) {
-  return placement.split("-")[0];
-}
-function getAlignment(placement) {
-  return placement.split("-")[1];
-}
-function getOppositeAxis(axis) {
-  return axis === "x" ? "y" : "x";
-}
-function getAxisLength(axis) {
-  return axis === "y" ? "height" : "width";
-}
-function getSideAxis(placement) {
-  return yAxisSides.has(getSide(placement)) ? "y" : "x";
-}
-function getAlignmentAxis(placement) {
-  return getOppositeAxis(getSideAxis(placement));
-}
-function getAlignmentSides(placement, rects, rtl) {
-  if (rtl === void 0) {
-    rtl = false;
-  }
-  const alignment = getAlignment(placement);
-  const alignmentAxis = getAlignmentAxis(placement);
-  const length = getAxisLength(alignmentAxis);
-  let mainAlignmentSide = alignmentAxis === "x" ? alignment === (rtl ? "end" : "start") ? "right" : "left" : alignment === "start" ? "bottom" : "top";
-  if (rects.reference[length] > rects.floating[length]) {
-    mainAlignmentSide = getOppositePlacement(mainAlignmentSide);
-  }
-  return [mainAlignmentSide, getOppositePlacement(mainAlignmentSide)];
-}
-function getExpandedPlacements(placement) {
-  const oppositePlacement = getOppositePlacement(placement);
-  return [getOppositeAlignmentPlacement(placement), oppositePlacement, getOppositeAlignmentPlacement(oppositePlacement)];
-}
-function getOppositeAlignmentPlacement(placement) {
-  return placement.replace(/start|end/g, (alignment) => oppositeAlignmentMap[alignment]);
-}
-function getSideList(side, isStart, rtl) {
-  switch (side) {
-    case "top":
-    case "bottom":
-      if (rtl) return isStart ? rlPlacement : lrPlacement;
-      return isStart ? lrPlacement : rlPlacement;
-    case "left":
-    case "right":
-      return isStart ? tbPlacement : btPlacement;
-    default:
-      return [];
-  }
-}
-function getOppositeAxisPlacements(placement, flipAlignment, direction, rtl) {
-  const alignment = getAlignment(placement);
-  let list = getSideList(getSide(placement), direction === "start", rtl);
-  if (alignment) {
-    list = list.map((side) => side + "-" + alignment);
-    if (flipAlignment) {
-      list = list.concat(list.map(getOppositeAlignmentPlacement));
-    }
-  }
-  return list;
-}
-function getOppositePlacement(placement) {
-  return placement.replace(/left|right|bottom|top/g, (side) => oppositeSideMap[side]);
-}
-function expandPaddingObject(padding) {
-  return {
-    top: 0,
-    right: 0,
-    bottom: 0,
-    left: 0,
-    ...padding
-  };
-}
-function getPaddingObject(padding) {
-  return typeof padding !== "number" ? expandPaddingObject(padding) : {
-    top: padding,
-    right: padding,
-    bottom: padding,
-    left: padding
-  };
-}
-function rectToClientRect(rect) {
-  const {
-    x,
-    y,
-    width,
-    height
-  } = rect;
-  return {
-    width,
-    height,
-    top: y,
-    left: x,
-    right: x + width,
-    bottom: y + height,
-    x,
-    y
-  };
-}
-var sides, min, max, round, createCoords, oppositeSideMap, oppositeAlignmentMap, yAxisSides, lrPlacement, rlPlacement, tbPlacement, btPlacement;
-var init_floating_ui_utils = __esm({
-  "node_modules/@floating-ui/utils/dist/floating-ui.utils.mjs"() {
-    init_virtual_unenv_global_polyfill_cloudflare_unenv_preset_node_process();
-    init_virtual_unenv_global_polyfill_cloudflare_unenv_preset_node_console();
-    init_performance2();
-    sides = ["top", "right", "bottom", "left"];
-    min = Math.min;
-    max = Math.max;
-    round = Math.round;
-    createCoords = /* @__PURE__ */ __name((v) => ({
-      x: v,
-      y: v
-    }), "createCoords");
-    oppositeSideMap = {
-      left: "right",
-      right: "left",
-      bottom: "top",
-      top: "bottom"
-    };
-    oppositeAlignmentMap = {
-      start: "end",
-      end: "start"
-    };
-    __name(clamp, "clamp");
-    __name(evaluate, "evaluate");
-    __name(getSide, "getSide");
-    __name(getAlignment, "getAlignment");
-    __name(getOppositeAxis, "getOppositeAxis");
-    __name(getAxisLength, "getAxisLength");
-    yAxisSides = /* @__PURE__ */ new Set(["top", "bottom"]);
-    __name(getSideAxis, "getSideAxis");
-    __name(getAlignmentAxis, "getAlignmentAxis");
-    __name(getAlignmentSides, "getAlignmentSides");
-    __name(getExpandedPlacements, "getExpandedPlacements");
-    __name(getOppositeAlignmentPlacement, "getOppositeAlignmentPlacement");
-    lrPlacement = ["left", "right"];
-    rlPlacement = ["right", "left"];
-    tbPlacement = ["top", "bottom"];
-    btPlacement = ["bottom", "top"];
-    __name(getSideList, "getSideList");
-    __name(getOppositeAxisPlacements, "getOppositeAxisPlacements");
-    __name(getOppositePlacement, "getOppositePlacement");
-    __name(expandPaddingObject, "expandPaddingObject");
-    __name(getPaddingObject, "getPaddingObject");
-    __name(rectToClientRect, "rectToClientRect");
-  }
-});
-
-// node_modules/@floating-ui/core/dist/floating-ui.core.mjs
-function computeCoordsFromPlacement(_ref, placement, rtl) {
-  let {
-    reference,
-    floating
-  } = _ref;
-  const sideAxis = getSideAxis(placement);
-  const alignmentAxis = getAlignmentAxis(placement);
-  const alignLength = getAxisLength(alignmentAxis);
-  const side = getSide(placement);
-  const isVertical = sideAxis === "y";
-  const commonX = reference.x + reference.width / 2 - floating.width / 2;
-  const commonY = reference.y + reference.height / 2 - floating.height / 2;
-  const commonAlign = reference[alignLength] / 2 - floating[alignLength] / 2;
-  let coords;
-  switch (side) {
-    case "top":
-      coords = {
-        x: commonX,
-        y: reference.y - floating.height
-      };
-      break;
-    case "bottom":
-      coords = {
-        x: commonX,
-        y: reference.y + reference.height
-      };
-      break;
-    case "right":
-      coords = {
-        x: reference.x + reference.width,
-        y: commonY
-      };
-      break;
-    case "left":
-      coords = {
-        x: reference.x - floating.width,
-        y: commonY
-      };
-      break;
-    default:
-      coords = {
-        x: reference.x,
-        y: reference.y
-      };
-  }
-  switch (getAlignment(placement)) {
-    case "start":
-      coords[alignmentAxis] -= commonAlign * (rtl && isVertical ? -1 : 1);
-      break;
-    case "end":
-      coords[alignmentAxis] += commonAlign * (rtl && isVertical ? -1 : 1);
-      break;
-  }
-  return coords;
-}
-async function detectOverflow(state3, options2) {
-  var _await$platform$isEle;
-  if (options2 === void 0) {
-    options2 = {};
-  }
-  const {
-    x,
-    y,
-    platform: platform3,
-    rects,
-    elements,
-    strategy
-  } = state3;
-  const {
-    boundary: boundary2 = "clippingAncestors",
-    rootBoundary = "viewport",
-    elementContext = "floating",
-    altBoundary = false,
-    padding = 0
-  } = evaluate(options2, state3);
-  const paddingObject = getPaddingObject(padding);
-  const altContext = elementContext === "floating" ? "reference" : "floating";
-  const element2 = elements[altBoundary ? altContext : elementContext];
-  const clippingClientRect = rectToClientRect(await platform3.getClippingRect({
-    element: ((_await$platform$isEle = await (platform3.isElement == null ? void 0 : platform3.isElement(element2))) != null ? _await$platform$isEle : true) ? element2 : element2.contextElement || await (platform3.getDocumentElement == null ? void 0 : platform3.getDocumentElement(elements.floating)),
-    boundary: boundary2,
-    rootBoundary,
-    strategy
-  }));
-  const rect = elementContext === "floating" ? {
-    x,
-    y,
-    width: rects.floating.width,
-    height: rects.floating.height
-  } : rects.reference;
-  const offsetParent = await (platform3.getOffsetParent == null ? void 0 : platform3.getOffsetParent(elements.floating));
-  const offsetScale = await (platform3.isElement == null ? void 0 : platform3.isElement(offsetParent)) ? await (platform3.getScale == null ? void 0 : platform3.getScale(offsetParent)) || {
-    x: 1,
-    y: 1
-  } : {
-    x: 1,
-    y: 1
-  };
-  const elementClientRect = rectToClientRect(platform3.convertOffsetParentRelativeRectToViewportRelativeRect ? await platform3.convertOffsetParentRelativeRectToViewportRelativeRect({
-    elements,
-    rect,
-    offsetParent,
-    strategy
-  }) : rect);
-  return {
-    top: (clippingClientRect.top - elementClientRect.top + paddingObject.top) / offsetScale.y,
-    bottom: (elementClientRect.bottom - clippingClientRect.bottom + paddingObject.bottom) / offsetScale.y,
-    left: (clippingClientRect.left - elementClientRect.left + paddingObject.left) / offsetScale.x,
-    right: (elementClientRect.right - clippingClientRect.right + paddingObject.right) / offsetScale.x
-  };
-}
-function getSideOffsets(overflow, rect) {
-  return {
-    top: overflow.top - rect.height,
-    right: overflow.right - rect.width,
-    bottom: overflow.bottom - rect.height,
-    left: overflow.left - rect.width
-  };
-}
-function isAnySideFullyClipped(overflow) {
-  return sides.some((side) => overflow[side] >= 0);
-}
-async function convertValueToCoords(state3, options2) {
-  const {
-    placement,
-    platform: platform3,
-    elements
-  } = state3;
-  const rtl = await (platform3.isRTL == null ? void 0 : platform3.isRTL(elements.floating));
-  const side = getSide(placement);
-  const alignment = getAlignment(placement);
-  const isVertical = getSideAxis(placement) === "y";
-  const mainAxisMulti = originSides.has(side) ? -1 : 1;
-  const crossAxisMulti = rtl && isVertical ? -1 : 1;
-  const rawValue = evaluate(options2, state3);
-  let {
-    mainAxis,
-    crossAxis,
-    alignmentAxis
-  } = typeof rawValue === "number" ? {
-    mainAxis: rawValue,
-    crossAxis: 0,
-    alignmentAxis: null
-  } : {
-    mainAxis: rawValue.mainAxis || 0,
-    crossAxis: rawValue.crossAxis || 0,
-    alignmentAxis: rawValue.alignmentAxis
-  };
-  if (alignment && typeof alignmentAxis === "number") {
-    crossAxis = alignment === "end" ? alignmentAxis * -1 : alignmentAxis;
-  }
-  return isVertical ? {
-    x: crossAxis * crossAxisMulti,
-    y: mainAxis * mainAxisMulti
-  } : {
-    x: mainAxis * mainAxisMulti,
-    y: crossAxis * crossAxisMulti
-  };
-}
-var computePosition, arrow, flip, hide, originSides, offset, shift, limitShift, size;
-var init_floating_ui_core = __esm({
-  "node_modules/@floating-ui/core/dist/floating-ui.core.mjs"() {
-    init_virtual_unenv_global_polyfill_cloudflare_unenv_preset_node_process();
-    init_virtual_unenv_global_polyfill_cloudflare_unenv_preset_node_console();
-    init_performance2();
-    init_floating_ui_utils();
-    init_floating_ui_utils();
-    __name(computeCoordsFromPlacement, "computeCoordsFromPlacement");
-    computePosition = /* @__PURE__ */ __name(async (reference, floating, config4) => {
-      const {
-        placement = "bottom",
-        strategy = "absolute",
-        middleware = [],
-        platform: platform3
-      } = config4;
-      const validMiddleware = middleware.filter(Boolean);
-      const rtl = await (platform3.isRTL == null ? void 0 : platform3.isRTL(floating));
-      let rects = await platform3.getElementRects({
-        reference,
-        floating,
-        strategy
-      });
-      let {
-        x,
-        y
-      } = computeCoordsFromPlacement(rects, placement, rtl);
-      let statefulPlacement = placement;
-      let middlewareData = {};
-      let resetCount = 0;
-      for (let i = 0; i < validMiddleware.length; i++) {
-        const {
-          name,
-          fn
-        } = validMiddleware[i];
-        const {
-          x: nextX,
-          y: nextY,
-          data,
-          reset: reset2
-        } = await fn({
-          x,
-          y,
-          initialPlacement: placement,
-          placement: statefulPlacement,
-          strategy,
-          middlewareData,
-          rects,
-          platform: platform3,
-          elements: {
-            reference,
-            floating
-          }
-        });
-        x = nextX != null ? nextX : x;
-        y = nextY != null ? nextY : y;
-        middlewareData = {
-          ...middlewareData,
-          [name]: {
-            ...middlewareData[name],
-            ...data
-          }
-        };
-        if (reset2 && resetCount <= 50) {
-          resetCount++;
-          if (typeof reset2 === "object") {
-            if (reset2.placement) {
-              statefulPlacement = reset2.placement;
-            }
-            if (reset2.rects) {
-              rects = reset2.rects === true ? await platform3.getElementRects({
-                reference,
-                floating,
-                strategy
-              }) : reset2.rects;
-            }
-            ({
-              x,
-              y
-            } = computeCoordsFromPlacement(rects, statefulPlacement, rtl));
-          }
-          i = -1;
-        }
-      }
-      return {
-        x,
-        y,
-        placement: statefulPlacement,
-        strategy,
-        middlewareData
-      };
-    }, "computePosition");
-    __name(detectOverflow, "detectOverflow");
-    arrow = /* @__PURE__ */ __name((options2) => ({
-      name: "arrow",
-      options: options2,
-      async fn(state3) {
-        const {
-          x,
-          y,
-          placement,
-          rects,
-          platform: platform3,
-          elements,
-          middlewareData
-        } = state3;
-        const {
-          element: element2,
-          padding = 0
-        } = evaluate(options2, state3) || {};
-        if (element2 == null) {
-          return {};
-        }
-        const paddingObject = getPaddingObject(padding);
-        const coords = {
-          x,
-          y
-        };
-        const axis = getAlignmentAxis(placement);
-        const length = getAxisLength(axis);
-        const arrowDimensions = await platform3.getDimensions(element2);
-        const isYAxis = axis === "y";
-        const minProp = isYAxis ? "top" : "left";
-        const maxProp = isYAxis ? "bottom" : "right";
-        const clientProp = isYAxis ? "clientHeight" : "clientWidth";
-        const endDiff = rects.reference[length] + rects.reference[axis] - coords[axis] - rects.floating[length];
-        const startDiff = coords[axis] - rects.reference[axis];
-        const arrowOffsetParent = await (platform3.getOffsetParent == null ? void 0 : platform3.getOffsetParent(element2));
-        let clientSize = arrowOffsetParent ? arrowOffsetParent[clientProp] : 0;
-        if (!clientSize || !await (platform3.isElement == null ? void 0 : platform3.isElement(arrowOffsetParent))) {
-          clientSize = elements.floating[clientProp] || rects.floating[length];
-        }
-        const centerToReference = endDiff / 2 - startDiff / 2;
-        const largestPossiblePadding = clientSize / 2 - arrowDimensions[length] / 2 - 1;
-        const minPadding = min(paddingObject[minProp], largestPossiblePadding);
-        const maxPadding = min(paddingObject[maxProp], largestPossiblePadding);
-        const min$1 = minPadding;
-        const max2 = clientSize - arrowDimensions[length] - maxPadding;
-        const center = clientSize / 2 - arrowDimensions[length] / 2 + centerToReference;
-        const offset3 = clamp(min$1, center, max2);
-        const shouldAddOffset = !middlewareData.arrow && getAlignment(placement) != null && center !== offset3 && rects.reference[length] / 2 - (center < min$1 ? minPadding : maxPadding) - arrowDimensions[length] / 2 < 0;
-        const alignmentOffset = shouldAddOffset ? center < min$1 ? center - min$1 : center - max2 : 0;
-        return {
-          [axis]: coords[axis] + alignmentOffset,
-          data: {
-            [axis]: offset3,
-            centerOffset: center - offset3 - alignmentOffset,
-            ...shouldAddOffset && {
-              alignmentOffset
-            }
-          },
-          reset: shouldAddOffset
-        };
-      }
-    }), "arrow");
-    flip = /* @__PURE__ */ __name(function(options2) {
-      if (options2 === void 0) {
-        options2 = {};
-      }
-      return {
-        name: "flip",
-        options: options2,
-        async fn(state3) {
-          var _middlewareData$arrow, _middlewareData$flip;
-          const {
-            placement,
-            middlewareData,
-            rects,
-            initialPlacement,
-            platform: platform3,
-            elements
-          } = state3;
-          const {
-            mainAxis: checkMainAxis = true,
-            crossAxis: checkCrossAxis = true,
-            fallbackPlacements: specifiedFallbackPlacements,
-            fallbackStrategy = "bestFit",
-            fallbackAxisSideDirection = "none",
-            flipAlignment = true,
-            ...detectOverflowOptions
-          } = evaluate(options2, state3);
-          if ((_middlewareData$arrow = middlewareData.arrow) != null && _middlewareData$arrow.alignmentOffset) {
-            return {};
-          }
-          const side = getSide(placement);
-          const initialSideAxis = getSideAxis(initialPlacement);
-          const isBasePlacement = getSide(initialPlacement) === initialPlacement;
-          const rtl = await (platform3.isRTL == null ? void 0 : platform3.isRTL(elements.floating));
-          const fallbackPlacements = specifiedFallbackPlacements || (isBasePlacement || !flipAlignment ? [getOppositePlacement(initialPlacement)] : getExpandedPlacements(initialPlacement));
-          const hasFallbackAxisSideDirection = fallbackAxisSideDirection !== "none";
-          if (!specifiedFallbackPlacements && hasFallbackAxisSideDirection) {
-            fallbackPlacements.push(...getOppositeAxisPlacements(initialPlacement, flipAlignment, fallbackAxisSideDirection, rtl));
-          }
-          const placements2 = [initialPlacement, ...fallbackPlacements];
-          const overflow = await detectOverflow(state3, detectOverflowOptions);
-          const overflows = [];
-          let overflowsData = ((_middlewareData$flip = middlewareData.flip) == null ? void 0 : _middlewareData$flip.overflows) || [];
-          if (checkMainAxis) {
-            overflows.push(overflow[side]);
-          }
-          if (checkCrossAxis) {
-            const sides2 = getAlignmentSides(placement, rects, rtl);
-            overflows.push(overflow[sides2[0]], overflow[sides2[1]]);
-          }
-          overflowsData = [...overflowsData, {
-            placement,
-            overflows
-          }];
-          if (!overflows.every((side2) => side2 <= 0)) {
-            var _middlewareData$flip2, _overflowsData$filter;
-            const nextIndex = (((_middlewareData$flip2 = middlewareData.flip) == null ? void 0 : _middlewareData$flip2.index) || 0) + 1;
-            const nextPlacement = placements2[nextIndex];
-            if (nextPlacement) {
-              const ignoreCrossAxisOverflow = checkCrossAxis === "alignment" ? initialSideAxis !== getSideAxis(nextPlacement) : false;
-              if (!ignoreCrossAxisOverflow || // We leave the current main axis only if every placement on that axis
-              // overflows the main axis.
-              overflowsData.every((d) => getSideAxis(d.placement) === initialSideAxis ? d.overflows[0] > 0 : true)) {
-                return {
-                  data: {
-                    index: nextIndex,
-                    overflows: overflowsData
-                  },
-                  reset: {
-                    placement: nextPlacement
-                  }
-                };
-              }
-            }
-            let resetPlacement = (_overflowsData$filter = overflowsData.filter((d) => d.overflows[0] <= 0).sort((a, b) => a.overflows[1] - b.overflows[1])[0]) == null ? void 0 : _overflowsData$filter.placement;
-            if (!resetPlacement) {
-              switch (fallbackStrategy) {
-                case "bestFit": {
-                  var _overflowsData$filter2;
-                  const placement2 = (_overflowsData$filter2 = overflowsData.filter((d) => {
-                    if (hasFallbackAxisSideDirection) {
-                      const currentSideAxis = getSideAxis(d.placement);
-                      return currentSideAxis === initialSideAxis || // Create a bias to the `y` side axis due to horizontal
-                      // reading directions favoring greater width.
-                      currentSideAxis === "y";
-                    }
-                    return true;
-                  }).map((d) => [d.placement, d.overflows.filter((overflow2) => overflow2 > 0).reduce((acc, overflow2) => acc + overflow2, 0)]).sort((a, b) => a[1] - b[1])[0]) == null ? void 0 : _overflowsData$filter2[0];
-                  if (placement2) {
-                    resetPlacement = placement2;
-                  }
-                  break;
-                }
-                case "initialPlacement":
-                  resetPlacement = initialPlacement;
-                  break;
-              }
-            }
-            if (placement !== resetPlacement) {
-              return {
-                reset: {
-                  placement: resetPlacement
-                }
-              };
-            }
-          }
-          return {};
-        }
-      };
-    }, "flip");
-    __name(getSideOffsets, "getSideOffsets");
-    __name(isAnySideFullyClipped, "isAnySideFullyClipped");
-    hide = /* @__PURE__ */ __name(function(options2) {
-      if (options2 === void 0) {
-        options2 = {};
-      }
-      return {
-        name: "hide",
-        options: options2,
-        async fn(state3) {
-          const {
-            rects
-          } = state3;
-          const {
-            strategy = "referenceHidden",
-            ...detectOverflowOptions
-          } = evaluate(options2, state3);
-          switch (strategy) {
-            case "referenceHidden": {
-              const overflow = await detectOverflow(state3, {
-                ...detectOverflowOptions,
-                elementContext: "reference"
-              });
-              const offsets = getSideOffsets(overflow, rects.reference);
-              return {
-                data: {
-                  referenceHiddenOffsets: offsets,
-                  referenceHidden: isAnySideFullyClipped(offsets)
-                }
-              };
-            }
-            case "escaped": {
-              const overflow = await detectOverflow(state3, {
-                ...detectOverflowOptions,
-                altBoundary: true
-              });
-              const offsets = getSideOffsets(overflow, rects.floating);
-              return {
-                data: {
-                  escapedOffsets: offsets,
-                  escaped: isAnySideFullyClipped(offsets)
-                }
-              };
-            }
-            default: {
-              return {};
-            }
-          }
-        }
-      };
-    }, "hide");
-    originSides = /* @__PURE__ */ new Set(["left", "top"]);
-    __name(convertValueToCoords, "convertValueToCoords");
-    offset = /* @__PURE__ */ __name(function(options2) {
-      if (options2 === void 0) {
-        options2 = 0;
-      }
-      return {
-        name: "offset",
-        options: options2,
-        async fn(state3) {
-          var _middlewareData$offse, _middlewareData$arrow;
-          const {
-            x,
-            y,
-            placement,
-            middlewareData
-          } = state3;
-          const diffCoords = await convertValueToCoords(state3, options2);
-          if (placement === ((_middlewareData$offse = middlewareData.offset) == null ? void 0 : _middlewareData$offse.placement) && (_middlewareData$arrow = middlewareData.arrow) != null && _middlewareData$arrow.alignmentOffset) {
-            return {};
-          }
-          return {
-            x: x + diffCoords.x,
-            y: y + diffCoords.y,
-            data: {
-              ...diffCoords,
-              placement
-            }
-          };
-        }
-      };
-    }, "offset");
-    shift = /* @__PURE__ */ __name(function(options2) {
-      if (options2 === void 0) {
-        options2 = {};
-      }
-      return {
-        name: "shift",
-        options: options2,
-        async fn(state3) {
-          const {
-            x,
-            y,
-            placement
-          } = state3;
-          const {
-            mainAxis: checkMainAxis = true,
-            crossAxis: checkCrossAxis = false,
-            limiter = {
-              fn: /* @__PURE__ */ __name((_ref) => {
-                let {
-                  x: x2,
-                  y: y2
-                } = _ref;
-                return {
-                  x: x2,
-                  y: y2
-                };
-              }, "fn")
-            },
-            ...detectOverflowOptions
-          } = evaluate(options2, state3);
-          const coords = {
-            x,
-            y
-          };
-          const overflow = await detectOverflow(state3, detectOverflowOptions);
-          const crossAxis = getSideAxis(getSide(placement));
-          const mainAxis = getOppositeAxis(crossAxis);
-          let mainAxisCoord = coords[mainAxis];
-          let crossAxisCoord = coords[crossAxis];
-          if (checkMainAxis) {
-            const minSide = mainAxis === "y" ? "top" : "left";
-            const maxSide = mainAxis === "y" ? "bottom" : "right";
-            const min2 = mainAxisCoord + overflow[minSide];
-            const max2 = mainAxisCoord - overflow[maxSide];
-            mainAxisCoord = clamp(min2, mainAxisCoord, max2);
-          }
-          if (checkCrossAxis) {
-            const minSide = crossAxis === "y" ? "top" : "left";
-            const maxSide = crossAxis === "y" ? "bottom" : "right";
-            const min2 = crossAxisCoord + overflow[minSide];
-            const max2 = crossAxisCoord - overflow[maxSide];
-            crossAxisCoord = clamp(min2, crossAxisCoord, max2);
-          }
-          const limitedCoords = limiter.fn({
-            ...state3,
-            [mainAxis]: mainAxisCoord,
-            [crossAxis]: crossAxisCoord
-          });
-          return {
-            ...limitedCoords,
-            data: {
-              x: limitedCoords.x - x,
-              y: limitedCoords.y - y,
-              enabled: {
-                [mainAxis]: checkMainAxis,
-                [crossAxis]: checkCrossAxis
-              }
-            }
-          };
-        }
-      };
-    }, "shift");
-    limitShift = /* @__PURE__ */ __name(function(options2) {
-      if (options2 === void 0) {
-        options2 = {};
-      }
-      return {
-        options: options2,
-        fn(state3) {
-          const {
-            x,
-            y,
-            placement,
-            rects,
-            middlewareData
-          } = state3;
-          const {
-            offset: offset3 = 0,
-            mainAxis: checkMainAxis = true,
-            crossAxis: checkCrossAxis = true
-          } = evaluate(options2, state3);
-          const coords = {
-            x,
-            y
-          };
-          const crossAxis = getSideAxis(placement);
-          const mainAxis = getOppositeAxis(crossAxis);
-          let mainAxisCoord = coords[mainAxis];
-          let crossAxisCoord = coords[crossAxis];
-          const rawOffset = evaluate(offset3, state3);
-          const computedOffset = typeof rawOffset === "number" ? {
-            mainAxis: rawOffset,
-            crossAxis: 0
-          } : {
-            mainAxis: 0,
-            crossAxis: 0,
-            ...rawOffset
-          };
-          if (checkMainAxis) {
-            const len = mainAxis === "y" ? "height" : "width";
-            const limitMin = rects.reference[mainAxis] - rects.floating[len] + computedOffset.mainAxis;
-            const limitMax = rects.reference[mainAxis] + rects.reference[len] - computedOffset.mainAxis;
-            if (mainAxisCoord < limitMin) {
-              mainAxisCoord = limitMin;
-            } else if (mainAxisCoord > limitMax) {
-              mainAxisCoord = limitMax;
-            }
-          }
-          if (checkCrossAxis) {
-            var _middlewareData$offse, _middlewareData$offse2;
-            const len = mainAxis === "y" ? "width" : "height";
-            const isOriginSide = originSides.has(getSide(placement));
-            const limitMin = rects.reference[crossAxis] - rects.floating[len] + (isOriginSide ? ((_middlewareData$offse = middlewareData.offset) == null ? void 0 : _middlewareData$offse[crossAxis]) || 0 : 0) + (isOriginSide ? 0 : computedOffset.crossAxis);
-            const limitMax = rects.reference[crossAxis] + rects.reference[len] + (isOriginSide ? 0 : ((_middlewareData$offse2 = middlewareData.offset) == null ? void 0 : _middlewareData$offse2[crossAxis]) || 0) - (isOriginSide ? computedOffset.crossAxis : 0);
-            if (crossAxisCoord < limitMin) {
-              crossAxisCoord = limitMin;
-            } else if (crossAxisCoord > limitMax) {
-              crossAxisCoord = limitMax;
-            }
-          }
-          return {
-            [mainAxis]: mainAxisCoord,
-            [crossAxis]: crossAxisCoord
-          };
-        }
-      };
-    }, "limitShift");
-    size = /* @__PURE__ */ __name(function(options2) {
-      if (options2 === void 0) {
-        options2 = {};
-      }
-      return {
-        name: "size",
-        options: options2,
-        async fn(state3) {
-          var _state$middlewareData, _state$middlewareData2;
-          const {
-            placement,
-            rects,
-            platform: platform3,
-            elements
-          } = state3;
-          const {
-            apply = /* @__PURE__ */ __name(() => {
-            }, "apply"),
-            ...detectOverflowOptions
-          } = evaluate(options2, state3);
-          const overflow = await detectOverflow(state3, detectOverflowOptions);
-          const side = getSide(placement);
-          const alignment = getAlignment(placement);
-          const isYAxis = getSideAxis(placement) === "y";
-          const {
-            width,
-            height
-          } = rects.floating;
-          let heightSide;
-          let widthSide;
-          if (side === "top" || side === "bottom") {
-            heightSide = side;
-            widthSide = alignment === (await (platform3.isRTL == null ? void 0 : platform3.isRTL(elements.floating)) ? "start" : "end") ? "left" : "right";
-          } else {
-            widthSide = side;
-            heightSide = alignment === "end" ? "top" : "bottom";
-          }
-          const maximumClippingHeight = height - overflow.top - overflow.bottom;
-          const maximumClippingWidth = width - overflow.left - overflow.right;
-          const overflowAvailableHeight = min(height - overflow[heightSide], maximumClippingHeight);
-          const overflowAvailableWidth = min(width - overflow[widthSide], maximumClippingWidth);
-          const noShift = !state3.middlewareData.shift;
-          let availableHeight = overflowAvailableHeight;
-          let availableWidth = overflowAvailableWidth;
-          if ((_state$middlewareData = state3.middlewareData.shift) != null && _state$middlewareData.enabled.x) {
-            availableWidth = maximumClippingWidth;
-          }
-          if ((_state$middlewareData2 = state3.middlewareData.shift) != null && _state$middlewareData2.enabled.y) {
-            availableHeight = maximumClippingHeight;
-          }
-          if (noShift && !alignment) {
-            const xMin = max(overflow.left, 0);
-            const xMax = max(overflow.right, 0);
-            const yMin = max(overflow.top, 0);
-            const yMax = max(overflow.bottom, 0);
-            if (isYAxis) {
-              availableWidth = width - 2 * (xMin !== 0 || xMax !== 0 ? xMin + xMax : max(overflow.left, overflow.right));
-            } else {
-              availableHeight = height - 2 * (yMin !== 0 || yMax !== 0 ? yMin + yMax : max(overflow.top, overflow.bottom));
-            }
-          }
-          await apply({
-            ...state3,
-            availableWidth,
-            availableHeight
-          });
-          const nextDimensions = await platform3.getDimensions(elements.floating);
-          if (width !== nextDimensions.width || height !== nextDimensions.height) {
-            return {
-              reset: {
-                rects: true
-              }
-            };
-          }
-          return {};
-        }
-      };
-    }, "size");
-  }
-});
-
-// node_modules/@floating-ui/utils/dist/floating-ui.utils.dom.mjs
-function hasWindow() {
-  return typeof window !== "undefined";
-}
-function getNodeName(node) {
-  if (isNode2(node)) {
-    return (node.nodeName || "").toLowerCase();
-  }
-  return "#document";
-}
-function getWindow2(node) {
-  var _node$ownerDocument;
-  return (node == null || (_node$ownerDocument = node.ownerDocument) == null ? void 0 : _node$ownerDocument.defaultView) || window;
-}
-function getDocumentElement(node) {
-  var _ref;
-  return (_ref = (isNode2(node) ? node.ownerDocument : node.document) || window.document) == null ? void 0 : _ref.documentElement;
-}
-function isNode2(value) {
-  if (!hasWindow()) {
-    return false;
-  }
-  return value instanceof Node || value instanceof getWindow2(value).Node;
-}
-function isElement(value) {
-  if (!hasWindow()) {
-    return false;
-  }
-  return value instanceof Element || value instanceof getWindow2(value).Element;
-}
-function isHTMLElement2(value) {
-  if (!hasWindow()) {
-    return false;
-  }
-  return value instanceof HTMLElement || value instanceof getWindow2(value).HTMLElement;
-}
-function isShadowRoot2(value) {
-  if (!hasWindow() || typeof ShadowRoot === "undefined") {
-    return false;
-  }
-  return value instanceof ShadowRoot || value instanceof getWindow2(value).ShadowRoot;
-}
-function isOverflowElement(element2) {
-  const {
-    overflow,
-    overflowX,
-    overflowY,
-    display
-  } = getComputedStyle2(element2);
-  return /auto|scroll|overlay|hidden|clip/.test(overflow + overflowY + overflowX) && !invalidOverflowDisplayValues.has(display);
-}
-function isTableElement(element2) {
-  return tableElements.has(getNodeName(element2));
-}
-function isTopLayer(element2) {
-  return topLayerSelectors.some((selector) => {
-    try {
-      return element2.matches(selector);
-    } catch (_e) {
-      return false;
-    }
-  });
-}
-function isContainingBlock(elementOrCss) {
-  const webkit = isWebKit();
-  const css = isElement(elementOrCss) ? getComputedStyle2(elementOrCss) : elementOrCss;
-  return transformProperties.some((value) => css[value] ? css[value] !== "none" : false) || (css.containerType ? css.containerType !== "normal" : false) || !webkit && (css.backdropFilter ? css.backdropFilter !== "none" : false) || !webkit && (css.filter ? css.filter !== "none" : false) || willChangeValues.some((value) => (css.willChange || "").includes(value)) || containValues.some((value) => (css.contain || "").includes(value));
-}
-function getContainingBlock(element2) {
-  let currentNode = getParentNode(element2);
-  while (isHTMLElement2(currentNode) && !isLastTraversableNode(currentNode)) {
-    if (isContainingBlock(currentNode)) {
-      return currentNode;
-    } else if (isTopLayer(currentNode)) {
-      return null;
-    }
-    currentNode = getParentNode(currentNode);
-  }
-  return null;
-}
-function isWebKit() {
-  if (typeof CSS === "undefined" || !CSS.supports) return false;
-  return CSS.supports("-webkit-backdrop-filter", "none");
-}
-function isLastTraversableNode(node) {
-  return lastTraversableNodeNames.has(getNodeName(node));
-}
-function getComputedStyle2(element2) {
-  return getWindow2(element2).getComputedStyle(element2);
-}
-function getNodeScroll(element2) {
-  if (isElement(element2)) {
-    return {
-      scrollLeft: element2.scrollLeft,
-      scrollTop: element2.scrollTop
-    };
-  }
-  return {
-    scrollLeft: element2.scrollX,
-    scrollTop: element2.scrollY
-  };
-}
-function getParentNode(node) {
-  if (getNodeName(node) === "html") {
-    return node;
-  }
-  const result = (
-    // Step into the shadow DOM of the parent of a slotted node.
-    node.assignedSlot || // DOM Element detected.
-    node.parentNode || // ShadowRoot detected.
-    isShadowRoot2(node) && node.host || // Fallback.
-    getDocumentElement(node)
-  );
-  return isShadowRoot2(result) ? result.host : result;
-}
-function getNearestOverflowAncestor(node) {
-  const parentNode = getParentNode(node);
-  if (isLastTraversableNode(parentNode)) {
-    return node.ownerDocument ? node.ownerDocument.body : node.body;
-  }
-  if (isHTMLElement2(parentNode) && isOverflowElement(parentNode)) {
-    return parentNode;
-  }
-  return getNearestOverflowAncestor(parentNode);
-}
-function getOverflowAncestors(node, list, traverseIframes) {
-  var _node$ownerDocument2;
-  if (list === void 0) {
-    list = [];
-  }
-  if (traverseIframes === void 0) {
-    traverseIframes = true;
-  }
-  const scrollableAncestor = getNearestOverflowAncestor(node);
-  const isBody = scrollableAncestor === ((_node$ownerDocument2 = node.ownerDocument) == null ? void 0 : _node$ownerDocument2.body);
-  const win = getWindow2(scrollableAncestor);
-  if (isBody) {
-    const frameElement = getFrameElement(win);
-    return list.concat(win, win.visualViewport || [], isOverflowElement(scrollableAncestor) ? scrollableAncestor : [], frameElement && traverseIframes ? getOverflowAncestors(frameElement) : []);
-  }
-  return list.concat(scrollableAncestor, getOverflowAncestors(scrollableAncestor, [], traverseIframes));
-}
-function getFrameElement(win) {
-  return win.parent && Object.getPrototypeOf(win.parent) ? win.frameElement : null;
-}
-var invalidOverflowDisplayValues, tableElements, topLayerSelectors, transformProperties, willChangeValues, containValues, lastTraversableNodeNames;
-var init_floating_ui_utils_dom = __esm({
-  "node_modules/@floating-ui/utils/dist/floating-ui.utils.dom.mjs"() {
-    init_virtual_unenv_global_polyfill_cloudflare_unenv_preset_node_process();
-    init_virtual_unenv_global_polyfill_cloudflare_unenv_preset_node_console();
-    init_performance2();
-    __name(hasWindow, "hasWindow");
-    __name(getNodeName, "getNodeName");
-    __name(getWindow2, "getWindow");
-    __name(getDocumentElement, "getDocumentElement");
-    __name(isNode2, "isNode");
-    __name(isElement, "isElement");
-    __name(isHTMLElement2, "isHTMLElement");
-    __name(isShadowRoot2, "isShadowRoot");
-    invalidOverflowDisplayValues = /* @__PURE__ */ new Set(["inline", "contents"]);
-    __name(isOverflowElement, "isOverflowElement");
-    tableElements = /* @__PURE__ */ new Set(["table", "td", "th"]);
-    __name(isTableElement, "isTableElement");
-    topLayerSelectors = [":popover-open", ":modal"];
-    __name(isTopLayer, "isTopLayer");
-    transformProperties = ["transform", "translate", "scale", "rotate", "perspective"];
-    willChangeValues = ["transform", "translate", "scale", "rotate", "perspective", "filter"];
-    containValues = ["paint", "layout", "strict", "content"];
-    __name(isContainingBlock, "isContainingBlock");
-    __name(getContainingBlock, "getContainingBlock");
-    __name(isWebKit, "isWebKit");
-    lastTraversableNodeNames = /* @__PURE__ */ new Set(["html", "body", "#document"]);
-    __name(isLastTraversableNode, "isLastTraversableNode");
-    __name(getComputedStyle2, "getComputedStyle");
-    __name(getNodeScroll, "getNodeScroll");
-    __name(getParentNode, "getParentNode");
-    __name(getNearestOverflowAncestor, "getNearestOverflowAncestor");
-    __name(getOverflowAncestors, "getOverflowAncestors");
-    __name(getFrameElement, "getFrameElement");
-  }
-});
-
-// node_modules/@floating-ui/dom/dist/floating-ui.dom.mjs
-function getCssDimensions(element2) {
-  const css = getComputedStyle2(element2);
-  let width = parseFloat(css.width) || 0;
-  let height = parseFloat(css.height) || 0;
-  const hasOffset = isHTMLElement2(element2);
-  const offsetWidth = hasOffset ? element2.offsetWidth : width;
-  const offsetHeight = hasOffset ? element2.offsetHeight : height;
-  const shouldFallback = round(width) !== offsetWidth || round(height) !== offsetHeight;
-  if (shouldFallback) {
-    width = offsetWidth;
-    height = offsetHeight;
-  }
-  return {
-    width,
-    height,
-    $: shouldFallback
-  };
-}
-function unwrapElement(element2) {
-  return !isElement(element2) ? element2.contextElement : element2;
-}
-function getScale(element2) {
-  const domElement = unwrapElement(element2);
-  if (!isHTMLElement2(domElement)) {
-    return createCoords(1);
-  }
-  const rect = domElement.getBoundingClientRect();
-  const {
-    width,
-    height,
-    $
-  } = getCssDimensions(domElement);
-  let x = ($ ? round(rect.width) : rect.width) / width;
-  let y = ($ ? round(rect.height) : rect.height) / height;
-  if (!x || !Number.isFinite(x)) {
-    x = 1;
-  }
-  if (!y || !Number.isFinite(y)) {
-    y = 1;
-  }
-  return {
-    x,
-    y
-  };
-}
-function getVisualOffsets(element2) {
-  const win = getWindow2(element2);
-  if (!isWebKit() || !win.visualViewport) {
-    return noOffsets;
-  }
-  return {
-    x: win.visualViewport.offsetLeft,
-    y: win.visualViewport.offsetTop
-  };
-}
-function shouldAddVisualOffsets(element2, isFixed, floatingOffsetParent) {
-  if (isFixed === void 0) {
-    isFixed = false;
-  }
-  if (!floatingOffsetParent || isFixed && floatingOffsetParent !== getWindow2(element2)) {
-    return false;
-  }
-  return isFixed;
-}
-function getBoundingClientRect(element2, includeScale, isFixedStrategy, offsetParent) {
-  if (includeScale === void 0) {
-    includeScale = false;
-  }
-  if (isFixedStrategy === void 0) {
-    isFixedStrategy = false;
-  }
-  const clientRect = element2.getBoundingClientRect();
-  const domElement = unwrapElement(element2);
-  let scale = createCoords(1);
-  if (includeScale) {
-    if (offsetParent) {
-      if (isElement(offsetParent)) {
-        scale = getScale(offsetParent);
-      }
-    } else {
-      scale = getScale(element2);
-    }
-  }
-  const visualOffsets = shouldAddVisualOffsets(domElement, isFixedStrategy, offsetParent) ? getVisualOffsets(domElement) : createCoords(0);
-  let x = (clientRect.left + visualOffsets.x) / scale.x;
-  let y = (clientRect.top + visualOffsets.y) / scale.y;
-  let width = clientRect.width / scale.x;
-  let height = clientRect.height / scale.y;
-  if (domElement) {
-    const win = getWindow2(domElement);
-    const offsetWin = offsetParent && isElement(offsetParent) ? getWindow2(offsetParent) : offsetParent;
-    let currentWin = win;
-    let currentIFrame = getFrameElement(currentWin);
-    while (currentIFrame && offsetParent && offsetWin !== currentWin) {
-      const iframeScale = getScale(currentIFrame);
-      const iframeRect = currentIFrame.getBoundingClientRect();
-      const css = getComputedStyle2(currentIFrame);
-      const left = iframeRect.left + (currentIFrame.clientLeft + parseFloat(css.paddingLeft)) * iframeScale.x;
-      const top = iframeRect.top + (currentIFrame.clientTop + parseFloat(css.paddingTop)) * iframeScale.y;
-      x *= iframeScale.x;
-      y *= iframeScale.y;
-      width *= iframeScale.x;
-      height *= iframeScale.y;
-      x += left;
-      y += top;
-      currentWin = getWindow2(currentIFrame);
-      currentIFrame = getFrameElement(currentWin);
-    }
-  }
-  return rectToClientRect({
-    width,
-    height,
-    x,
-    y
-  });
-}
-function getWindowScrollBarX(element2, rect) {
-  const leftScroll = getNodeScroll(element2).scrollLeft;
-  if (!rect) {
-    return getBoundingClientRect(getDocumentElement(element2)).left + leftScroll;
-  }
-  return rect.left + leftScroll;
-}
-function getHTMLOffset(documentElement, scroll) {
-  const htmlRect = documentElement.getBoundingClientRect();
-  const x = htmlRect.left + scroll.scrollLeft - getWindowScrollBarX(documentElement, htmlRect);
-  const y = htmlRect.top + scroll.scrollTop;
-  return {
-    x,
-    y
-  };
-}
-function convertOffsetParentRelativeRectToViewportRelativeRect(_ref) {
-  let {
-    elements,
-    rect,
-    offsetParent,
-    strategy
-  } = _ref;
-  const isFixed = strategy === "fixed";
-  const documentElement = getDocumentElement(offsetParent);
-  const topLayer = elements ? isTopLayer(elements.floating) : false;
-  if (offsetParent === documentElement || topLayer && isFixed) {
-    return rect;
-  }
-  let scroll = {
-    scrollLeft: 0,
-    scrollTop: 0
-  };
-  let scale = createCoords(1);
-  const offsets = createCoords(0);
-  const isOffsetParentAnElement = isHTMLElement2(offsetParent);
-  if (isOffsetParentAnElement || !isOffsetParentAnElement && !isFixed) {
-    if (getNodeName(offsetParent) !== "body" || isOverflowElement(documentElement)) {
-      scroll = getNodeScroll(offsetParent);
-    }
-    if (isHTMLElement2(offsetParent)) {
-      const offsetRect = getBoundingClientRect(offsetParent);
-      scale = getScale(offsetParent);
-      offsets.x = offsetRect.x + offsetParent.clientLeft;
-      offsets.y = offsetRect.y + offsetParent.clientTop;
-    }
-  }
-  const htmlOffset = documentElement && !isOffsetParentAnElement && !isFixed ? getHTMLOffset(documentElement, scroll) : createCoords(0);
-  return {
-    width: rect.width * scale.x,
-    height: rect.height * scale.y,
-    x: rect.x * scale.x - scroll.scrollLeft * scale.x + offsets.x + htmlOffset.x,
-    y: rect.y * scale.y - scroll.scrollTop * scale.y + offsets.y + htmlOffset.y
-  };
-}
-function getClientRects(element2) {
-  return Array.from(element2.getClientRects());
-}
-function getDocumentRect(element2) {
-  const html2 = getDocumentElement(element2);
-  const scroll = getNodeScroll(element2);
-  const body2 = element2.ownerDocument.body;
-  const width = max(html2.scrollWidth, html2.clientWidth, body2.scrollWidth, body2.clientWidth);
-  const height = max(html2.scrollHeight, html2.clientHeight, body2.scrollHeight, body2.clientHeight);
-  let x = -scroll.scrollLeft + getWindowScrollBarX(element2);
-  const y = -scroll.scrollTop;
-  if (getComputedStyle2(body2).direction === "rtl") {
-    x += max(html2.clientWidth, body2.clientWidth) - width;
-  }
-  return {
-    width,
-    height,
-    x,
-    y
-  };
-}
-function getViewportRect(element2, strategy) {
-  const win = getWindow2(element2);
-  const html2 = getDocumentElement(element2);
-  const visualViewport = win.visualViewport;
-  let width = html2.clientWidth;
-  let height = html2.clientHeight;
-  let x = 0;
-  let y = 0;
-  if (visualViewport) {
-    width = visualViewport.width;
-    height = visualViewport.height;
-    const visualViewportBased = isWebKit();
-    if (!visualViewportBased || visualViewportBased && strategy === "fixed") {
-      x = visualViewport.offsetLeft;
-      y = visualViewport.offsetTop;
-    }
-  }
-  const windowScrollbarX = getWindowScrollBarX(html2);
-  if (windowScrollbarX <= 0) {
-    const doc = html2.ownerDocument;
-    const body2 = doc.body;
-    const bodyStyles = getComputedStyle(body2);
-    const bodyMarginInline = doc.compatMode === "CSS1Compat" ? parseFloat(bodyStyles.marginLeft) + parseFloat(bodyStyles.marginRight) || 0 : 0;
-    const clippingStableScrollbarWidth = Math.abs(html2.clientWidth - body2.clientWidth - bodyMarginInline);
-    if (clippingStableScrollbarWidth <= SCROLLBAR_MAX) {
-      width -= clippingStableScrollbarWidth;
-    }
-  } else if (windowScrollbarX <= SCROLLBAR_MAX) {
-    width += windowScrollbarX;
-  }
-  return {
-    width,
-    height,
-    x,
-    y
-  };
-}
-function getInnerBoundingClientRect(element2, strategy) {
-  const clientRect = getBoundingClientRect(element2, true, strategy === "fixed");
-  const top = clientRect.top + element2.clientTop;
-  const left = clientRect.left + element2.clientLeft;
-  const scale = isHTMLElement2(element2) ? getScale(element2) : createCoords(1);
-  const width = element2.clientWidth * scale.x;
-  const height = element2.clientHeight * scale.y;
-  const x = left * scale.x;
-  const y = top * scale.y;
-  return {
-    width,
-    height,
-    x,
-    y
-  };
-}
-function getClientRectFromClippingAncestor(element2, clippingAncestor, strategy) {
-  let rect;
-  if (clippingAncestor === "viewport") {
-    rect = getViewportRect(element2, strategy);
-  } else if (clippingAncestor === "document") {
-    rect = getDocumentRect(getDocumentElement(element2));
-  } else if (isElement(clippingAncestor)) {
-    rect = getInnerBoundingClientRect(clippingAncestor, strategy);
-  } else {
-    const visualOffsets = getVisualOffsets(element2);
-    rect = {
-      x: clippingAncestor.x - visualOffsets.x,
-      y: clippingAncestor.y - visualOffsets.y,
-      width: clippingAncestor.width,
-      height: clippingAncestor.height
-    };
-  }
-  return rectToClientRect(rect);
-}
-function hasFixedPositionAncestor(element2, stopNode) {
-  const parentNode = getParentNode(element2);
-  if (parentNode === stopNode || !isElement(parentNode) || isLastTraversableNode(parentNode)) {
-    return false;
-  }
-  return getComputedStyle2(parentNode).position === "fixed" || hasFixedPositionAncestor(parentNode, stopNode);
-}
-function getClippingElementAncestors(element2, cache3) {
-  const cachedResult = cache3.get(element2);
-  if (cachedResult) {
-    return cachedResult;
-  }
-  let result = getOverflowAncestors(element2, [], false).filter((el) => isElement(el) && getNodeName(el) !== "body");
-  let currentContainingBlockComputedStyle = null;
-  const elementIsFixed = getComputedStyle2(element2).position === "fixed";
-  let currentNode = elementIsFixed ? getParentNode(element2) : element2;
-  while (isElement(currentNode) && !isLastTraversableNode(currentNode)) {
-    const computedStyle = getComputedStyle2(currentNode);
-    const currentNodeIsContaining = isContainingBlock(currentNode);
-    if (!currentNodeIsContaining && computedStyle.position === "fixed") {
-      currentContainingBlockComputedStyle = null;
-    }
-    const shouldDropCurrentNode = elementIsFixed ? !currentNodeIsContaining && !currentContainingBlockComputedStyle : !currentNodeIsContaining && computedStyle.position === "static" && !!currentContainingBlockComputedStyle && absoluteOrFixed.has(currentContainingBlockComputedStyle.position) || isOverflowElement(currentNode) && !currentNodeIsContaining && hasFixedPositionAncestor(element2, currentNode);
-    if (shouldDropCurrentNode) {
-      result = result.filter((ancestor) => ancestor !== currentNode);
-    } else {
-      currentContainingBlockComputedStyle = computedStyle;
-    }
-    currentNode = getParentNode(currentNode);
-  }
-  cache3.set(element2, result);
-  return result;
-}
-function getClippingRect(_ref) {
-  let {
-    element: element2,
-    boundary: boundary2,
-    rootBoundary,
-    strategy
-  } = _ref;
-  const elementClippingAncestors = boundary2 === "clippingAncestors" ? isTopLayer(element2) ? [] : getClippingElementAncestors(element2, this._c) : [].concat(boundary2);
-  const clippingAncestors = [...elementClippingAncestors, rootBoundary];
-  const firstClippingAncestor = clippingAncestors[0];
-  const clippingRect = clippingAncestors.reduce((accRect, clippingAncestor) => {
-    const rect = getClientRectFromClippingAncestor(element2, clippingAncestor, strategy);
-    accRect.top = max(rect.top, accRect.top);
-    accRect.right = min(rect.right, accRect.right);
-    accRect.bottom = min(rect.bottom, accRect.bottom);
-    accRect.left = max(rect.left, accRect.left);
-    return accRect;
-  }, getClientRectFromClippingAncestor(element2, firstClippingAncestor, strategy));
-  return {
-    width: clippingRect.right - clippingRect.left,
-    height: clippingRect.bottom - clippingRect.top,
-    x: clippingRect.left,
-    y: clippingRect.top
-  };
-}
-function getDimensions(element2) {
-  const {
-    width,
-    height
-  } = getCssDimensions(element2);
-  return {
-    width,
-    height
-  };
-}
-function getRectRelativeToOffsetParent(element2, offsetParent, strategy) {
-  const isOffsetParentAnElement = isHTMLElement2(offsetParent);
-  const documentElement = getDocumentElement(offsetParent);
-  const isFixed = strategy === "fixed";
-  const rect = getBoundingClientRect(element2, true, isFixed, offsetParent);
-  let scroll = {
-    scrollLeft: 0,
-    scrollTop: 0
-  };
-  const offsets = createCoords(0);
-  function setLeftRTLScrollbarOffset() {
-    offsets.x = getWindowScrollBarX(documentElement);
-  }
-  __name(setLeftRTLScrollbarOffset, "setLeftRTLScrollbarOffset");
-  if (isOffsetParentAnElement || !isOffsetParentAnElement && !isFixed) {
-    if (getNodeName(offsetParent) !== "body" || isOverflowElement(documentElement)) {
-      scroll = getNodeScroll(offsetParent);
-    }
-    if (isOffsetParentAnElement) {
-      const offsetRect = getBoundingClientRect(offsetParent, true, isFixed, offsetParent);
-      offsets.x = offsetRect.x + offsetParent.clientLeft;
-      offsets.y = offsetRect.y + offsetParent.clientTop;
-    } else if (documentElement) {
-      setLeftRTLScrollbarOffset();
-    }
-  }
-  if (isFixed && !isOffsetParentAnElement && documentElement) {
-    setLeftRTLScrollbarOffset();
-  }
-  const htmlOffset = documentElement && !isOffsetParentAnElement && !isFixed ? getHTMLOffset(documentElement, scroll) : createCoords(0);
-  const x = rect.left + scroll.scrollLeft - offsets.x - htmlOffset.x;
-  const y = rect.top + scroll.scrollTop - offsets.y - htmlOffset.y;
-  return {
-    x,
-    y,
-    width: rect.width,
-    height: rect.height
-  };
-}
-function isStaticPositioned(element2) {
-  return getComputedStyle2(element2).position === "static";
-}
-function getTrueOffsetParent(element2, polyfill) {
-  if (!isHTMLElement2(element2) || getComputedStyle2(element2).position === "fixed") {
-    return null;
-  }
-  if (polyfill) {
-    return polyfill(element2);
-  }
-  let rawOffsetParent = element2.offsetParent;
-  if (getDocumentElement(element2) === rawOffsetParent) {
-    rawOffsetParent = rawOffsetParent.ownerDocument.body;
-  }
-  return rawOffsetParent;
-}
-function getOffsetParent(element2, polyfill) {
-  const win = getWindow2(element2);
-  if (isTopLayer(element2)) {
-    return win;
-  }
-  if (!isHTMLElement2(element2)) {
-    let svgOffsetParent = getParentNode(element2);
-    while (svgOffsetParent && !isLastTraversableNode(svgOffsetParent)) {
-      if (isElement(svgOffsetParent) && !isStaticPositioned(svgOffsetParent)) {
-        return svgOffsetParent;
-      }
-      svgOffsetParent = getParentNode(svgOffsetParent);
-    }
-    return win;
-  }
-  let offsetParent = getTrueOffsetParent(element2, polyfill);
-  while (offsetParent && isTableElement(offsetParent) && isStaticPositioned(offsetParent)) {
-    offsetParent = getTrueOffsetParent(offsetParent, polyfill);
-  }
-  if (offsetParent && isLastTraversableNode(offsetParent) && isStaticPositioned(offsetParent) && !isContainingBlock(offsetParent)) {
-    return win;
-  }
-  return offsetParent || getContainingBlock(element2) || win;
-}
-function isRTL(element2) {
-  return getComputedStyle2(element2).direction === "rtl";
-}
-var noOffsets, SCROLLBAR_MAX, absoluteOrFixed, getElementRects, platform2, offset2, shift2, flip2, size2, hide2, arrow2, limitShift2, computePosition2;
-var init_floating_ui_dom = __esm({
-  "node_modules/@floating-ui/dom/dist/floating-ui.dom.mjs"() {
-    init_virtual_unenv_global_polyfill_cloudflare_unenv_preset_node_process();
-    init_virtual_unenv_global_polyfill_cloudflare_unenv_preset_node_console();
-    init_performance2();
-    init_floating_ui_core();
-    init_floating_ui_utils();
-    init_floating_ui_utils_dom();
-    __name(getCssDimensions, "getCssDimensions");
-    __name(unwrapElement, "unwrapElement");
-    __name(getScale, "getScale");
-    noOffsets = /* @__PURE__ */ createCoords(0);
-    __name(getVisualOffsets, "getVisualOffsets");
-    __name(shouldAddVisualOffsets, "shouldAddVisualOffsets");
-    __name(getBoundingClientRect, "getBoundingClientRect");
-    __name(getWindowScrollBarX, "getWindowScrollBarX");
-    __name(getHTMLOffset, "getHTMLOffset");
-    __name(convertOffsetParentRelativeRectToViewportRelativeRect, "convertOffsetParentRelativeRectToViewportRelativeRect");
-    __name(getClientRects, "getClientRects");
-    __name(getDocumentRect, "getDocumentRect");
-    SCROLLBAR_MAX = 25;
-    __name(getViewportRect, "getViewportRect");
-    absoluteOrFixed = /* @__PURE__ */ new Set(["absolute", "fixed"]);
-    __name(getInnerBoundingClientRect, "getInnerBoundingClientRect");
-    __name(getClientRectFromClippingAncestor, "getClientRectFromClippingAncestor");
-    __name(hasFixedPositionAncestor, "hasFixedPositionAncestor");
-    __name(getClippingElementAncestors, "getClippingElementAncestors");
-    __name(getClippingRect, "getClippingRect");
-    __name(getDimensions, "getDimensions");
-    __name(getRectRelativeToOffsetParent, "getRectRelativeToOffsetParent");
-    __name(isStaticPositioned, "isStaticPositioned");
-    __name(getTrueOffsetParent, "getTrueOffsetParent");
-    __name(getOffsetParent, "getOffsetParent");
-    getElementRects = /* @__PURE__ */ __name(async function(data) {
-      const getOffsetParentFn = this.getOffsetParent || getOffsetParent;
-      const getDimensionsFn = this.getDimensions;
-      const floatingDimensions = await getDimensionsFn(data.floating);
-      return {
-        reference: getRectRelativeToOffsetParent(data.reference, await getOffsetParentFn(data.floating), data.strategy),
-        floating: {
-          x: 0,
-          y: 0,
-          width: floatingDimensions.width,
-          height: floatingDimensions.height
-        }
-      };
-    }, "getElementRects");
-    __name(isRTL, "isRTL");
-    platform2 = {
-      convertOffsetParentRelativeRectToViewportRelativeRect,
-      getDocumentElement,
-      getClippingRect,
-      getOffsetParent,
-      getElementRects,
-      getClientRects,
-      getDimensions,
-      getScale,
-      isElement,
-      isRTL
-    };
-    offset2 = offset;
-    shift2 = shift;
-    flip2 = flip;
-    size2 = size;
-    hide2 = hide;
-    arrow2 = arrow;
-    limitShift2 = limitShift;
-    computePosition2 = /* @__PURE__ */ __name((reference, floating, options2) => {
-      const cache3 = /* @__PURE__ */ new Map();
-      const mergedOptions = {
-        platform: platform2,
-        ...options2
-      };
-      const platformWithCache = {
-        ...mergedOptions.platform,
-        _c: cache3
-      };
-      return computePosition(reference, floating, {
-        ...mergedOptions,
-        platform: platformWithCache
-      });
-    }, "computePosition");
-  }
-});
-
-// .svelte-kit/output/server/entries/pages/_page.svelte.js
-var page_svelte_exports = {};
-__export(page_svelte_exports, {
-  default: () => _page
-});
-function isFunction4(value) {
-  return typeof value === "function";
-}
-function get$1(value) {
-  if (isFunction4(value)) {
-    return value();
-  }
-  return value;
-}
-function next2(array3, index8, loop = true) {
-  if (array3.length === 0 || index8 < 0 || index8 >= array3.length)
-    return;
-  if (array3.length === 1 && index8 === 0)
-    return array3[0];
-  if (index8 === array3.length - 1)
-    return loop ? array3[0] : void 0;
-  return array3[index8 + 1];
-}
-function prev(array3, index8, loop = true) {
-  if (array3.length === 0 || index8 < 0 || index8 >= array3.length)
-    return;
-  if (array3.length === 1 && index8 === 0)
-    return array3[0];
-  if (index8 === 0)
-    return loop ? array3[array3.length - 1] : void 0;
-  return array3[index8 - 1];
-}
-function forward(array3, index8, increment2, loop = true) {
-  if (array3.length === 0 || index8 < 0 || index8 >= array3.length)
-    return;
-  let targetIndex = index8 + increment2;
-  if (loop) {
-    targetIndex = (targetIndex % array3.length + array3.length) % array3.length;
-  } else {
-    targetIndex = Math.max(0, Math.min(targetIndex, array3.length - 1));
-  }
-  return array3[targetIndex];
-}
-function backward(array3, index8, decrement, loop = true) {
-  if (array3.length === 0 || index8 < 0 || index8 >= array3.length)
-    return;
-  let targetIndex = index8 - decrement;
-  if (loop) {
-    targetIndex = (targetIndex % array3.length + array3.length) % array3.length;
-  } else {
-    targetIndex = Math.max(0, Math.min(targetIndex, array3.length - 1));
-  }
-  return array3[targetIndex];
-}
-function getNextMatch(values, search, currentMatch) {
-  const lowerSearch = search.toLowerCase();
-  if (lowerSearch.endsWith(" ")) {
-    const searchWithoutSpace = lowerSearch.slice(0, -1);
-    const matchesWithoutSpace = values.filter((value) => value.toLowerCase().startsWith(searchWithoutSpace));
-    if (matchesWithoutSpace.length <= 1) {
-      return getNextMatch(values, searchWithoutSpace, currentMatch);
-    }
-    const currentMatchLowercase = currentMatch?.toLowerCase();
-    if (currentMatchLowercase && currentMatchLowercase.startsWith(searchWithoutSpace) && currentMatchLowercase.charAt(searchWithoutSpace.length) === " " && search.trim() === searchWithoutSpace) {
-      return currentMatch;
-    }
-    const spacedMatches = values.filter((value) => value.toLowerCase().startsWith(lowerSearch));
-    if (spacedMatches.length > 0) {
-      const currentMatchIndex2 = currentMatch ? values.indexOf(currentMatch) : -1;
-      let wrappedMatches = wrapArray(spacedMatches, Math.max(currentMatchIndex2, 0));
-      const nextMatch2 = wrappedMatches.find((match) => match !== currentMatch);
-      return nextMatch2 || currentMatch;
-    }
-  }
-  const isRepeated = search.length > 1 && Array.from(search).every((char) => char === search[0]);
-  const normalizedSearch = isRepeated ? search[0] : search;
-  const normalizedLowerSearch = normalizedSearch.toLowerCase();
-  const currentMatchIndex = currentMatch ? values.indexOf(currentMatch) : -1;
-  let wrappedValues = wrapArray(values, Math.max(currentMatchIndex, 0));
-  const excludeCurrentMatch = normalizedSearch.length === 1;
-  if (excludeCurrentMatch)
-    wrappedValues = wrappedValues.filter((v) => v !== currentMatch);
-  const nextMatch = wrappedValues.find((value) => value?.toLowerCase().startsWith(normalizedLowerSearch));
-  return nextMatch !== currentMatch ? nextMatch : void 0;
-}
-function wrapArray(array3, startIndex) {
-  return array3.map((_, index8) => array3[(startIndex + index8) % array3.length]);
-}
-function boxAutoReset(defaultValue, options2) {
-  const { afterMs, onChange, getWindow: getWindow22 } = { ...defaultOptions, ...options2 };
-  let timeout = null;
-  let value = defaultValue;
-  function resetAfter() {
-    return getWindow22().setTimeout(
-      () => {
-        value = defaultValue;
-        onChange?.(defaultValue);
-      },
-      afterMs
-    );
-  }
-  __name(resetAfter, "resetAfter");
-  return boxWith(() => value, (v) => {
-    value = v;
-    onChange?.(v);
-    if (timeout) getWindow22().clearTimeout(timeout);
-    timeout = resetAfter();
-  });
-}
-function Hidden_input($$renderer, $$props) {
-  $$renderer.component(($$renderer2) => {
-    let { value = void 0, $$slots, $$events, ...restProps } = $$props;
-    const mergedProps = mergeProps(restProps, {
-      "aria-hidden": "true",
-      tabindex: -1,
-      style: srOnlyStylesString
-    });
-    if (mergedProps.type === "checkbox") {
-      $$renderer2.push("<!--[-->");
-      $$renderer2.push(`<input${attributes({ ...mergedProps, value }, void 0, void 0, void 0, 4)}/>`);
-    } else {
-      $$renderer2.push("<!--[!-->");
-      $$renderer2.push(`<input${attributes({ value, ...mergedProps }, void 0, void 0, void 0, 4)}/>`);
-    }
-    $$renderer2.push(`<!--]-->`);
-    bind_props($$props, { value });
-  });
-}
-function get2(valueOrGetValue) {
-  return typeof valueOrGetValue === "function" ? valueOrGetValue() : valueOrGetValue;
-}
-function getDPR(element2) {
-  if (typeof window === "undefined") return 1;
-  const win = element2.ownerDocument.defaultView || window;
-  return win.devicePixelRatio || 1;
-}
-function roundByDPR(element2, value) {
-  const dpr = getDPR(element2);
-  return Math.round(value * dpr) / dpr;
-}
-function getFloatingContentCSSVars(name) {
-  return {
-    [`--bits-${name}-content-transform-origin`]: `var(--bits-floating-transform-origin)`,
-    [`--bits-${name}-content-available-width`]: `var(--bits-floating-available-width)`,
-    [`--bits-${name}-content-available-height`]: `var(--bits-floating-available-height)`,
-    [`--bits-${name}-anchor-width`]: `var(--bits-floating-anchor-width)`,
-    [`--bits-${name}-anchor-height`]: `var(--bits-floating-anchor-height)`
-  };
-}
-function useFloating(options2) {
-  const openOption = get2(options2.open) ?? true;
-  const middlewareOption = get2(options2.middleware);
-  const transformOption = get2(options2.transform) ?? true;
-  const placementOption = get2(options2.placement) ?? "bottom";
-  const strategyOption = get2(options2.strategy) ?? "absolute";
-  const sideOffsetOption = get2(options2.sideOffset) ?? 0;
-  const alignOffsetOption = get2(options2.alignOffset) ?? 0;
-  const reference = options2.reference;
-  let x = 0;
-  let y = 0;
-  const floating = simpleBox(null);
-  let strategy = strategyOption;
-  let placement = placementOption;
-  let middlewareData = {};
-  let isPositioned = false;
-  const floatingStyles = (() => {
-    const xVal = floating.current ? roundByDPR(floating.current, x) : x;
-    const yVal = floating.current ? roundByDPR(floating.current, y) : y;
-    if (transformOption) {
-      return {
-        position: strategy,
-        left: "0",
-        top: "0",
-        transform: `translate(${xVal}px, ${yVal}px)`,
-        ...floating.current && getDPR(floating.current) >= 1.5 && { willChange: "transform" }
-      };
-    }
-    return { position: strategy, left: `${xVal}px`, top: `${yVal}px` };
-  })();
-  function update() {
-    if (reference.current === null || floating.current === null) return;
-    computePosition2(reference.current, floating.current, {
-      middleware: middlewareOption,
-      placement: placementOption,
-      strategy: strategyOption
-    }).then((position) => {
-      if (!openOption && x !== 0 && y !== 0) {
-        const maxExpectedOffset = Math.max(Math.abs(sideOffsetOption), Math.abs(alignOffsetOption), 15);
-        if (position.x <= maxExpectedOffset && position.y <= maxExpectedOffset) return;
-      }
-      x = position.x;
-      y = position.y;
-      strategy = position.strategy;
-      placement = position.placement;
-      middlewareData = position.middlewareData;
-      isPositioned = true;
-    });
-  }
-  __name(update, "update");
-  return {
-    floating,
-    reference,
-    get strategy() {
-      return strategy;
-    },
-    get placement() {
-      return placement;
-    },
-    get middlewareData() {
-      return middlewareData;
-    },
-    get isPositioned() {
-      return isPositioned;
-    },
-    get floatingStyles() {
-      return floatingStyles;
-    },
-    get update() {
-      return update;
-    }
-  };
-}
-function transformOrigin(options2) {
-  return {
-    name: "transformOrigin",
-    options: options2,
-    fn(data) {
-      const { placement, rects, middlewareData } = data;
-      const cannotCenterArrow = middlewareData.arrow?.centerOffset !== 0;
-      const isArrowHidden = cannotCenterArrow;
-      const arrowWidth = isArrowHidden ? 0 : options2.arrowWidth;
-      const arrowHeight = isArrowHidden ? 0 : options2.arrowHeight;
-      const [placedSide, placedAlign] = getSideAndAlignFromPlacement(placement);
-      const noArrowAlign = { start: "0%", center: "50%", end: "100%" }[placedAlign];
-      const arrowXCenter = (middlewareData.arrow?.x ?? 0) + arrowWidth / 2;
-      const arrowYCenter = (middlewareData.arrow?.y ?? 0) + arrowHeight / 2;
-      let x = "";
-      let y = "";
-      if (placedSide === "bottom") {
-        x = isArrowHidden ? noArrowAlign : `${arrowXCenter}px`;
-        y = `${-arrowHeight}px`;
-      } else if (placedSide === "top") {
-        x = isArrowHidden ? noArrowAlign : `${arrowXCenter}px`;
-        y = `${rects.floating.height + arrowHeight}px`;
-      } else if (placedSide === "right") {
-        x = `${-arrowHeight}px`;
-        y = isArrowHidden ? noArrowAlign : `${arrowYCenter}px`;
-      } else if (placedSide === "left") {
-        x = `${rects.floating.width + arrowHeight}px`;
-        y = isArrowHidden ? noArrowAlign : `${arrowYCenter}px`;
-      }
-      return { data: { x, y } };
-    }
-  };
-}
-function getSideAndAlignFromPlacement(placement) {
-  const [side, align = "center"] = placement.split("-");
-  return [side, align];
-}
-function getSideFromPlacement(placement) {
-  return getSideAndAlignFromPlacement(placement)[0];
-}
-function getAlignFromPlacement(placement) {
-  return getSideAndAlignFromPlacement(placement)[1];
-}
-function Floating_layer($$renderer, $$props) {
-  $$renderer.component(($$renderer2) => {
-    let { children, tooltip = false } = $$props;
-    FloatingRootState.create(tooltip);
-    children?.($$renderer2);
-    $$renderer2.push(`<!---->`);
-  });
-}
-function Select_hidden_input($$renderer, $$props) {
-  $$renderer.component(($$renderer2) => {
-    let { value = void 0, autocomplete } = $$props;
-    const hiddenInputState = SelectHiddenInputState.create({ value: boxWith(() => value) });
-    let $$settled = true;
-    let $$inner_renderer;
-    function $$render_inner($$renderer3) {
-      if (hiddenInputState.shouldRender) {
-        $$renderer3.push("<!--[-->");
-        Hidden_input($$renderer3, spread_props([
-          hiddenInputState.props,
-          {
-            autocomplete,
-            get value() {
-              return value;
-            },
-            set value($$value) {
-              value = $$value;
-              $$settled = false;
-            }
-          }
-        ]));
-      } else {
-        $$renderer3.push("<!--[!-->");
-      }
-      $$renderer3.push(`<!--]-->`);
-    }
-    __name($$render_inner, "$$render_inner");
-    do {
-      $$settled = true;
-      $$inner_renderer = $$renderer2.copy();
-      $$render_inner($$inner_renderer);
-    } while (!$$settled);
-    $$renderer2.subsume($$inner_renderer);
-    bind_props($$props, { value });
-  });
-}
-function Floating_layer_anchor($$renderer, $$props) {
-  $$renderer.component(($$renderer2) => {
-    let { id, children, virtualEl, ref: ref2, tooltip = false } = $$props;
-    FloatingAnchorState.create(
-      {
-        id: boxWith(() => id),
-        virtualEl: boxWith(() => virtualEl),
-        ref: ref2
-      },
-      tooltip
-    );
-    children?.($$renderer2);
-    $$renderer2.push(`<!---->`);
-  });
-}
-function Floating_layer_content($$renderer, $$props) {
-  $$renderer.component(($$renderer2) => {
-    let {
-      content,
-      side = "bottom",
-      sideOffset = 0,
-      align = "center",
-      alignOffset = 0,
-      id,
-      arrowPadding = 0,
-      avoidCollisions = true,
-      collisionBoundary = [],
-      collisionPadding = 0,
-      hideWhenDetached = false,
-      onPlaced = /* @__PURE__ */ __name(() => {
-      }, "onPlaced"),
-      sticky = "partial",
-      updatePositionStrategy = "optimized",
-      strategy = "fixed",
-      dir: dir3 = "ltr",
-      style = {},
-      wrapperId = useId(),
-      customAnchor = null,
-      enabled,
-      tooltip = false
-    } = $$props;
-    const contentState = FloatingContentState.create(
-      {
-        side: boxWith(() => side),
-        sideOffset: boxWith(() => sideOffset),
-        align: boxWith(() => align),
-        alignOffset: boxWith(() => alignOffset),
-        id: boxWith(() => id),
-        arrowPadding: boxWith(() => arrowPadding),
-        avoidCollisions: boxWith(() => avoidCollisions),
-        collisionBoundary: boxWith(() => collisionBoundary),
-        collisionPadding: boxWith(() => collisionPadding),
-        hideWhenDetached: boxWith(() => hideWhenDetached),
-        onPlaced: boxWith(() => onPlaced),
-        sticky: boxWith(() => sticky),
-        updatePositionStrategy: boxWith(() => updatePositionStrategy),
-        strategy: boxWith(() => strategy),
-        dir: boxWith(() => dir3),
-        style: boxWith(() => style),
-        enabled: boxWith(() => enabled),
-        wrapperId: boxWith(() => wrapperId),
-        customAnchor: boxWith(() => customAnchor)
-      },
-      tooltip
-    );
-    const mergedProps = mergeProps(contentState.wrapperProps, { style: { pointerEvents: "auto" } });
-    content?.($$renderer2, { props: contentState.props, wrapperProps: mergedProps });
-    $$renderer2.push(`<!---->`);
-  });
-}
-function Floating_layer_content_static($$renderer, $$props) {
-  $$renderer.component(($$renderer2) => {
-    let { content } = $$props;
-    content?.($$renderer2, { props: {}, wrapperProps: {} });
-    $$renderer2.push(`<!---->`);
-  });
-}
-function Popper_content($$renderer, $$props) {
-  let {
-    content,
-    isStatic = false,
-    onPlaced,
-    $$slots,
-    $$events,
-    ...restProps
-  } = $$props;
-  if (isStatic) {
-    $$renderer.push("<!--[-->");
-    Floating_layer_content_static($$renderer, { content });
-  } else {
-    $$renderer.push("<!--[!-->");
-    Floating_layer_content($$renderer, spread_props([{ content, onPlaced }, restProps]));
-  }
-  $$renderer.push(`<!--]-->`);
-}
-function Popper_layer_inner($$renderer, $$props) {
-  $$renderer.component(($$renderer2) => {
-    let {
-      popper,
-      onEscapeKeydown,
-      escapeKeydownBehavior,
-      preventOverflowTextSelection,
-      id,
-      onPointerDown,
-      onPointerUp,
-      side,
-      sideOffset,
-      align,
-      alignOffset,
-      arrowPadding,
-      avoidCollisions,
-      collisionBoundary,
-      collisionPadding,
-      sticky,
-      hideWhenDetached,
-      updatePositionStrategy,
-      strategy,
-      dir: dir3,
-      preventScroll,
-      wrapperId,
-      style,
-      onPlaced,
-      onInteractOutside,
-      onCloseAutoFocus,
-      onOpenAutoFocus,
-      onFocusOutside,
-      interactOutsideBehavior = "close",
-      loop,
-      trapFocus = true,
-      isValidEvent: isValidEvent2 = /* @__PURE__ */ __name(() => false, "isValidEvent"),
-      customAnchor = null,
-      isStatic = false,
-      enabled,
-      ref: ref2,
-      tooltip = false,
-      $$slots,
-      $$events,
-      ...restProps
-    } = $$props;
-    {
-      let content = /* @__PURE__ */ __name(function($$renderer3, { props: floatingProps, wrapperProps }) {
-        if (restProps.forceMount && enabled) {
-          $$renderer3.push("<!--[-->");
-          Scroll_lock($$renderer3, { preventScroll });
-        } else {
-          $$renderer3.push("<!--[!-->");
-          if (!restProps.forceMount) {
-            $$renderer3.push("<!--[-->");
-            Scroll_lock($$renderer3, { preventScroll });
-          } else {
-            $$renderer3.push("<!--[!-->");
-          }
-          $$renderer3.push(`<!--]-->`);
-        }
-        $$renderer3.push(`<!--]--> `);
-        {
-          let focusScope = /* @__PURE__ */ __name(function($$renderer4, { props: focusScopeProps }) {
-            Escape_layer($$renderer4, {
-              onEscapeKeydown,
-              escapeKeydownBehavior,
-              enabled,
-              ref: ref2,
-              children: /* @__PURE__ */ __name(($$renderer5) => {
-                {
-                  let children = /* @__PURE__ */ __name(function($$renderer6, { props: dismissibleProps }) {
-                    Text_selection_layer($$renderer6, {
-                      id,
-                      preventOverflowTextSelection,
-                      onPointerDown,
-                      onPointerUp,
-                      enabled,
-                      ref: ref2,
-                      children: /* @__PURE__ */ __name(($$renderer7) => {
-                        popper?.($$renderer7, {
-                          props: mergeProps(restProps, floatingProps, dismissibleProps, focusScopeProps, { style: { pointerEvents: "auto" } }),
-                          wrapperProps
-                        });
-                        $$renderer7.push(`<!---->`);
-                      }, "children")
-                    });
-                  }, "children");
-                  Dismissible_layer($$renderer5, {
-                    id,
-                    onInteractOutside,
-                    onFocusOutside,
-                    interactOutsideBehavior,
-                    isValidEvent: isValidEvent2,
-                    enabled,
-                    ref: ref2,
-                    children
-                  });
-                }
-              }, "children")
-            });
-          }, "focusScope");
-          Focus_scope($$renderer3, {
-            onOpenAutoFocus,
-            onCloseAutoFocus,
-            loop,
-            enabled,
-            trapFocus,
-            forceMount: restProps.forceMount,
-            ref: ref2,
-            focusScope
-          });
-        }
-        $$renderer3.push(`<!---->`);
-      }, "content");
-      Popper_content($$renderer2, {
-        isStatic,
-        id,
-        side,
-        sideOffset,
-        align,
-        alignOffset,
-        arrowPadding,
-        avoidCollisions,
-        collisionBoundary,
-        collisionPadding,
-        sticky,
-        hideWhenDetached,
-        updatePositionStrategy,
-        strategy,
-        dir: dir3,
-        wrapperId,
-        style,
-        onPlaced,
-        customAnchor,
-        enabled,
-        tooltip,
-        content,
-        $$slots: { content: true }
-      });
-    }
-  });
-}
-function Popper_layer($$renderer, $$props) {
-  let {
-    popper,
-    open,
-    onEscapeKeydown,
-    escapeKeydownBehavior,
-    preventOverflowTextSelection,
-    id,
-    onPointerDown,
-    onPointerUp,
-    side,
-    sideOffset,
-    align,
-    alignOffset,
-    arrowPadding,
-    avoidCollisions,
-    collisionBoundary,
-    collisionPadding,
-    sticky,
-    hideWhenDetached,
-    updatePositionStrategy,
-    strategy,
-    dir: dir3,
-    preventScroll,
-    wrapperId,
-    style,
-    onPlaced,
-    onInteractOutside,
-    onCloseAutoFocus,
-    onOpenAutoFocus,
-    onFocusOutside,
-    interactOutsideBehavior = "close",
-    loop,
-    trapFocus = true,
-    isValidEvent: isValidEvent2 = /* @__PURE__ */ __name(() => false, "isValidEvent"),
-    customAnchor = null,
-    isStatic = false,
-    ref: ref2,
-    shouldRender,
-    $$slots,
-    $$events,
-    ...restProps
-  } = $$props;
-  if (shouldRender) {
-    $$renderer.push("<!--[-->");
-    Popper_layer_inner($$renderer, spread_props([
-      {
-        popper,
-        onEscapeKeydown,
-        escapeKeydownBehavior,
-        preventOverflowTextSelection,
-        id,
-        onPointerDown,
-        onPointerUp,
-        side,
-        sideOffset,
-        align,
-        alignOffset,
-        arrowPadding,
-        avoidCollisions,
-        collisionBoundary,
-        collisionPadding,
-        sticky,
-        hideWhenDetached,
-        updatePositionStrategy,
-        strategy,
-        dir: dir3,
-        preventScroll,
-        wrapperId,
-        style,
-        onPlaced,
-        customAnchor,
-        isStatic,
-        enabled: open,
-        onInteractOutside,
-        onCloseAutoFocus,
-        onOpenAutoFocus,
-        interactOutsideBehavior,
-        loop,
-        trapFocus,
-        isValidEvent: isValidEvent2,
-        onFocusOutside,
-        forceMount: false,
-        ref: ref2
-      },
-      restProps
-    ]));
-  } else {
-    $$renderer.push("<!--[!-->");
-  }
-  $$renderer.push(`<!--]-->`);
-}
-function Popper_layer_force_mount($$renderer, $$props) {
-  let {
-    popper,
-    onEscapeKeydown,
-    escapeKeydownBehavior,
-    preventOverflowTextSelection,
-    id,
-    onPointerDown,
-    onPointerUp,
-    side,
-    sideOffset,
-    align,
-    alignOffset,
-    arrowPadding,
-    avoidCollisions,
-    collisionBoundary,
-    collisionPadding,
-    sticky,
-    hideWhenDetached,
-    updatePositionStrategy,
-    strategy,
-    dir: dir3,
-    preventScroll,
-    wrapperId,
-    style,
-    onPlaced,
-    onInteractOutside,
-    onCloseAutoFocus,
-    onOpenAutoFocus,
-    onFocusOutside,
-    interactOutsideBehavior = "close",
-    loop,
-    trapFocus = true,
-    isValidEvent: isValidEvent2 = /* @__PURE__ */ __name(() => false, "isValidEvent"),
-    customAnchor = null,
-    isStatic = false,
-    enabled,
-    $$slots,
-    $$events,
-    ...restProps
-  } = $$props;
-  Popper_layer_inner($$renderer, spread_props([
-    {
-      popper,
-      onEscapeKeydown,
-      escapeKeydownBehavior,
-      preventOverflowTextSelection,
-      id,
-      onPointerDown,
-      onPointerUp,
-      side,
-      sideOffset,
-      align,
-      alignOffset,
-      arrowPadding,
-      avoidCollisions,
-      collisionBoundary,
-      collisionPadding,
-      sticky,
-      hideWhenDetached,
-      updatePositionStrategy,
-      strategy,
-      dir: dir3,
-      preventScroll,
-      wrapperId,
-      style,
-      onPlaced,
-      customAnchor,
-      isStatic,
-      enabled,
-      onInteractOutside,
-      onCloseAutoFocus,
-      onOpenAutoFocus,
-      interactOutsideBehavior,
-      loop,
-      trapFocus,
-      isValidEvent: isValidEvent2,
-      onFocusOutside
-    },
-    restProps,
-    { forceMount: true }
-  ]));
-}
-function Select_content$1($$renderer, $$props) {
-  $$renderer.component(($$renderer2) => {
-    const uid = props_id($$renderer2);
-    let {
-      id = createId(uid),
-      ref: ref2 = null,
-      forceMount = false,
-      side = "bottom",
-      onInteractOutside = noop3,
-      onEscapeKeydown = noop3,
-      children,
-      child,
-      preventScroll = false,
-      $$slots,
-      $$events,
-      ...restProps
-    } = $$props;
-    const contentState = SelectContentState.create({
-      id: boxWith(() => id),
-      ref: boxWith(() => ref2, (v) => ref2 = v),
-      onInteractOutside: boxWith(() => onInteractOutside),
-      onEscapeKeydown: boxWith(() => onEscapeKeydown)
-    });
-    const mergedProps = mergeProps(restProps, contentState.props);
-    if (forceMount) {
-      $$renderer2.push("<!--[-->");
-      {
-        let popper = /* @__PURE__ */ __name(function($$renderer3, { props, wrapperProps }) {
-          const finalProps = mergeProps(props, { style: contentState.props.style });
-          if (child) {
-            $$renderer3.push("<!--[-->");
-            child($$renderer3, {
-              props: finalProps,
-              wrapperProps,
-              ...contentState.snippetProps
-            });
-            $$renderer3.push(`<!---->`);
-          } else {
-            $$renderer3.push("<!--[!-->");
-            $$renderer3.push(`<div${attributes({ ...wrapperProps })}><div${attributes({ ...finalProps })}>`);
-            children?.($$renderer3);
-            $$renderer3.push(`<!----></div></div>`);
-          }
-          $$renderer3.push(`<!--]-->`);
-        }, "popper");
-        Popper_layer_force_mount($$renderer2, spread_props([
-          mergedProps,
-          contentState.popperProps,
-          {
-            ref: contentState.opts.ref,
-            side,
-            enabled: contentState.root.opts.open.current,
-            id,
-            preventScroll,
-            forceMount: true,
-            shouldRender: contentState.shouldRender,
-            popper,
-            $$slots: { popper: true }
-          }
-        ]));
-      }
-    } else {
-      $$renderer2.push("<!--[!-->");
-      if (!forceMount) {
-        $$renderer2.push("<!--[-->");
-        {
-          let popper = /* @__PURE__ */ __name(function($$renderer3, { props, wrapperProps }) {
-            const finalProps = mergeProps(props, { style: contentState.props.style });
-            if (child) {
-              $$renderer3.push("<!--[-->");
-              child($$renderer3, {
-                props: finalProps,
-                wrapperProps,
-                ...contentState.snippetProps
-              });
-              $$renderer3.push(`<!---->`);
-            } else {
-              $$renderer3.push("<!--[!-->");
-              $$renderer3.push(`<div${attributes({ ...wrapperProps })}><div${attributes({ ...finalProps })}>`);
-              children?.($$renderer3);
-              $$renderer3.push(`<!----></div></div>`);
-            }
-            $$renderer3.push(`<!--]-->`);
-          }, "popper");
-          Popper_layer($$renderer2, spread_props([
-            mergedProps,
-            contentState.popperProps,
-            {
-              ref: contentState.opts.ref,
-              side,
-              open: contentState.root.opts.open.current,
-              id,
-              preventScroll,
-              forceMount: false,
-              shouldRender: contentState.shouldRender,
-              popper,
-              $$slots: { popper: true }
-            }
-          ]));
-        }
-      } else {
-        $$renderer2.push("<!--[!-->");
-      }
-      $$renderer2.push(`<!--]-->`);
-    }
-    $$renderer2.push(`<!--]-->`);
-    bind_props($$props, { ref: ref2 });
-  });
-}
-function Mounted($$renderer, $$props) {
-  $$renderer.component(($$renderer2) => {
-    let { mounted = false, onMountedChange = noop3 } = $$props;
-    bind_props($$props, { mounted });
-  });
-}
-function Select_item$1($$renderer, $$props) {
-  $$renderer.component(($$renderer2) => {
-    const uid = props_id($$renderer2);
-    let {
-      id = createId(uid),
-      ref: ref2 = null,
-      value,
-      label = value,
-      disabled = false,
-      children,
-      child,
-      onHighlight = noop3,
-      onUnhighlight = noop3,
-      $$slots,
-      $$events,
-      ...restProps
-    } = $$props;
-    const itemState = SelectItemState.create({
-      id: boxWith(() => id),
-      ref: boxWith(() => ref2, (v) => ref2 = v),
-      value: boxWith(() => value),
-      disabled: boxWith(() => disabled),
-      label: boxWith(() => label),
-      onHighlight: boxWith(() => onHighlight),
-      onUnhighlight: boxWith(() => onUnhighlight)
-    });
-    const mergedProps = mergeProps(restProps, itemState.props);
-    let $$settled = true;
-    let $$inner_renderer;
-    function $$render_inner($$renderer3) {
-      if (child) {
-        $$renderer3.push("<!--[-->");
-        child($$renderer3, { props: mergedProps, ...itemState.snippetProps });
-        $$renderer3.push(`<!---->`);
-      } else {
-        $$renderer3.push("<!--[!-->");
-        $$renderer3.push(`<div${attributes({ ...mergedProps })}>`);
-        children?.($$renderer3, itemState.snippetProps);
-        $$renderer3.push(`<!----></div>`);
-      }
-      $$renderer3.push(`<!--]--> `);
-      Mounted($$renderer3, {
-        get mounted() {
-          return itemState.mounted;
-        },
-        set mounted($$value) {
-          itemState.mounted = $$value;
-          $$settled = false;
-        }
-      });
-      $$renderer3.push(`<!---->`);
-    }
-    __name($$render_inner, "$$render_inner");
-    do {
-      $$settled = true;
-      $$inner_renderer = $$renderer2.copy();
-      $$render_inner($$inner_renderer);
-    } while (!$$settled);
-    $$renderer2.subsume($$inner_renderer);
-    bind_props($$props, { ref: ref2 });
-  });
-}
-function Select_viewport($$renderer, $$props) {
-  $$renderer.component(($$renderer2) => {
-    const uid = props_id($$renderer2);
-    let {
-      id = createId(uid),
-      ref: ref2 = null,
-      children,
-      child,
-      $$slots,
-      $$events,
-      ...restProps
-    } = $$props;
-    const viewportState = SelectViewportState.create({
-      id: boxWith(() => id),
-      ref: boxWith(() => ref2, (v) => ref2 = v)
-    });
-    const mergedProps = mergeProps(restProps, viewportState.props);
-    if (child) {
-      $$renderer2.push("<!--[-->");
-      child($$renderer2, { props: mergedProps });
-      $$renderer2.push(`<!---->`);
-    } else {
-      $$renderer2.push("<!--[!-->");
-      $$renderer2.push(`<div${attributes({ ...mergedProps })}>`);
-      children?.($$renderer2);
-      $$renderer2.push(`<!----></div>`);
-    }
-    $$renderer2.push(`<!--]-->`);
-    bind_props($$props, { ref: ref2 });
-  });
-}
-function Select_scroll_down_button$1($$renderer, $$props) {
-  $$renderer.component(($$renderer2) => {
-    const uid = props_id($$renderer2);
-    let {
-      id = createId(uid),
-      ref: ref2 = null,
-      delay = /* @__PURE__ */ __name(() => 50, "delay"),
-      child,
-      children,
-      $$slots,
-      $$events,
-      ...restProps
-    } = $$props;
-    const scrollButtonState = SelectScrollDownButtonState.create({
-      id: boxWith(() => id),
-      ref: boxWith(() => ref2, (v) => ref2 = v),
-      delay: boxWith(() => delay)
-    });
-    const mergedProps = mergeProps(restProps, scrollButtonState.props);
-    let $$settled = true;
-    let $$inner_renderer;
-    function $$render_inner($$renderer3) {
-      if (scrollButtonState.canScrollDown) {
-        $$renderer3.push("<!--[-->");
-        Mounted($$renderer3, {
-          get mounted() {
-            return scrollButtonState.scrollButtonState.mounted;
-          },
-          set mounted($$value) {
-            scrollButtonState.scrollButtonState.mounted = $$value;
-            $$settled = false;
-          }
-        });
-        $$renderer3.push(`<!----> `);
-        if (child) {
-          $$renderer3.push("<!--[-->");
-          child($$renderer3, { props: restProps });
-          $$renderer3.push(`<!---->`);
-        } else {
-          $$renderer3.push("<!--[!-->");
-          $$renderer3.push(`<div${attributes({ ...mergedProps })}>`);
-          children?.($$renderer3);
-          $$renderer3.push(`<!----></div>`);
-        }
-        $$renderer3.push(`<!--]-->`);
-      } else {
-        $$renderer3.push("<!--[!-->");
-      }
-      $$renderer3.push(`<!--]-->`);
-    }
-    __name($$render_inner, "$$render_inner");
-    do {
-      $$settled = true;
-      $$inner_renderer = $$renderer2.copy();
-      $$render_inner($$inner_renderer);
-    } while (!$$settled);
-    $$renderer2.subsume($$inner_renderer);
-    bind_props($$props, { ref: ref2 });
-  });
-}
-function Select_scroll_up_button$1($$renderer, $$props) {
-  $$renderer.component(($$renderer2) => {
-    const uid = props_id($$renderer2);
-    let {
-      id = createId(uid),
-      ref: ref2 = null,
-      delay = /* @__PURE__ */ __name(() => 50, "delay"),
-      child,
-      children,
-      $$slots,
-      $$events,
-      ...restProps
-    } = $$props;
-    const scrollButtonState = SelectScrollUpButtonState.create({
-      id: boxWith(() => id),
-      ref: boxWith(() => ref2, (v) => ref2 = v),
-      delay: boxWith(() => delay)
-    });
-    const mergedProps = mergeProps(restProps, scrollButtonState.props);
-    let $$settled = true;
-    let $$inner_renderer;
-    function $$render_inner($$renderer3) {
-      if (scrollButtonState.canScrollUp) {
-        $$renderer3.push("<!--[-->");
-        Mounted($$renderer3, {
-          get mounted() {
-            return scrollButtonState.scrollButtonState.mounted;
-          },
-          set mounted($$value) {
-            scrollButtonState.scrollButtonState.mounted = $$value;
-            $$settled = false;
-          }
-        });
-        $$renderer3.push(`<!----> `);
-        if (child) {
-          $$renderer3.push("<!--[-->");
-          child($$renderer3, { props: restProps });
-          $$renderer3.push(`<!---->`);
-        } else {
-          $$renderer3.push("<!--[!-->");
-          $$renderer3.push(`<div${attributes({ ...mergedProps })}>`);
-          children?.($$renderer3);
-          $$renderer3.push(`<!----></div>`);
-        }
-        $$renderer3.push(`<!--]-->`);
-      } else {
-        $$renderer3.push("<!--[!-->");
-      }
-      $$renderer3.push(`<!--]-->`);
-    }
-    __name($$render_inner, "$$render_inner");
-    do {
-      $$settled = true;
-      $$inner_renderer = $$renderer2.copy();
-      $$render_inner($$inner_renderer);
-    } while (!$$settled);
-    $$renderer2.subsume($$inner_renderer);
-    bind_props($$props, { ref: ref2 });
-  });
-}
-function Label$1($$renderer, $$props) {
-  $$renderer.component(($$renderer2) => {
-    const uid = props_id($$renderer2);
-    let {
-      children,
-      child,
-      id = createId(uid),
-      ref: ref2 = null,
-      for: forProp,
-      $$slots,
-      $$events,
-      ...restProps
-    } = $$props;
-    const rootState = LabelRootState.create({
-      id: boxWith(() => id),
-      ref: boxWith(() => ref2, (v) => ref2 = v)
-    });
-    const mergedProps = mergeProps(restProps, rootState.props, { for: forProp });
-    if (child) {
-      $$renderer2.push("<!--[-->");
-      child($$renderer2, { props: mergedProps });
-      $$renderer2.push(`<!---->`);
-    } else {
-      $$renderer2.push("<!--[!-->");
-      $$renderer2.push(`<label${attributes({ ...mergedProps, for: forProp })}>`);
-      children?.($$renderer2);
-      $$renderer2.push(`<!----></label>`);
-    }
-    $$renderer2.push(`<!--]-->`);
-    bind_props($$props, { ref: ref2 });
-  });
-}
-function Select$1($$renderer, $$props) {
-  $$renderer.component(($$renderer2) => {
-    let {
-      value = void 0,
-      onValueChange = noop3,
-      name = "",
-      disabled = false,
-      type,
-      open = false,
-      onOpenChange = noop3,
-      onOpenChangeComplete = noop3,
-      loop = false,
-      scrollAlignment = "nearest",
-      required: required2 = false,
-      items = [],
-      allowDeselect = false,
-      autocomplete,
-      children
-    } = $$props;
-    function handleDefaultValue() {
-      if (value !== void 0) return;
-      value = type === "single" ? "" : [];
-    }
-    __name(handleDefaultValue, "handleDefaultValue");
-    handleDefaultValue();
-    watch.pre(() => value, () => {
-      handleDefaultValue();
-    });
-    let inputValue = "";
-    const rootState = SelectRootState.create({
-      type,
-      value: boxWith(() => value, (v) => {
-        value = v;
-        onValueChange(v);
-      }),
-      disabled: boxWith(() => disabled),
-      required: boxWith(() => required2),
-      open: boxWith(() => open, (v) => {
-        open = v;
-        onOpenChange(v);
-      }),
-      loop: boxWith(() => loop),
-      scrollAlignment: boxWith(() => scrollAlignment),
-      name: boxWith(() => name),
-      isCombobox: false,
-      items: boxWith(() => items),
-      allowDeselect: boxWith(() => allowDeselect),
-      inputValue: boxWith(() => inputValue, (v) => inputValue = v),
-      onOpenChangeComplete: boxWith(() => onOpenChangeComplete)
-    });
-    let $$settled = true;
-    let $$inner_renderer;
-    function $$render_inner($$renderer3) {
-      Floating_layer($$renderer3, {
-        children: /* @__PURE__ */ __name(($$renderer4) => {
-          children?.($$renderer4);
-          $$renderer4.push(`<!---->`);
-        }, "children")
-      });
-      $$renderer3.push(`<!----> `);
-      if (Array.isArray(rootState.opts.value.current)) {
-        $$renderer3.push("<!--[-->");
-        if (rootState.opts.value.current.length === 0) {
-          $$renderer3.push("<!--[-->");
-          Select_hidden_input($$renderer3, { autocomplete });
-        } else {
-          $$renderer3.push("<!--[!-->");
-          $$renderer3.push(`<!--[-->`);
-          const each_array = ensure_array_like(rootState.opts.value.current);
-          for (let $$index = 0, $$length = each_array.length; $$index < $$length; $$index++) {
-            let item = each_array[$$index];
-            Select_hidden_input($$renderer3, { value: item, autocomplete });
-          }
-          $$renderer3.push(`<!--]-->`);
-        }
-        $$renderer3.push(`<!--]-->`);
-      } else {
-        $$renderer3.push("<!--[!-->");
-        Select_hidden_input($$renderer3, {
-          autocomplete,
-          get value() {
-            return rootState.opts.value.current;
-          },
-          set value($$value) {
-            rootState.opts.value.current = $$value;
-            $$settled = false;
-          }
-        });
-      }
-      $$renderer3.push(`<!--]-->`);
-    }
-    __name($$render_inner, "$$render_inner");
-    do {
-      $$settled = true;
-      $$inner_renderer = $$renderer2.copy();
-      $$render_inner($$inner_renderer);
-    } while (!$$settled);
-    $$renderer2.subsume($$inner_renderer);
-    bind_props($$props, { value, open });
-  });
-}
-function Select_trigger$1($$renderer, $$props) {
-  $$renderer.component(($$renderer2) => {
-    const uid = props_id($$renderer2);
-    let {
-      id = createId(uid),
-      ref: ref2 = null,
-      child,
-      children,
-      type = "button",
-      $$slots,
-      $$events,
-      ...restProps
-    } = $$props;
-    const triggerState = SelectTriggerState.create({
-      id: boxWith(() => id),
-      ref: boxWith(() => ref2, (v) => ref2 = v)
-    });
-    const mergedProps = mergeProps(restProps, triggerState.props, { type });
-    $$renderer2.push(`<!---->`);
-    Floating_layer_anchor($$renderer2, {
-      id,
-      ref: triggerState.opts.ref,
-      children: /* @__PURE__ */ __name(($$renderer3) => {
-        if (child) {
-          $$renderer3.push("<!--[-->");
-          child($$renderer3, { props: mergedProps });
-          $$renderer3.push(`<!---->`);
-        } else {
-          $$renderer3.push("<!--[!-->");
-          $$renderer3.push(`<button${attributes({ ...mergedProps })}>`);
-          children?.($$renderer3);
-          $$renderer3.push(`<!----></button>`);
-        }
-        $$renderer3.push(`<!--]-->`);
-      }, "children")
-    });
-    $$renderer2.push(`<!---->`);
-    bind_props($$props, { ref: ref2 });
-  });
-}
-function Card($$renderer, $$props) {
-  $$renderer.component(($$renderer2) => {
-    let {
-      ref: ref2 = null,
-      class: className,
-      children,
-      $$slots,
-      $$events,
-      ...restProps
-    } = $$props;
-    $$renderer2.push(`<div${attributes({
-      "data-slot": "card",
-      class: clsx2(cn("bg-card text-card-foreground flex flex-col gap-6 rounded-xl border py-6 shadow-sm", className)),
-      ...restProps
-    })}>`);
-    children?.($$renderer2);
-    $$renderer2.push(`<!----></div>`);
-    bind_props($$props, { ref: ref2 });
-  });
-}
-function Card_content($$renderer, $$props) {
-  $$renderer.component(($$renderer2) => {
-    let {
-      ref: ref2 = null,
-      class: className,
-      children,
-      $$slots,
-      $$events,
-      ...restProps
-    } = $$props;
-    $$renderer2.push(`<div${attributes({
-      "data-slot": "card-content",
-      class: clsx2(cn("px-6", className)),
-      ...restProps
-    })}>`);
-    children?.($$renderer2);
-    $$renderer2.push(`<!----></div>`);
-    bind_props($$props, { ref: ref2 });
-  });
-}
-function Card_header($$renderer, $$props) {
-  $$renderer.component(($$renderer2) => {
-    let {
-      ref: ref2 = null,
-      class: className,
-      children,
-      $$slots,
-      $$events,
-      ...restProps
-    } = $$props;
-    $$renderer2.push(`<div${attributes({
-      "data-slot": "card-header",
-      class: clsx2(cn("@container/card-header grid auto-rows-min grid-rows-[auto_auto] items-start gap-1.5 px-6 has-data-[slot=card-action]:grid-cols-[1fr_auto] [.border-b]:pb-6", className)),
-      ...restProps
-    })}>`);
-    children?.($$renderer2);
-    $$renderer2.push(`<!----></div>`);
-    bind_props($$props, { ref: ref2 });
-  });
-}
-function Card_title($$renderer, $$props) {
-  $$renderer.component(($$renderer2) => {
-    let {
-      ref: ref2 = null,
-      class: className,
-      children,
-      $$slots,
-      $$events,
-      ...restProps
-    } = $$props;
-    $$renderer2.push(`<div${attributes({
-      "data-slot": "card-title",
-      class: clsx2(cn("leading-none font-semibold", className)),
-      ...restProps
-    })}>`);
-    children?.($$renderer2);
-    $$renderer2.push(`<!----></div>`);
-    bind_props($$props, { ref: ref2 });
-  });
-}
-function Label($$renderer, $$props) {
-  $$renderer.component(($$renderer2) => {
-    let {
-      ref: ref2 = null,
-      class: className,
-      $$slots,
-      $$events,
-      ...restProps
-    } = $$props;
-    let $$settled = true;
-    let $$inner_renderer;
-    function $$render_inner($$renderer3) {
-      $$renderer3.push(`<!---->`);
-      Label$1($$renderer3, spread_props([
-        {
-          "data-slot": "label",
-          class: cn("flex items-center gap-2 text-sm leading-none font-medium select-none group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 peer-disabled:cursor-not-allowed peer-disabled:opacity-50", className)
-        },
-        restProps,
-        {
-          get ref() {
-            return ref2;
-          },
-          set ref($$value) {
-            ref2 = $$value;
-            $$settled = false;
-          }
-        }
-      ]));
-      $$renderer3.push(`<!---->`);
-    }
-    __name($$render_inner, "$$render_inner");
-    do {
-      $$settled = true;
-      $$inner_renderer = $$renderer2.copy();
-      $$render_inner($$inner_renderer);
-    } while (!$$settled);
-    $$renderer2.subsume($$inner_renderer);
-    bind_props($$props, { ref: ref2 });
-  });
-}
-function Select($$renderer, $$props) {
-  $$renderer.component(($$renderer2) => {
-    let {
-      open = false,
-      value = void 0,
-      $$slots,
-      $$events,
-      ...restProps
-    } = $$props;
-    let $$settled = true;
-    let $$inner_renderer;
-    function $$render_inner($$renderer3) {
-      $$renderer3.push(`<!---->`);
-      Select$1($$renderer3, spread_props([
-        restProps,
-        {
-          get open() {
-            return open;
-          },
-          set open($$value) {
-            open = $$value;
-            $$settled = false;
-          },
-          get value() {
-            return value;
-          },
-          set value($$value) {
-            value = $$value;
-            $$settled = false;
-          }
-        }
-      ]));
-      $$renderer3.push(`<!---->`);
-    }
-    __name($$render_inner, "$$render_inner");
-    do {
-      $$settled = true;
-      $$inner_renderer = $$renderer2.copy();
-      $$render_inner($$inner_renderer);
-    } while (!$$settled);
-    $$renderer2.subsume($$inner_renderer);
-    bind_props($$props, { open, value });
-  });
-}
-function Check2($$renderer, $$props) {
-  $$renderer.component(($$renderer2) => {
-    let { $$slots, $$events, ...props } = $$props;
-    const iconNode = [["path", { "d": "M20 6 9 17l-5-5" }]];
-    Icon($$renderer2, spread_props([
-      { name: "check" },
-      /**
-       * @component @name Check
-       * @description Lucide SVG icon component, renders SVG Element with children.
-       *
-       * @preview ![img](data:image/svg+xml;base64,PHN2ZyAgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIgogIHdpZHRoPSIyNCIKICBoZWlnaHQ9IjI0IgogIHZpZXdCb3g9IjAgMCAyNCAyNCIKICBmaWxsPSJub25lIgogIHN0cm9rZT0iIzAwMCIgc3R5bGU9ImJhY2tncm91bmQtY29sb3I6ICNmZmY7IGJvcmRlci1yYWRpdXM6IDJweCIKICBzdHJva2Utd2lkdGg9IjIiCiAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogIHN0cm9rZS1saW5lam9pbj0icm91bmQiCj4KICA8cGF0aCBkPSJNMjAgNiA5IDE3bC01LTUiIC8+Cjwvc3ZnPgo=) - https://lucide.dev/icons/check
-       * @see https://lucide.dev/guide/packages/lucide-svelte - Documentation
-       *
-       * @param {Object} props - Lucide icons props and any valid SVG attribute
-       * @returns {FunctionalComponent} Svelte component
-       *
-       */
-      props,
-      {
-        iconNode,
-        children: /* @__PURE__ */ __name(($$renderer3) => {
-          props.children?.($$renderer3);
-          $$renderer3.push(`<!---->`);
-        }, "children"),
-        $$slots: { default: true }
-      }
-    ]));
-  });
-}
-function Select_item($$renderer, $$props) {
-  $$renderer.component(($$renderer2) => {
-    let {
-      ref: ref2 = null,
-      class: className,
-      value,
-      label,
-      children: childrenProp,
-      $$slots,
-      $$events,
-      ...restProps
-    } = $$props;
-    let $$settled = true;
-    let $$inner_renderer;
-    function $$render_inner($$renderer3) {
-      $$renderer3.push(`<!---->`);
-      {
-        let children = /* @__PURE__ */ __name(function($$renderer4, { selected, highlighted }) {
-          $$renderer4.push(`<span class="absolute end-2 flex size-3.5 items-center justify-center">`);
-          if (selected) {
-            $$renderer4.push("<!--[-->");
-            Check2($$renderer4, { class: "size-4" });
-          } else {
-            $$renderer4.push("<!--[!-->");
-          }
-          $$renderer4.push(`<!--]--></span> `);
-          if (childrenProp) {
-            $$renderer4.push("<!--[-->");
-            childrenProp($$renderer4, { selected, highlighted });
-            $$renderer4.push(`<!---->`);
-          } else {
-            $$renderer4.push("<!--[!-->");
-            $$renderer4.push(`${escape_html(label || value)}`);
-          }
-          $$renderer4.push(`<!--]-->`);
-        }, "children");
-        Select_item$1($$renderer3, spread_props([
-          {
-            value,
-            "data-slot": "select-item",
-            class: cn("data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground [&_svg:not([class*='text-'])]:text-muted-foreground relative flex w-full cursor-default items-center gap-2 rounded-sm py-1.5 ps-2 pe-8 text-sm outline-hidden select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2", className)
-          },
-          restProps,
-          {
-            get ref() {
-              return ref2;
-            },
-            set ref($$value) {
-              ref2 = $$value;
-              $$settled = false;
-            },
-            children,
-            $$slots: { default: true }
-          }
-        ]));
-      }
-      $$renderer3.push(`<!---->`);
-    }
-    __name($$render_inner, "$$render_inner");
-    do {
-      $$settled = true;
-      $$inner_renderer = $$renderer2.copy();
-      $$render_inner($$inner_renderer);
-    } while (!$$settled);
-    $$renderer2.subsume($$inner_renderer);
-    bind_props($$props, { ref: ref2 });
-  });
-}
-function Select_portal($$renderer, $$props) {
-  let { $$slots, $$events, ...restProps } = $$props;
-  $$renderer.push(`<!---->`);
-  Portal($$renderer, spread_props([restProps]));
-  $$renderer.push(`<!---->`);
-}
-function Chevron_up($$renderer, $$props) {
-  $$renderer.component(($$renderer2) => {
-    let { $$slots, $$events, ...props } = $$props;
-    const iconNode = [["path", { "d": "m18 15-6-6-6 6" }]];
-    Icon($$renderer2, spread_props([
-      { name: "chevron-up" },
-      /**
-       * @component @name ChevronUp
-       * @description Lucide SVG icon component, renders SVG Element with children.
-       *
-       * @preview ![img](data:image/svg+xml;base64,PHN2ZyAgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIgogIHdpZHRoPSIyNCIKICBoZWlnaHQ9IjI0IgogIHZpZXdCb3g9IjAgMCAyNCAyNCIKICBmaWxsPSJub25lIgogIHN0cm9rZT0iIzAwMCIgc3R5bGU9ImJhY2tncm91bmQtY29sb3I6ICNmZmY7IGJvcmRlci1yYWRpdXM6IDJweCIKICBzdHJva2Utd2lkdGg9IjIiCiAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogIHN0cm9rZS1saW5lam9pbj0icm91bmQiCj4KICA8cGF0aCBkPSJtMTggMTUtNi02LTYgNiIgLz4KPC9zdmc+Cg==) - https://lucide.dev/icons/chevron-up
-       * @see https://lucide.dev/guide/packages/lucide-svelte - Documentation
-       *
-       * @param {Object} props - Lucide icons props and any valid SVG attribute
-       * @returns {FunctionalComponent} Svelte component
-       *
-       */
-      props,
-      {
-        iconNode,
-        children: /* @__PURE__ */ __name(($$renderer3) => {
-          props.children?.($$renderer3);
-          $$renderer3.push(`<!---->`);
-        }, "children"),
-        $$slots: { default: true }
-      }
-    ]));
-  });
-}
-function Select_scroll_up_button($$renderer, $$props) {
-  $$renderer.component(($$renderer2) => {
-    let {
-      ref: ref2 = null,
-      class: className,
-      $$slots,
-      $$events,
-      ...restProps
-    } = $$props;
-    let $$settled = true;
-    let $$inner_renderer;
-    function $$render_inner($$renderer3) {
-      $$renderer3.push(`<!---->`);
-      Select_scroll_up_button$1($$renderer3, spread_props([
-        {
-          "data-slot": "select-scroll-up-button",
-          class: cn("flex cursor-default items-center justify-center py-1", className)
-        },
-        restProps,
-        {
-          get ref() {
-            return ref2;
-          },
-          set ref($$value) {
-            ref2 = $$value;
-            $$settled = false;
-          },
-          children: /* @__PURE__ */ __name(($$renderer4) => {
-            Chevron_up($$renderer4, { class: "size-4" });
-          }, "children"),
-          $$slots: { default: true }
-        }
-      ]));
-      $$renderer3.push(`<!---->`);
-    }
-    __name($$render_inner, "$$render_inner");
-    do {
-      $$settled = true;
-      $$inner_renderer = $$renderer2.copy();
-      $$render_inner($$inner_renderer);
-    } while (!$$settled);
-    $$renderer2.subsume($$inner_renderer);
-    bind_props($$props, { ref: ref2 });
-  });
-}
-function Chevron_down($$renderer, $$props) {
-  $$renderer.component(($$renderer2) => {
-    let { $$slots, $$events, ...props } = $$props;
-    const iconNode = [["path", { "d": "m6 9 6 6 6-6" }]];
-    Icon($$renderer2, spread_props([
-      { name: "chevron-down" },
-      /**
-       * @component @name ChevronDown
-       * @description Lucide SVG icon component, renders SVG Element with children.
-       *
-       * @preview ![img](data:image/svg+xml;base64,PHN2ZyAgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIgogIHdpZHRoPSIyNCIKICBoZWlnaHQ9IjI0IgogIHZpZXdCb3g9IjAgMCAyNCAyNCIKICBmaWxsPSJub25lIgogIHN0cm9rZT0iIzAwMCIgc3R5bGU9ImJhY2tncm91bmQtY29sb3I6ICNmZmY7IGJvcmRlci1yYWRpdXM6IDJweCIKICBzdHJva2Utd2lkdGg9IjIiCiAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogIHN0cm9rZS1saW5lam9pbj0icm91bmQiCj4KICA8cGF0aCBkPSJtNiA5IDYgNiA2LTYiIC8+Cjwvc3ZnPgo=) - https://lucide.dev/icons/chevron-down
-       * @see https://lucide.dev/guide/packages/lucide-svelte - Documentation
-       *
-       * @param {Object} props - Lucide icons props and any valid SVG attribute
-       * @returns {FunctionalComponent} Svelte component
-       *
-       */
-      props,
-      {
-        iconNode,
-        children: /* @__PURE__ */ __name(($$renderer3) => {
-          props.children?.($$renderer3);
-          $$renderer3.push(`<!---->`);
-        }, "children"),
-        $$slots: { default: true }
-      }
-    ]));
-  });
-}
-function Select_scroll_down_button($$renderer, $$props) {
-  $$renderer.component(($$renderer2) => {
-    let {
-      ref: ref2 = null,
-      class: className,
-      $$slots,
-      $$events,
-      ...restProps
-    } = $$props;
-    let $$settled = true;
-    let $$inner_renderer;
-    function $$render_inner($$renderer3) {
-      $$renderer3.push(`<!---->`);
-      Select_scroll_down_button$1($$renderer3, spread_props([
-        {
-          "data-slot": "select-scroll-down-button",
-          class: cn("flex cursor-default items-center justify-center py-1", className)
-        },
-        restProps,
-        {
-          get ref() {
-            return ref2;
-          },
-          set ref($$value) {
-            ref2 = $$value;
-            $$settled = false;
-          },
-          children: /* @__PURE__ */ __name(($$renderer4) => {
-            Chevron_down($$renderer4, { class: "size-4" });
-          }, "children"),
-          $$slots: { default: true }
-        }
-      ]));
-      $$renderer3.push(`<!---->`);
-    }
-    __name($$render_inner, "$$render_inner");
-    do {
-      $$settled = true;
-      $$inner_renderer = $$renderer2.copy();
-      $$render_inner($$inner_renderer);
-    } while (!$$settled);
-    $$renderer2.subsume($$inner_renderer);
-    bind_props($$props, { ref: ref2 });
-  });
-}
-function Select_content($$renderer, $$props) {
-  $$renderer.component(($$renderer2) => {
-    let {
-      ref: ref2 = null,
-      class: className,
-      sideOffset = 4,
-      portalProps,
-      children,
-      preventScroll = true,
-      $$slots,
-      $$events,
-      ...restProps
-    } = $$props;
-    let $$settled = true;
-    let $$inner_renderer;
-    function $$render_inner($$renderer3) {
-      Select_portal($$renderer3, spread_props([
-        portalProps,
-        {
-          children: /* @__PURE__ */ __name(($$renderer4) => {
-            $$renderer4.push(`<!---->`);
-            Select_content$1($$renderer4, spread_props([
-              {
-                sideOffset,
-                preventScroll,
-                "data-slot": "select-content",
-                class: cn("bg-popover text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-end-2 data-[side=right]:slide-in-from-start-2 data-[side=top]:slide-in-from-bottom-2 relative z-50 max-h-(--bits-select-content-available-height) min-w-[8rem] origin-(--bits-select-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-md border shadow-md data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1", className)
-              },
-              restProps,
-              {
-                get ref() {
-                  return ref2;
-                },
-                set ref($$value) {
-                  ref2 = $$value;
-                  $$settled = false;
-                },
-                children: /* @__PURE__ */ __name(($$renderer5) => {
-                  Select_scroll_up_button($$renderer5, {});
-                  $$renderer5.push(`<!----> <!---->`);
-                  Select_viewport($$renderer5, {
-                    class: cn("h-(--bits-select-anchor-height) w-full min-w-(--bits-select-anchor-width) scroll-my-1 p-1"),
-                    children: /* @__PURE__ */ __name(($$renderer6) => {
-                      children?.($$renderer6);
-                      $$renderer6.push(`<!---->`);
-                    }, "children"),
-                    $$slots: { default: true }
-                  });
-                  $$renderer5.push(`<!----> `);
-                  Select_scroll_down_button($$renderer5, {});
-                  $$renderer5.push(`<!---->`);
-                }, "children"),
-                $$slots: { default: true }
-              }
-            ]));
-            $$renderer4.push(`<!---->`);
-          }, "children"),
-          $$slots: { default: true }
-        }
-      ]));
-    }
-    __name($$render_inner, "$$render_inner");
-    do {
-      $$settled = true;
-      $$inner_renderer = $$renderer2.copy();
-      $$render_inner($$inner_renderer);
-    } while (!$$settled);
-    $$renderer2.subsume($$inner_renderer);
-    bind_props($$props, { ref: ref2 });
-  });
-}
-function Select_trigger($$renderer, $$props) {
-  $$renderer.component(($$renderer2) => {
-    let {
-      ref: ref2 = null,
-      class: className,
-      children,
-      size: size22 = "default",
-      $$slots,
-      $$events,
-      ...restProps
-    } = $$props;
-    let $$settled = true;
-    let $$inner_renderer;
-    function $$render_inner($$renderer3) {
-      $$renderer3.push(`<!---->`);
-      Select_trigger$1($$renderer3, spread_props([
-        {
-          "data-slot": "select-trigger",
-          "data-size": size22,
-          class: cn("border-input data-[placeholder]:text-muted-foreground [&_svg:not([class*='text-'])]:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive dark:bg-input/30 dark:hover:bg-input/50 flex w-fit items-center justify-between gap-2 rounded-md border bg-transparent px-3 py-2 text-sm whitespace-nowrap shadow-xs transition-[color,box-shadow] outline-none select-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50 data-[size=default]:h-9 data-[size=sm]:h-8 *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-2 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4", className)
-        },
-        restProps,
-        {
-          get ref() {
-            return ref2;
-          },
-          set ref($$value) {
-            ref2 = $$value;
-            $$settled = false;
-          },
-          children: /* @__PURE__ */ __name(($$renderer4) => {
-            children?.($$renderer4);
-            $$renderer4.push(`<!----> `);
-            Chevron_down($$renderer4, { class: "size-4 opacity-50" });
-            $$renderer4.push(`<!---->`);
-          }, "children"),
-          $$slots: { default: true }
-        }
-      ]));
-      $$renderer3.push(`<!---->`);
-    }
-    __name($$render_inner, "$$render_inner");
-    do {
-      $$settled = true;
-      $$inner_renderer = $$renderer2.copy();
-      $$render_inner($$inner_renderer);
-    } while (!$$settled);
-    $$renderer2.subsume($$inner_renderer);
-    bind_props($$props, { ref: ref2 });
-  });
-}
-function Badge($$renderer, $$props) {
-  $$renderer.component(($$renderer2) => {
-    let {
-      ref: ref2 = null,
-      href,
-      class: className,
-      variant = "default",
-      children,
-      $$slots,
-      $$events,
-      ...restProps
-    } = $$props;
-    element(
-      $$renderer2,
-      href ? "a" : "span",
-      () => {
-        $$renderer2.push(`${attributes({
-          "data-slot": "badge",
-          href,
-          class: clsx2(cn(badgeVariants({ variant }), className)),
-          ...restProps
-        })}`);
-      },
-      () => {
-        children?.($$renderer2);
-        $$renderer2.push(`<!---->`);
-      }
-    );
-    bind_props($$props, { ref: ref2 });
-  });
-}
-function Play($$renderer, $$props) {
-  $$renderer.component(($$renderer2) => {
-    let { $$slots, $$events, ...props } = $$props;
-    const iconNode = [
-      [
-        "path",
-        {
-          "d": "M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z"
-        }
-      ]
-    ];
-    Icon($$renderer2, spread_props([
-      { name: "play" },
-      /**
-       * @component @name Play
-       * @description Lucide SVG icon component, renders SVG Element with children.
-       *
-       * @preview ![img](data:image/svg+xml;base64,PHN2ZyAgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIgogIHdpZHRoPSIyNCIKICBoZWlnaHQ9IjI0IgogIHZpZXdCb3g9IjAgMCAyNCAyNCIKICBmaWxsPSJub25lIgogIHN0cm9rZT0iIzAwMCIgc3R5bGU9ImJhY2tncm91bmQtY29sb3I6ICNmZmY7IGJvcmRlci1yYWRpdXM6IDJweCIKICBzdHJva2Utd2lkdGg9IjIiCiAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogIHN0cm9rZS1saW5lam9pbj0icm91bmQiCj4KICA8cGF0aCBkPSJNNSA1YTIgMiAwIDAgMSAzLjAwOC0xLjcyOGwxMS45OTcgNi45OThhMiAyIDAgMCAxIC4wMDMgMy40NThsLTEyIDdBMiAyIDAgMCAxIDUgMTl6IiAvPgo8L3N2Zz4K) - https://lucide.dev/icons/play
-       * @see https://lucide.dev/guide/packages/lucide-svelte - Documentation
-       *
-       * @param {Object} props - Lucide icons props and any valid SVG attribute
-       * @returns {FunctionalComponent} Svelte component
-       *
-       */
-      props,
-      {
-        iconNode,
-        children: /* @__PURE__ */ __name(($$renderer3) => {
-          props.children?.($$renderer3);
-          $$renderer3.push(`<!---->`);
-        }, "children"),
-        $$slots: { default: true }
-      }
-    ]));
-  });
-}
-function Pause($$renderer, $$props) {
-  $$renderer.component(($$renderer2) => {
-    let { $$slots, $$events, ...props } = $$props;
-    const iconNode = [
-      [
-        "rect",
-        { "x": "14", "y": "3", "width": "5", "height": "18", "rx": "1" }
-      ],
-      [
-        "rect",
-        { "x": "5", "y": "3", "width": "5", "height": "18", "rx": "1" }
-      ]
-    ];
-    Icon($$renderer2, spread_props([
-      { name: "pause" },
-      /**
-       * @component @name Pause
-       * @description Lucide SVG icon component, renders SVG Element with children.
-       *
-       * @preview ![img](data:image/svg+xml;base64,PHN2ZyAgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIgogIHdpZHRoPSIyNCIKICBoZWlnaHQ9IjI0IgogIHZpZXdCb3g9IjAgMCAyNCAyNCIKICBmaWxsPSJub25lIgogIHN0cm9rZT0iIzAwMCIgc3R5bGU9ImJhY2tncm91bmQtY29sb3I6ICNmZmY7IGJvcmRlci1yYWRpdXM6IDJweCIKICBzdHJva2Utd2lkdGg9IjIiCiAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogIHN0cm9rZS1saW5lam9pbj0icm91bmQiCj4KICA8cmVjdCB4PSIxNCIgeT0iMyIgd2lkdGg9IjUiIGhlaWdodD0iMTgiIHJ4PSIxIiAvPgogIDxyZWN0IHg9IjUiIHk9IjMiIHdpZHRoPSI1IiBoZWlnaHQ9IjE4IiByeD0iMSIgLz4KPC9zdmc+Cg==) - https://lucide.dev/icons/pause
-       * @see https://lucide.dev/guide/packages/lucide-svelte - Documentation
-       *
-       * @param {Object} props - Lucide icons props and any valid SVG attribute
-       * @returns {FunctionalComponent} Svelte component
-       *
-       */
-      props,
-      {
-        iconNode,
-        children: /* @__PURE__ */ __name(($$renderer3) => {
-          props.children?.($$renderer3);
-          $$renderer3.push(`<!---->`);
-        }, "children"),
-        $$slots: { default: true }
-      }
-    ]));
-  });
-}
-function Trash_2($$renderer, $$props) {
-  $$renderer.component(($$renderer2) => {
-    let { $$slots, $$events, ...props } = $$props;
-    const iconNode = [
-      ["path", { "d": "M10 11v6" }],
-      ["path", { "d": "M14 11v6" }],
-      ["path", { "d": "M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" }],
-      ["path", { "d": "M3 6h18" }],
-      ["path", { "d": "M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" }]
-    ];
-    Icon($$renderer2, spread_props([
-      { name: "trash-2" },
-      /**
-       * @component @name Trash2
-       * @description Lucide SVG icon component, renders SVG Element with children.
-       *
-       * @preview ![img](data:image/svg+xml;base64,PHN2ZyAgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIgogIHdpZHRoPSIyNCIKICBoZWlnaHQ9IjI0IgogIHZpZXdCb3g9IjAgMCAyNCAyNCIKICBmaWxsPSJub25lIgogIHN0cm9rZT0iIzAwMCIgc3R5bGU9ImJhY2tncm91bmQtY29sb3I6ICNmZmY7IGJvcmRlci1yYWRpdXM6IDJweCIKICBzdHJva2Utd2lkdGg9IjIiCiAgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIgogIHN0cm9rZS1saW5lam9pbj0icm91bmQiCj4KICA8cGF0aCBkPSJNMTAgMTF2NiIgLz4KICA8cGF0aCBkPSJNMTQgMTF2NiIgLz4KICA8cGF0aCBkPSJNMTkgNnYxNGEyIDIgMCAwIDEtMiAySDdhMiAyIDAgMCAxLTItMlY2IiAvPgogIDxwYXRoIGQ9Ik0zIDZoMTgiIC8+CiAgPHBhdGggZD0iTTggNlY0YTIgMiAwIDAgMSAyLTJoNGEyIDIgMCAwIDEgMiAydjIiIC8+Cjwvc3ZnPgo=) - https://lucide.dev/icons/trash-2
-       * @see https://lucide.dev/guide/packages/lucide-svelte - Documentation
-       *
-       * @param {Object} props - Lucide icons props and any valid SVG attribute
-       * @returns {FunctionalComponent} Svelte component
-       *
-       */
-      props,
-      {
-        iconNode,
-        children: /* @__PURE__ */ __name(($$renderer3) => {
-          props.children?.($$renderer3);
-          $$renderer3.push(`<!---->`);
-        }, "children"),
-        $$slots: { default: true }
-      }
-    ]));
-  });
-}
-function InteractiveDemo($$renderer, $$props) {
-  $$renderer.component(($$renderer2) => {
-    let taskName = "AI agents";
-    let complexity = "demo";
-    let customSteps = "";
-    let tasks = [];
-    let isLoading = false;
-    let pollingInterval = null;
-    let now3 = Date.now();
-    const complexityOptions = [
-      { value: "1s", label: "1s" },
-      { value: "10s", label: "10s" },
-      { value: "demo", label: "60s" },
-      { value: "realistic", label: "1hr" },
-      { value: "production", label: "1wk" },
-      { value: "month", label: "1mo" },
-      { value: "year", label: "1yr" }
-    ];
-    async function handleStart() {
-      isLoading = true;
-      try {
-        const steps = customSteps.split(",").map((s3) => s3.trim()).filter(Boolean);
-        await startTask({
-          taskName: "agent-loop",
-          complexity,
-          steps: steps.length > 0 ? steps : void 0,
-          namespace: "task"
-          // Homepage namespace
-        });
-        await new Promise((r3) => setTimeout(r3, 100));
-        await loadTasks();
-      } catch (error50) {
-        alert("Failed to start task: " + error50.message);
-      } finally {
-        isLoading = false;
-      }
-    }
-    __name(handleStart, "handleStart");
-    async function loadTasks() {
-      try {
-        const fetchedTasks = await getTasks("task");
-        console.log("Loaded tasks:", fetchedTasks);
-        tasks = fetchedTasks;
-        updatePolling();
-      } catch (error50) {
-        console.error("Failed to load tasks:", error50);
-      }
-    }
-    __name(loadTasks, "loadTasks");
-    async function handlePause(taskId) {
-      try {
-        await pauseTask(taskId);
-        await loadTasks();
-      } catch (error50) {
-        alert("Failed to pause task: " + error50.message);
-      }
-    }
-    __name(handlePause, "handlePause");
-    async function handleResume(taskId) {
-      try {
-        await resumeTask(taskId);
-        await loadTasks();
-      } catch (error50) {
-        alert("Failed to resume task: " + error50.message);
-      }
-    }
-    __name(handleResume, "handleResume");
-    async function handleCancel(taskId) {
-      if (pollingInterval) {
-        clearInterval(pollingInterval);
-        pollingInterval = null;
-      }
-      try {
-        await cancelTask(taskId);
-        await loadTasks();
-      } catch (error50) {
-        alert("Failed to delete task: " + error50.message);
-      }
-    }
-    __name(handleCancel, "handleCancel");
-    async function handleClearCompleted() {
-      try {
-        await clearCompleted();
-        await loadTasks();
-      } catch (error50) {
-        alert("Failed to clear completed: " + error50.message);
-      }
-    }
-    __name(handleClearCompleted, "handleClearCompleted");
-    function formatElapsed(startedAt, pausedAt, totalPausedMs = 0, status, completedAt) {
-      const currentTime = status === "completed" && completedAt ? completedAt : now3;
-      if (pausedAt) {
-        const elapsed2 = pausedAt - startedAt - totalPausedMs;
-        return formatDuration(elapsed2);
-      }
-      const elapsed = currentTime - startedAt - totalPausedMs;
-      return formatDuration(elapsed);
-    }
-    __name(formatElapsed, "formatElapsed");
-    function formatDuration(ms) {
-      if (ms < 1e3) return `${ms}ms`;
-      if (ms < 6e4) return `${Math.floor(ms / 1e3)}s`;
-      if (ms < 36e5) return `${Math.floor(ms / 6e4)}m`;
-      if (ms < 864e5) return `${Math.floor(ms / 36e5)}h`;
-      return `${Math.floor(ms / 864e5)}d`;
-    }
-    __name(formatDuration, "formatDuration");
-    function getStatusVariant(status) {
-      switch (status) {
-        case "running":
-          return "default";
-        case "completed":
-          return "secondary";
-        case "failed":
-          return "destructive";
-        case "paused":
-          return "outline";
-        default:
-          return "outline";
-      }
-    }
-    __name(getStatusVariant, "getStatusVariant");
-    function getStepDotColor(stepIndex, currentStepIndex, totalSteps, status) {
-      if (status === "completed") {
-        return "bg-green-500";
-      }
-      if (status === "failed") {
-        return stepIndex < currentStepIndex ? "bg-green-500" : "bg-red-500";
-      }
-      if (stepIndex < currentStepIndex) {
-        return "bg-green-500";
-      }
-      if (stepIndex === currentStepIndex) {
-        return status === "running" ? "bg-blue-500" : "bg-yellow-500";
-      }
-      return "bg-gray-300 dark:bg-gray-700";
-    }
-    __name(getStepDotColor, "getStepDotColor");
-    function updatePolling() {
-      const hasRunningTasks = tasks.some((t2) => t2.status === "running" || t2.status === "pending");
-      if (pollingInterval) {
-        clearInterval(pollingInterval);
-        pollingInterval = null;
-      }
-      if (hasRunningTasks) {
-        pollingInterval = setInterval(
-          async () => {
-            await loadTasks();
-          },
-          1e3
-        );
-      }
-    }
-    __name(updatePolling, "updatePolling");
-    onDestroy(() => {
-      if (pollingInterval) {
-        clearInterval(pollingInterval);
-      }
-    });
-    let $$settled = true;
-    let $$inner_renderer;
-    function $$render_inner($$renderer3) {
-      $$renderer3.push(`<div class="space-y-6"><!---->`);
-      Card($$renderer3, {
-        children: /* @__PURE__ */ __name(($$renderer4) => {
-          $$renderer4.push(`<!---->`);
-          Card_header($$renderer4, {
-            children: /* @__PURE__ */ __name(($$renderer5) => {
-              $$renderer5.push(`<!---->`);
-              Card_title($$renderer5, {
-                children: /* @__PURE__ */ __name(($$renderer6) => {
-                  $$renderer6.push(`<!---->Start a Task`);
-                }, "children"),
-                $$slots: { default: true }
-              });
-              $$renderer5.push(`<!---->`);
-            }, "children"),
-            $$slots: { default: true }
-          });
-          $$renderer4.push(`<!----> <!---->`);
-          Card_content($$renderer4, {
-            class: "space-y-4",
-            children: /* @__PURE__ */ __name(($$renderer5) => {
-              $$renderer5.push(`<div class="space-y-2">`);
-              Label($$renderer5, {
-                for: "taskName",
-                children: /* @__PURE__ */ __name(($$renderer6) => {
-                  $$renderer6.push(`<!---->Task Name`);
-                }, "children"),
-                $$slots: { default: true }
-              });
-              $$renderer5.push(`<!----> `);
-              Input($$renderer5, {
-                id: "taskName",
-                placeholder: "AI agents",
-                get value() {
-                  return taskName;
-                },
-                set value($$value) {
-                  taskName = $$value;
-                  $$settled = false;
-                }
-              });
-              $$renderer5.push(`<!----></div> <div class="space-y-2">`);
-              Label($$renderer5, {
-                children: /* @__PURE__ */ __name(($$renderer6) => {
-                  $$renderer6.push(`<!---->Duration`);
-                }, "children"),
-                $$slots: { default: true }
-              });
-              $$renderer5.push(`<!----> <!---->`);
-              Select($$renderer5, {
-                type: "single",
-                get value() {
-                  return complexity;
-                },
-                set value($$value) {
-                  complexity = $$value;
-                  $$settled = false;
-                },
-                children: /* @__PURE__ */ __name(($$renderer6) => {
-                  $$renderer6.push(`<!---->`);
-                  Select_trigger($$renderer6, {
-                    class: "w-full",
-                    children: /* @__PURE__ */ __name(($$renderer7) => {
-                      $$renderer7.push(`<!---->${escape_html(complexityOptions.find((o2) => o2.value === complexity)?.label ?? complexity)}`);
-                    }, "children"),
-                    $$slots: { default: true }
-                  });
-                  $$renderer6.push(`<!----> <!---->`);
-                  Select_content($$renderer6, {
-                    children: /* @__PURE__ */ __name(($$renderer7) => {
-                      $$renderer7.push(`<!--[-->`);
-                      const each_array = ensure_array_like(complexityOptions);
-                      for (let $$index = 0, $$length = each_array.length; $$index < $$length; $$index++) {
-                        let option = each_array[$$index];
-                        $$renderer7.push(`<!---->`);
-                        Select_item($$renderer7, {
-                          value: option.value,
-                          children: /* @__PURE__ */ __name(($$renderer8) => {
-                            $$renderer8.push(`<!---->${escape_html(option.label)}`);
-                          }, "children"),
-                          $$slots: { default: true }
-                        });
-                        $$renderer7.push(`<!---->`);
-                      }
-                      $$renderer7.push(`<!--]-->`);
-                    }, "children"),
-                    $$slots: { default: true }
-                  });
-                  $$renderer6.push(`<!---->`);
-                }, "children"),
-                $$slots: { default: true }
-              });
-              $$renderer5.push(`<!----></div> <div class="space-y-2">`);
-              Label($$renderer5, {
-                for: "customSteps",
-                children: /* @__PURE__ */ __name(($$renderer6) => {
-                  $$renderer6.push(`<!---->Custom Steps (comma-separated)`);
-                }, "children"),
-                $$slots: { default: true }
-              });
-              $$renderer5.push(`<!----> `);
-              Input($$renderer5, {
-                id: "customSteps",
-                placeholder: "researching, analyzing, synthesizing, writing, finalizing",
-                get value() {
-                  return customSteps;
-                },
-                set value($$value) {
-                  customSteps = $$value;
-                  $$settled = false;
-                }
-              });
-              $$renderer5.push(`<!----></div> `);
-              Button($$renderer5, {
-                onclick: handleStart,
-                disabled: isLoading,
-                class: "w-full",
-                children: /* @__PURE__ */ __name(($$renderer6) => {
-                  $$renderer6.push(`<!---->${escape_html(isLoading ? "Starting..." : "Start Task")}`);
-                }, "children"),
-                $$slots: { default: true }
-              });
-              $$renderer5.push(`<!---->`);
-            }, "children"),
-            $$slots: { default: true }
-          });
-          $$renderer4.push(`<!---->`);
-        }, "children"),
-        $$slots: { default: true }
-      });
-      $$renderer3.push(`<!----> <!---->`);
-      Card($$renderer3, {
-        children: /* @__PURE__ */ __name(($$renderer4) => {
-          $$renderer4.push(`<!---->`);
-          Card_header($$renderer4, {
-            class: "flex flex-row items-center justify-between",
-            children: /* @__PURE__ */ __name(($$renderer5) => {
-              $$renderer5.push(`<!---->`);
-              Card_title($$renderer5, {
-                children: /* @__PURE__ */ __name(($$renderer6) => {
-                  $$renderer6.push(`<!---->Running Tasks`);
-                }, "children"),
-                $$slots: { default: true }
-              });
-              $$renderer5.push(`<!----> `);
-              if (tasks.some((t2) => t2.status === "completed")) {
-                $$renderer5.push("<!--[-->");
-                Button($$renderer5, {
-                  variant: "ghost",
-                  size: "sm",
-                  onclick: handleClearCompleted,
-                  children: /* @__PURE__ */ __name(($$renderer6) => {
-                    $$renderer6.push(`<!---->Clear Completed`);
-                  }, "children"),
-                  $$slots: { default: true }
-                });
-              } else {
-                $$renderer5.push("<!--[!-->");
-              }
-              $$renderer5.push(`<!--]-->`);
-            }, "children"),
-            $$slots: { default: true }
-          });
-          $$renderer4.push(`<!----> <!---->`);
-          Card_content($$renderer4, {
-            children: /* @__PURE__ */ __name(($$renderer5) => {
-              if (tasks.length === 0) {
-                $$renderer5.push("<!--[-->");
-                $$renderer5.push(`<p class="text-muted-foreground text-center py-8">No tasks yet</p>`);
-              } else {
-                $$renderer5.push("<!--[!-->");
-                $$renderer5.push(`<div class="space-y-3"><!--[-->`);
-                const each_array_1 = ensure_array_like(tasks);
-                for (let $$index_2 = 0, $$length = each_array_1.length; $$index_2 < $$length; $$index_2++) {
-                  let task = each_array_1[$$index_2];
-                  $$renderer5.push(`<div class="border rounded-lg p-4 hover:bg-muted/50 transition-colors"><div class="flex items-start justify-between gap-4"><div class="flex-1 min-w-0"><div class="flex items-center gap-2 mb-2"><span class="font-mono text-xs text-muted-foreground truncate">${escape_html(task.taskId)}</span> `);
-                  Badge($$renderer5, {
-                    variant: getStatusVariant(task.status),
-                    class: "text-xs",
-                    children: /* @__PURE__ */ __name(($$renderer6) => {
-                      $$renderer6.push(`<!---->${escape_html(task.status)}`);
-                    }, "children"),
-                    $$slots: { default: true }
-                  });
-                  $$renderer5.push(`<!----> <span class="text-xs text-muted-foreground ml-auto">${escape_html(formatElapsed(task.startedAt, task.pausedAt, task.totalPausedMs, task.status, task.completedAt))}</span></div> `);
-                  if (task.progress.step) {
-                    $$renderer5.push("<!--[-->");
-                    $$renderer5.push(`<div class="text-sm font-medium mb-3 text-balance">${escape_html(task.progress.step)}</div>`);
-                  } else {
-                    $$renderer5.push("<!--[!-->");
-                  }
-                  $$renderer5.push(`<!--]--> `);
-                  if (task.progress.totalSteps) {
-                    $$renderer5.push("<!--[-->");
-                    $$renderer5.push(`<div class="flex items-center gap-1.5"><!--[-->`);
-                    const each_array_2 = ensure_array_like(Array(task.progress.totalSteps));
-                    for (let i = 0, $$length2 = each_array_2.length; i < $$length2; i++) {
-                      each_array_2[i];
-                      $$renderer5.push(`<div${attr_class(`w-2 h-2 rounded-full transition-colors ${stringify2(getStepDotColor(i, task.progress.currentStepIndex || 0, task.progress.totalSteps, task.status))}`)}${attr("title", task.progress.completedSteps?.[i] || `Step ${i + 1}`)}></div>`);
-                    }
-                    $$renderer5.push(`<!--]--> <span class="text-xs text-muted-foreground ml-2">${escape_html(task.progress.currentStepIndex || 0)}/${escape_html(task.progress.totalSteps)}</span></div>`);
-                  } else {
-                    $$renderer5.push("<!--[!-->");
-                  }
-                  $$renderer5.push(`<!--]--> `);
-                  if (task.status === "completed" && task.progress.result) {
-                    $$renderer5.push("<!--[-->");
-                    $$renderer5.push(`<div class="mt-3 text-xs text-green-600 dark:text-green-400">\u2713 ${escape_html(task.progress.result)}</div>`);
-                  } else {
-                    $$renderer5.push("<!--[!-->");
-                  }
-                  $$renderer5.push(`<!--]--> `);
-                  if (task.status === "failed" && task.error) {
-                    $$renderer5.push("<!--[-->");
-                    $$renderer5.push(`<div class="mt-3 text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded p-2">\u2717 ${escape_html(task.error)}</div>`);
-                  } else {
-                    $$renderer5.push("<!--[!-->");
-                  }
-                  $$renderer5.push(`<!--]--></div> <div class="flex items-center gap-1">`);
-                  if (task.status === "running") {
-                    $$renderer5.push("<!--[-->");
-                    Button($$renderer5, {
-                      variant: "outline",
-                      size: "icon",
-                      class: "h-8 w-8",
-                      onclick: /* @__PURE__ */ __name(() => handlePause(task.taskId), "onclick"),
-                      title: "Pause task",
-                      children: /* @__PURE__ */ __name(($$renderer6) => {
-                        Pause($$renderer6, { class: "h-4 w-4" });
-                      }, "children"),
-                      $$slots: { default: true }
-                    });
-                  } else {
-                    $$renderer5.push("<!--[!-->");
-                    if (task.status === "paused") {
-                      $$renderer5.push("<!--[-->");
-                      Button($$renderer5, {
-                        variant: "outline",
-                        size: "icon",
-                        class: "h-8 w-8",
-                        onclick: /* @__PURE__ */ __name(() => handleResume(task.taskId), "onclick"),
-                        title: "Resume task",
-                        children: /* @__PURE__ */ __name(($$renderer6) => {
-                          Play($$renderer6, { class: "h-4 w-4" });
-                        }, "children"),
-                        $$slots: { default: true }
-                      });
-                    } else {
-                      $$renderer5.push("<!--[!-->");
-                    }
-                    $$renderer5.push(`<!--]-->`);
-                  }
-                  $$renderer5.push(`<!--]--> `);
-                  Button($$renderer5, {
-                    variant: "ghost",
-                    size: "icon",
-                    class: "h-8 w-8 text-destructive hover:text-destructive",
-                    onclick: /* @__PURE__ */ __name(() => handleCancel(task.taskId), "onclick"),
-                    title: "Delete task",
-                    children: /* @__PURE__ */ __name(($$renderer6) => {
-                      Trash_2($$renderer6, { class: "h-4 w-4" });
-                    }, "children"),
-                    $$slots: { default: true }
-                  });
-                  $$renderer5.push(`<!----></div></div></div>`);
-                }
-                $$renderer5.push(`<!--]--></div>`);
-              }
-              $$renderer5.push(`<!--]-->`);
-            }, "children"),
-            $$slots: { default: true }
-          });
-          $$renderer4.push(`<!---->`);
-        }, "children"),
-        $$slots: { default: true }
-      });
-      $$renderer3.push(`<!----></div>`);
-    }
-    __name($$render_inner, "$$render_inner");
-    do {
-      $$settled = true;
-      $$inner_renderer = $$renderer2.copy();
-      $$render_inner($$inner_renderer);
-    } while (!$$settled);
-    $$renderer2.subsume($$inner_renderer);
-  });
-}
-function _page($$renderer) {
-  head("1uha8ag", $$renderer, ($$renderer2) => {
-    $$renderer2.title(($$renderer3) => {
-      $$renderer3.push(`<title>ironalarm - Reliable task scheduling for Cloudflare Durable Objects</title>`);
-    });
-  });
-  $$renderer.push(`<div class="min-h-screen bg-white"><div class="container mx-auto px-6 py-16 lg:py-20"><div class="max-w-4xl mx-auto text-center space-y-6 mb-16">`);
-  Badge($$renderer, {
-    variant: "outline",
-    class: "font-mono",
-    children: /* @__PURE__ */ __name(($$renderer2) => {
-      $$renderer2.push(`<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-3 w-3"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" x2="20" y1="19" y2="19"></line></svg> bun install ironalarm`);
-    }, "children"),
-    $$slots: { default: true }
-  });
-  $$renderer.push(`<!----> <h1 class="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-balance">Reliable task scheduling for Cloudflare Durable Objects</h1> <p class="text-lg sm:text-xl text-muted-foreground text-balance max-w-2xl mx-auto leading-relaxed">Implementing the "reliable runNow" pattern for resilient long-running
-        tasks with automatic checkpoint recovery.</p> <div class="flex items-center justify-center gap-4 pt-4">`);
-  Button($$renderer, {
-    href: "/docs",
-    size: "lg",
-    children: /* @__PURE__ */ __name(($$renderer2) => {
-      $$renderer2.push(`<!---->Get Started`);
-    }, "children"),
-    $$slots: { default: true }
-  });
-  $$renderer.push(`<!----> `);
-  Button($$renderer, {
-    href: "/docs/api",
-    variant: "outline",
-    size: "lg",
-    children: /* @__PURE__ */ __name(($$renderer2) => {
-      $$renderer2.push(`<!---->API Reference`);
-    }, "children"),
-    $$slots: { default: true }
-  });
-  $$renderer.push(`<!----></div></div> <div class="max-w-4xl mx-auto mb-16">`);
-  Card($$renderer, {
-    children: /* @__PURE__ */ __name(($$renderer2) => {
-      Card_header($$renderer2, {
-        children: /* @__PURE__ */ __name(($$renderer3) => {
-          Card_title($$renderer3, {
-            children: /* @__PURE__ */ __name(($$renderer4) => {
-              $$renderer4.push(`<!---->The Problem`);
-            }, "children"),
-            $$slots: { default: true }
-          });
-        }, "children"),
-        $$slots: { default: true }
-      });
-      $$renderer2.push(`<!----> `);
-      Card_content($$renderer2, {
-        children: /* @__PURE__ */ __name(($$renderer3) => {
-          $$renderer3.push(`<p class="leading-relaxed">Cloudflare Durable Objects can evict your code after ~144 seconds of
-            inactivity. For long-running operations (like AI agent loops), a
-            single eviction mid-task breaks your workflow. <span class="font-semibold">ironalarm</span> solves this with a lightweight,
-            userspace implementation that persists task state and uses a 30-second
-            safety alarm net\u2014if evicted, the task automatically retries and resumes
-            from checkpoints.</p>`);
-        }, "children"),
-        $$slots: { default: true }
-      });
-      $$renderer2.push(`<!---->`);
-    }, "children"),
-    $$slots: { default: true }
-  });
-  $$renderer.push(`<!----></div> <div class="max-w-4xl mx-auto mb-16"><div class="text-center mb-8"><h2 class="text-2xl font-semibold mb-2">Try it live</h2> <p class="text-muted-foreground">Start a task and watch it handle evictions, checkpoints, and
-          resumability</p></div> `);
-  InteractiveDemo($$renderer);
-  $$renderer.push(`<!----></div> <div class="flex justify-center my-20 max-w-4xl mx-auto"><a href="/mission" class="group relative flex items-center justify-center transition-transform w-full bg-linear-to-r from-purple-900/70 to-pink-900/70 border-dashed border-pink-500/50 border-2 rounded-xl"><div class="relative overflow-hidden bg-muted/50 p-6 w-full flex items-center justify-center"><img src="/mining-game.png" alt="Mining Game" class="w-32 h-32 object-contain"/> <div class="absolute inset-0 bg-primary/10 opacity-0 group-hover:opacity-100 transition-opacity"></div> <div class="mt-4 text-left"><div class="text-lg font-semibold">Tired of boring deveoper docs? Try <code class="font-mono bg-muted px-1.5 py-0.5 rounded text-sm">the Mining Game</code></div> <div class="text-sm text-muted-foreground">Interactive demo</div></div></div></a></div> <div class="max-w-4xl mx-auto"><h2 class="text-2xl font-semibold mb-6 text-center">Key Features</h2> <div class="grid sm:grid-cols-2 gap-4">`);
-  Card($$renderer, {
-    children: /* @__PURE__ */ __name(($$renderer2) => {
-      Card_content($$renderer2, {
-        class: "pt-6",
-        children: /* @__PURE__ */ __name(($$renderer3) => {
-          $$renderer3.push(`<div class="flex items-start gap-3"><div class="h-8 w-8 rounded-md bg-muted flex items-center justify-center shrink-0 mt-1"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg></div> <div><h3 class="font-semibold mb-1">Reliable execution</h3> <p class="text-sm text-muted-foreground leading-relaxed">runNow() starts immediately with 30s safety alarm for eviction
-                  recovery</p></div></div>`);
-        }, "children"),
-        $$slots: { default: true }
-      });
-    }, "children"),
-    $$slots: { default: true }
-  });
-  $$renderer.push(`<!----> `);
-  Card($$renderer, {
-    children: /* @__PURE__ */ __name(($$renderer2) => {
-      Card_content($$renderer2, {
-        class: "pt-6",
-        children: /* @__PURE__ */ __name(($$renderer3) => {
-          $$renderer3.push(`<div class="flex items-start gap-3"><div class="h-8 w-8 rounded-md bg-muted flex items-center justify-center shrink-0 mt-1"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg></div> <div><h3 class="font-semibold mb-1">Checkpoints</h3> <p class="text-sm text-muted-foreground leading-relaxed">User-managed progress tracking for resumable work after
-                  evictions</p></div></div>`);
-        }, "children"),
-        $$slots: { default: true }
-      });
-    }, "children"),
-    $$slots: { default: true }
-  });
-  $$renderer.push(`<!----> `);
-  Card($$renderer, {
-    children: /* @__PURE__ */ __name(($$renderer2) => {
-      Card_content($$renderer2, {
-        class: "pt-6",
-        children: /* @__PURE__ */ __name(($$renderer3) => {
-          $$renderer3.push(`<div class="flex items-start gap-3"><div class="h-8 w-8 rounded-md bg-muted flex items-center justify-center shrink-0 mt-1"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg></div> <div><h3 class="font-semibold mb-1">Named handlers</h3> <p class="text-sm text-muted-foreground leading-relaxed">Register task handlers by name\u2014no function serialization
-                  required</p></div></div>`);
-        }, "children"),
-        $$slots: { default: true }
-      });
-    }, "children"),
-    $$slots: { default: true }
-  });
-  $$renderer.push(`<!----> `);
-  Card($$renderer, {
-    children: /* @__PURE__ */ __name(($$renderer2) => {
-      Card_content($$renderer2, {
-        class: "pt-6",
-        children: /* @__PURE__ */ __name(($$renderer3) => {
-          $$renderer3.push(`<div class="flex items-start gap-3"><div class="h-8 w-8 rounded-md bg-muted flex items-center justify-center shrink-0 mt-1"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4"><path d="m7.5 4.27 9 5.15"></path><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"></path><path d="m3.3 7 8.7 5 8.7-5"></path><path d="M12 22V12"></path></svg></div> <div><h3 class="font-semibold mb-1">Minimal</h3> <p class="text-sm text-muted-foreground leading-relaxed">~300 LOC, zero dependencies, fully serializable tasks</p></div></div>`);
-        }, "children"),
-        $$slots: { default: true }
-      });
-    }, "children"),
-    $$slots: { default: true }
-  });
-  $$renderer.push(`<!----></div></div></div></div>`);
-}
-var srOnlyStyles, srOnlyStylesString, ElementSize, Previous, defaultOptions, DOMTypeahead, OPPOSITE_SIDE, FloatingRootContext, FloatingContentContext, FloatingTooltipRootContext, FloatingRootState, FloatingContentState, FloatingAnchorState, DataTypeahead, FIRST_KEYS, LAST_KEYS, FIRST_LAST_KEYS, selectAttrs, SelectRootContext, SelectContentContext, SelectBaseRootState, SelectSingleRootState, SelectMultipleRootState, SelectRootState, SelectTriggerState, SelectContentState, SelectItemState, SelectHiddenInputState, SelectViewportState, SelectScrollButtonImplState, SelectScrollDownButtonState, SelectScrollUpButtonState, labelAttrs, LabelRootState, badgeVariants;
-var init_page_svelte = __esm({
-  ".svelte-kit/output/server/entries/pages/_page.svelte.js"() {
-    init_virtual_unenv_global_polyfill_cloudflare_unenv_preset_node_process();
-    init_virtual_unenv_global_polyfill_cloudflare_unenv_preset_node_console();
-    init_performance2();
-    init_async();
-    init_input();
-    init_data_remote();
-    init_button();
-    init_clsx();
-    init_floating_ui_dom();
-    init_events();
-    init_Icon();
-    init_dist7();
-    srOnlyStyles = {
-      position: "absolute",
-      width: "1px",
-      height: "1px",
-      padding: "0",
-      margin: "-1px",
-      overflow: "hidden",
-      clip: "rect(0, 0, 0, 0)",
-      whiteSpace: "nowrap",
-      borderWidth: "0",
-      transform: "translateX(-100%)"
-    };
-    srOnlyStylesString = styleToString(srOnlyStyles);
-    __name(isFunction4, "isFunction");
-    __name(get$1, "get$1");
-    ElementSize = class {
-      static {
-        __name(this, "ElementSize");
-      }
-      // no need to use `$state` here since we are using createSubscriber
-      #size = { width: 0, height: 0 };
-      #observed = false;
-      #options;
-      #node;
-      #window;
-      // we use a derived here to extract the width so that if the width doesn't change we don't get a state update
-      // which we would get if we would just use a getter since the version of the subscriber will be changing
-      #width = derived(() => {
-        this.#subscribe()?.();
-        return this.getSize().width;
-      });
-      // we use a derived here to extract the height so that if the height doesn't change we don't get a state update
-      // which we would get if we would just use a getter since the version of the subscriber will be changing
-      #height = derived(() => {
-        this.#subscribe()?.();
-        return this.getSize().height;
-      });
-      // we need to use a derived here because the class will be created before the node is bound to the ref
-      #subscribe = derived(() => {
-        const node$ = get$1(this.#node);
-        if (!node$) return;
-        return createSubscriber2();
-      });
-      constructor(node, options2 = { box: "border-box" }) {
-        this.#window = options2.window ?? defaultWindow;
-        this.#options = options2;
-        this.#node = node;
-        this.#size = { width: 0, height: 0 };
-      }
-      calculateSize() {
-        const element2 = get$1(this.#node);
-        if (!element2 || !this.#window) {
-          return;
-        }
-        const offsetWidth = element2.offsetWidth;
-        const offsetHeight = element2.offsetHeight;
-        if (this.#options.box === "border-box") {
-          return { width: offsetWidth, height: offsetHeight };
-        }
-        const style = this.#window.getComputedStyle(element2);
-        const paddingWidth = parseFloat(style.paddingLeft) + parseFloat(style.paddingRight);
-        const paddingHeight = parseFloat(style.paddingTop) + parseFloat(style.paddingBottom);
-        const borderWidth = parseFloat(style.borderLeftWidth) + parseFloat(style.borderRightWidth);
-        const borderHeight = parseFloat(style.borderTopWidth) + parseFloat(style.borderBottomWidth);
-        const contentWidth = offsetWidth - paddingWidth - borderWidth;
-        const contentHeight = offsetHeight - paddingHeight - borderHeight;
-        return { width: contentWidth, height: contentHeight };
-      }
-      getSize() {
-        return this.#observed ? this.#size : this.calculateSize() ?? this.#size;
-      }
-      get current() {
-        this.#subscribe()?.();
-        return this.getSize();
-      }
-      get width() {
-        return this.#width();
-      }
-      get height() {
-        return this.#height();
-      }
-    };
-    Previous = class {
-      static {
-        __name(this, "Previous");
-      }
-      #previousCallback = /* @__PURE__ */ __name(() => void 0, "#previousCallback");
-      #previous = derived(() => this.#previousCallback());
-      constructor(getter, initialValue) {
-        let actualPrevious = void 0;
-        if (initialValue !== void 0) actualPrevious = initialValue;
-        this.#previousCallback = () => {
-          try {
-            return actualPrevious;
-          } finally {
-            actualPrevious = getter();
-          }
-        };
-      }
-      get current() {
-        return this.#previous();
-      }
-    };
-    __name(next2, "next");
-    __name(prev, "prev");
-    __name(forward, "forward");
-    __name(backward, "backward");
-    __name(getNextMatch, "getNextMatch");
-    __name(wrapArray, "wrapArray");
-    defaultOptions = { afterMs: 1e4, onChange: noop3 };
-    __name(boxAutoReset, "boxAutoReset");
-    DOMTypeahead = class {
-      static {
-        __name(this, "DOMTypeahead");
-      }
-      #opts;
-      #search;
-      #onMatch = derived(() => {
-        if (this.#opts.onMatch) return this.#opts.onMatch;
-        return (node) => node.focus();
-      });
-      #getCurrentItem = derived(() => {
-        if (this.#opts.getCurrentItem) return this.#opts.getCurrentItem;
-        return this.#opts.getActiveElement;
-      });
-      constructor(opts) {
-        this.#opts = opts;
-        this.#search = boxAutoReset("", { afterMs: 1e3, getWindow: opts.getWindow });
-        this.handleTypeaheadSearch = this.handleTypeaheadSearch.bind(this);
-        this.resetTypeahead = this.resetTypeahead.bind(this);
-      }
-      handleTypeaheadSearch(key2, candidates) {
-        if (!candidates.length) return;
-        this.#search.current = this.#search.current + key2;
-        const currentItem = this.#getCurrentItem()();
-        const currentMatch = candidates.find((item) => item === currentItem)?.textContent?.trim() ?? "";
-        const values = candidates.map((item) => item.textContent?.trim() ?? "");
-        const nextMatch = getNextMatch(values, this.#search.current, currentMatch);
-        const newItem = candidates.find((item) => item.textContent?.trim() === nextMatch);
-        if (newItem) this.#onMatch()(newItem);
-        return newItem;
-      }
-      resetTypeahead() {
-        this.#search.current = "";
-      }
-      get search() {
-        return this.#search.current;
-      }
-    };
-    __name(Hidden_input, "Hidden_input");
-    __name(get2, "get");
-    __name(getDPR, "getDPR");
-    __name(roundByDPR, "roundByDPR");
-    __name(getFloatingContentCSSVars, "getFloatingContentCSSVars");
-    __name(useFloating, "useFloating");
-    OPPOSITE_SIDE = { top: "bottom", right: "left", bottom: "top", left: "right" };
-    FloatingRootContext = new Context("Floating.Root");
-    FloatingContentContext = new Context("Floating.Content");
-    FloatingTooltipRootContext = new Context("Floating.Root");
-    FloatingRootState = class _FloatingRootState {
-      static {
-        __name(this, "FloatingRootState");
-      }
-      static create(tooltip = false) {
-        return tooltip ? FloatingTooltipRootContext.set(new _FloatingRootState()) : FloatingRootContext.set(new _FloatingRootState());
-      }
-      anchorNode = simpleBox(null);
-      customAnchorNode = simpleBox(null);
-      triggerNode = simpleBox(null);
-      constructor() {
-      }
-    };
-    FloatingContentState = class _FloatingContentState {
-      static {
-        __name(this, "FloatingContentState");
-      }
-      static create(opts, tooltip = false) {
-        return tooltip ? FloatingContentContext.set(new _FloatingContentState(opts, FloatingTooltipRootContext.get())) : FloatingContentContext.set(new _FloatingContentState(opts, FloatingRootContext.get()));
-      }
-      opts;
-      root;
-      // nodes
-      contentRef = simpleBox(null);
-      wrapperRef = simpleBox(null);
-      arrowRef = simpleBox(null);
-      contentAttachment = attachRef(this.contentRef);
-      wrapperAttachment = attachRef(this.wrapperRef);
-      arrowAttachment = attachRef(this.arrowRef);
-      // ids
-      arrowId = simpleBox(useId());
-      #transformedStyle = derived(() => {
-        if (typeof this.opts.style === "string") return cssToStyleObj(this.opts.style);
-        if (!this.opts.style) return {};
-      });
-      #updatePositionStrategy = void 0;
-      #arrowSize = new ElementSize(() => this.arrowRef.current ?? void 0);
-      #arrowWidth = derived(() => this.#arrowSize?.width ?? 0);
-      #arrowHeight = derived(() => this.#arrowSize?.height ?? 0);
-      #desiredPlacement = derived(() => this.opts.side?.current + (this.opts.align.current !== "center" ? `-${this.opts.align.current}` : ""));
-      #boundary = derived(() => Array.isArray(this.opts.collisionBoundary.current) ? this.opts.collisionBoundary.current : [this.opts.collisionBoundary.current]);
-      #hasExplicitBoundaries = derived(() => this.#boundary().length > 0);
-      get hasExplicitBoundaries() {
-        return this.#hasExplicitBoundaries();
-      }
-      set hasExplicitBoundaries($$value) {
-        return this.#hasExplicitBoundaries($$value);
-      }
-      #detectOverflowOptions = derived(() => ({
-        padding: this.opts.collisionPadding.current,
-        boundary: this.#boundary().filter(isNotNull2),
-        altBoundary: this.hasExplicitBoundaries
-      }));
-      get detectOverflowOptions() {
-        return this.#detectOverflowOptions();
-      }
-      set detectOverflowOptions($$value) {
-        return this.#detectOverflowOptions($$value);
-      }
-      #availableWidth = void 0;
-      #availableHeight = void 0;
-      #anchorWidth = void 0;
-      #anchorHeight = void 0;
-      #middleware = derived(() => [
-        offset2({
-          mainAxis: this.opts.sideOffset.current + this.#arrowHeight(),
-          alignmentAxis: this.opts.alignOffset.current
-        }),
-        this.opts.avoidCollisions.current && shift2({
-          mainAxis: true,
-          crossAxis: false,
-          limiter: this.opts.sticky.current === "partial" ? limitShift2() : void 0,
-          ...this.detectOverflowOptions
-        }),
-        this.opts.avoidCollisions.current && flip2({ ...this.detectOverflowOptions }),
-        size2({
-          ...this.detectOverflowOptions,
-          apply: /* @__PURE__ */ __name(({ rects, availableWidth, availableHeight }) => {
-            const { width: anchorWidth, height: anchorHeight } = rects.reference;
-            this.#availableWidth = availableWidth;
-            this.#availableHeight = availableHeight;
-            this.#anchorWidth = anchorWidth;
-            this.#anchorHeight = anchorHeight;
-          }, "apply")
-        }),
-        this.arrowRef.current && arrow2({
-          element: this.arrowRef.current,
-          padding: this.opts.arrowPadding.current
-        }),
-        transformOrigin({
-          arrowWidth: this.#arrowWidth(),
-          arrowHeight: this.#arrowHeight()
-        }),
-        this.opts.hideWhenDetached.current && hide2({ strategy: "referenceHidden", ...this.detectOverflowOptions })
-      ].filter(Boolean));
-      get middleware() {
-        return this.#middleware();
-      }
-      set middleware($$value) {
-        return this.#middleware($$value);
-      }
-      floating;
-      #placedSide = derived(() => getSideFromPlacement(this.floating.placement));
-      get placedSide() {
-        return this.#placedSide();
-      }
-      set placedSide($$value) {
-        return this.#placedSide($$value);
-      }
-      #placedAlign = derived(() => getAlignFromPlacement(this.floating.placement));
-      get placedAlign() {
-        return this.#placedAlign();
-      }
-      set placedAlign($$value) {
-        return this.#placedAlign($$value);
-      }
-      #arrowX = derived(() => this.floating.middlewareData.arrow?.x ?? 0);
-      get arrowX() {
-        return this.#arrowX();
-      }
-      set arrowX($$value) {
-        return this.#arrowX($$value);
-      }
-      #arrowY = derived(() => this.floating.middlewareData.arrow?.y ?? 0);
-      get arrowY() {
-        return this.#arrowY();
-      }
-      set arrowY($$value) {
-        return this.#arrowY($$value);
-      }
-      #cannotCenterArrow = derived(() => this.floating.middlewareData.arrow?.centerOffset !== 0);
-      get cannotCenterArrow() {
-        return this.#cannotCenterArrow();
-      }
-      set cannotCenterArrow($$value) {
-        return this.#cannotCenterArrow($$value);
-      }
-      contentZIndex;
-      #arrowBaseSide = derived(() => OPPOSITE_SIDE[this.placedSide]);
-      get arrowBaseSide() {
-        return this.#arrowBaseSide();
-      }
-      set arrowBaseSide($$value) {
-        return this.#arrowBaseSide($$value);
-      }
-      #wrapperProps = derived(() => ({
-        id: this.opts.wrapperId.current,
-        "data-bits-floating-content-wrapper": "",
-        style: {
-          ...this.floating.floatingStyles,
-          transform: this.floating.isPositioned ? this.floating.floatingStyles.transform : "translate(0, -200%)",
-          minWidth: "max-content",
-          zIndex: this.contentZIndex,
-          "--bits-floating-transform-origin": `${this.floating.middlewareData.transformOrigin?.x} ${this.floating.middlewareData.transformOrigin?.y}`,
-          "--bits-floating-available-width": `${this.#availableWidth}px`,
-          "--bits-floating-available-height": `${this.#availableHeight}px`,
-          "--bits-floating-anchor-width": `${this.#anchorWidth}px`,
-          "--bits-floating-anchor-height": `${this.#anchorHeight}px`,
-          ...this.floating.middlewareData.hide?.referenceHidden && { visibility: "hidden", "pointer-events": "none" },
-          ...this.#transformedStyle()
-        },
-        dir: this.opts.dir.current,
-        ...this.wrapperAttachment
-      }));
-      get wrapperProps() {
-        return this.#wrapperProps();
-      }
-      set wrapperProps($$value) {
-        return this.#wrapperProps($$value);
-      }
-      #props = derived(() => ({
-        "data-side": this.placedSide,
-        "data-align": this.placedAlign,
-        style: styleToString({ ...this.#transformedStyle() }),
-        ...this.contentAttachment
-      }));
-      get props() {
-        return this.#props();
-      }
-      set props($$value) {
-        return this.#props($$value);
-      }
-      #arrowStyle = derived(() => ({
-        position: "absolute",
-        left: this.arrowX ? `${this.arrowX}px` : void 0,
-        top: this.arrowY ? `${this.arrowY}px` : void 0,
-        [this.arrowBaseSide]: 0,
-        "transform-origin": { top: "", right: "0 0", bottom: "center 0", left: "100% 0" }[this.placedSide],
-        transform: {
-          top: "translateY(100%)",
-          right: "translateY(50%) rotate(90deg) translateX(-50%)",
-          bottom: "rotate(180deg)",
-          left: "translateY(50%) rotate(-90deg) translateX(50%)"
-        }[this.placedSide],
-        visibility: this.cannotCenterArrow ? "hidden" : void 0
-      }));
-      get arrowStyle() {
-        return this.#arrowStyle();
-      }
-      set arrowStyle($$value) {
-        return this.#arrowStyle($$value);
-      }
-      constructor(opts, root2) {
-        this.opts = opts;
-        this.root = root2;
-        if (opts.customAnchor) {
-          this.root.customAnchorNode.current = opts.customAnchor.current;
-        }
-        watch(() => opts.customAnchor.current, (customAnchor) => {
-          this.root.customAnchorNode.current = customAnchor;
-        });
-        this.floating = useFloating({
-          strategy: /* @__PURE__ */ __name(() => this.opts.strategy.current, "strategy"),
-          placement: /* @__PURE__ */ __name(() => this.#desiredPlacement(), "placement"),
-          middleware: /* @__PURE__ */ __name(() => this.middleware, "middleware"),
-          reference: this.root.anchorNode,
-          open: /* @__PURE__ */ __name(() => this.opts.enabled.current, "open"),
-          sideOffset: /* @__PURE__ */ __name(() => this.opts.sideOffset.current, "sideOffset"),
-          alignOffset: /* @__PURE__ */ __name(() => this.opts.alignOffset.current, "alignOffset")
-        });
-        watch(() => this.contentRef.current, (contentNode) => {
-          if (!contentNode) return;
-          const win = getWindow(contentNode);
-          this.contentZIndex = win.getComputedStyle(contentNode).zIndex;
-        });
-      }
-    };
-    FloatingAnchorState = class _FloatingAnchorState {
-      static {
-        __name(this, "FloatingAnchorState");
-      }
-      static create(opts, tooltip = false) {
-        return tooltip ? new _FloatingAnchorState(opts, FloatingTooltipRootContext.get()) : new _FloatingAnchorState(opts, FloatingRootContext.get());
-      }
-      opts;
-      root;
-      constructor(opts, root2) {
-        this.opts = opts;
-        this.root = root2;
-        if (opts.virtualEl && opts.virtualEl.current) {
-          root2.triggerNode = boxFrom(opts.virtualEl.current);
-        } else {
-          root2.triggerNode = opts.ref;
-        }
-      }
-    };
-    __name(transformOrigin, "transformOrigin");
-    __name(getSideAndAlignFromPlacement, "getSideAndAlignFromPlacement");
-    __name(getSideFromPlacement, "getSideFromPlacement");
-    __name(getAlignFromPlacement, "getAlignFromPlacement");
-    __name(Floating_layer, "Floating_layer");
-    DataTypeahead = class {
-      static {
-        __name(this, "DataTypeahead");
-      }
-      #opts;
-      #candidateValues = derived(() => this.#opts.candidateValues());
-      #search;
-      constructor(opts) {
-        this.#opts = opts;
-        this.#search = boxAutoReset("", { afterMs: 1e3, getWindow: this.#opts.getWindow });
-        this.handleTypeaheadSearch = this.handleTypeaheadSearch.bind(this);
-        this.resetTypeahead = this.resetTypeahead.bind(this);
-      }
-      handleTypeaheadSearch(key2) {
-        if (!this.#opts.enabled() || !this.#candidateValues().length) return;
-        this.#search.current = this.#search.current + key2;
-        const currentItem = this.#opts.getCurrentItem();
-        const currentMatch = this.#candidateValues().find((item) => item === currentItem) ?? "";
-        const values = this.#candidateValues().map((item) => item ?? "");
-        const nextMatch = getNextMatch(values, this.#search.current, currentMatch);
-        const newItem = this.#candidateValues().find((item) => item === nextMatch);
-        if (newItem) {
-          this.#opts.onMatch(newItem);
-        }
-        return newItem;
-      }
-      resetTypeahead() {
-        this.#search.current = "";
-      }
-    };
-    FIRST_KEYS = [ARROW_DOWN, PAGE_UP, HOME];
-    LAST_KEYS = [ARROW_UP, PAGE_DOWN, END];
-    FIRST_LAST_KEYS = [...FIRST_KEYS, ...LAST_KEYS];
-    selectAttrs = createBitsAttrs({
-      component: "select",
-      parts: [
-        "trigger",
-        "content",
-        "item",
-        "viewport",
-        "scroll-up-button",
-        "scroll-down-button",
-        "group",
-        "group-label",
-        "separator",
-        "arrow",
-        "input",
-        "content-wrapper",
-        "item-text",
-        "value"
-      ]
-    });
-    SelectRootContext = new Context("Select.Root | Combobox.Root");
-    SelectContentContext = new Context("Select.Content | Combobox.Content");
-    SelectBaseRootState = class {
-      static {
-        __name(this, "SelectBaseRootState");
-      }
-      opts;
-      touchedInput = false;
-      inputNode = null;
-      contentNode = null;
-      contentPresence;
-      viewportNode = null;
-      triggerNode = null;
-      valueId = "";
-      highlightedNode = null;
-      #highlightedValue = derived(() => {
-        if (!this.highlightedNode) return null;
-        return this.highlightedNode.getAttribute("data-value");
-      });
-      get highlightedValue() {
-        return this.#highlightedValue();
-      }
-      set highlightedValue($$value) {
-        return this.#highlightedValue($$value);
-      }
-      #highlightedId = derived(() => {
-        if (!this.highlightedNode) return void 0;
-        return this.highlightedNode.id;
-      });
-      get highlightedId() {
-        return this.#highlightedId();
-      }
-      set highlightedId($$value) {
-        return this.#highlightedId($$value);
-      }
-      #highlightedLabel = derived(() => {
-        if (!this.highlightedNode) return null;
-        return this.highlightedNode.getAttribute("data-label");
-      });
-      get highlightedLabel() {
-        return this.#highlightedLabel();
-      }
-      set highlightedLabel($$value) {
-        return this.#highlightedLabel($$value);
-      }
-      isUsingKeyboard = false;
-      isCombobox = false;
-      domContext = new DOMContext(() => null);
-      constructor(opts) {
-        this.opts = opts;
-        this.isCombobox = opts.isCombobox;
-        this.contentPresence = new PresenceManager({
-          ref: boxWith(() => this.contentNode),
-          open: this.opts.open,
-          onComplete: /* @__PURE__ */ __name(() => {
-            this.opts.onOpenChangeComplete.current(this.opts.open.current);
-          }, "onComplete")
-        });
-      }
-      setHighlightedNode(node, initial2 = false) {
-        this.highlightedNode = node;
-        if (node && (this.isUsingKeyboard || initial2)) {
-          node.scrollIntoView({ block: this.opts.scrollAlignment.current });
-        }
-      }
-      getCandidateNodes() {
-        const node = this.contentNode;
-        if (!node) return [];
-        return Array.from(node.querySelectorAll(`[${this.getBitsAttr("item")}]:not([data-disabled])`));
-      }
-      setHighlightedToFirstCandidate(initial2 = false) {
-        this.setHighlightedNode(null);
-        let nodes = this.getCandidateNodes();
-        if (!nodes.length) return;
-        if (this.viewportNode) {
-          const viewportRect = this.viewportNode.getBoundingClientRect();
-          nodes = nodes.filter((node) => {
-            if (!this.viewportNode) return false;
-            const nodeRect = node.getBoundingClientRect();
-            const isNodeFullyVisible = nodeRect.right < viewportRect.right && nodeRect.left > viewportRect.left && nodeRect.bottom < viewportRect.bottom && nodeRect.top > viewportRect.top;
-            return isNodeFullyVisible;
-          });
-        }
-        this.setHighlightedNode(nodes[0], initial2);
-      }
-      getNodeByValue(value) {
-        const candidateNodes = this.getCandidateNodes();
-        return candidateNodes.find((node) => node.dataset.value === value) ?? null;
-      }
-      setOpen(open) {
-        this.opts.open.current = open;
-      }
-      toggleOpen() {
-        this.opts.open.current = !this.opts.open.current;
-      }
-      handleOpen() {
-        this.setOpen(true);
-      }
-      handleClose() {
-        this.setHighlightedNode(null);
-        this.setOpen(false);
-      }
-      toggleMenu() {
-        this.toggleOpen();
-      }
-      getBitsAttr = /* @__PURE__ */ __name((part) => {
-        return selectAttrs.getAttr(part, this.isCombobox ? "combobox" : void 0);
-      }, "getBitsAttr");
-    };
-    SelectSingleRootState = class extends SelectBaseRootState {
-      static {
-        __name(this, "SelectSingleRootState");
-      }
-      opts;
-      isMulti = false;
-      #hasValue = derived(() => this.opts.value.current !== "");
-      get hasValue() {
-        return this.#hasValue();
-      }
-      set hasValue($$value) {
-        return this.#hasValue($$value);
-      }
-      #currentLabel = derived(() => {
-        if (!this.opts.items.current.length) return "";
-        return this.opts.items.current.find((item) => item.value === this.opts.value.current)?.label ?? "";
-      });
-      get currentLabel() {
-        return this.#currentLabel();
-      }
-      set currentLabel($$value) {
-        return this.#currentLabel($$value);
-      }
-      #candidateLabels = derived(() => {
-        if (!this.opts.items.current.length) return [];
-        const filteredItems = this.opts.items.current.filter((item) => !item.disabled);
-        return filteredItems.map((item) => item.label);
-      });
-      get candidateLabels() {
-        return this.#candidateLabels();
-      }
-      set candidateLabels($$value) {
-        return this.#candidateLabels($$value);
-      }
-      #dataTypeaheadEnabled = derived(() => {
-        if (this.isMulti) return false;
-        if (this.opts.items.current.length === 0) return false;
-        return true;
-      });
-      get dataTypeaheadEnabled() {
-        return this.#dataTypeaheadEnabled();
-      }
-      set dataTypeaheadEnabled($$value) {
-        return this.#dataTypeaheadEnabled($$value);
-      }
-      constructor(opts) {
-        super(opts);
-        this.opts = opts;
-        watch(() => this.opts.open.current, () => {
-          if (!this.opts.open.current) return;
-          this.setInitialHighlightedNode();
-        });
-      }
-      includesItem(itemValue) {
-        return this.opts.value.current === itemValue;
-      }
-      toggleItem(itemValue, itemLabel = itemValue) {
-        const newValue = this.includesItem(itemValue) ? "" : itemValue;
-        this.opts.value.current = newValue;
-        if (newValue !== "") {
-          this.opts.inputValue.current = itemLabel;
-        }
-      }
-      setInitialHighlightedNode() {
-        afterTick(() => {
-          if (this.highlightedNode && this.domContext.getDocument().contains(this.highlightedNode)) return;
-          if (this.opts.value.current !== "") {
-            const node = this.getNodeByValue(this.opts.value.current);
-            if (node) {
-              this.setHighlightedNode(node, true);
-              return;
-            }
-          }
-          this.setHighlightedToFirstCandidate(true);
-        });
-      }
-    };
-    SelectMultipleRootState = class extends SelectBaseRootState {
-      static {
-        __name(this, "SelectMultipleRootState");
-      }
-      opts;
-      isMulti = true;
-      #hasValue = derived(() => this.opts.value.current.length > 0);
-      get hasValue() {
-        return this.#hasValue();
-      }
-      set hasValue($$value) {
-        return this.#hasValue($$value);
-      }
-      constructor(opts) {
-        super(opts);
-        this.opts = opts;
-        watch(() => this.opts.open.current, () => {
-          if (!this.opts.open.current) return;
-          this.setInitialHighlightedNode();
-        });
-      }
-      includesItem(itemValue) {
-        return this.opts.value.current.includes(itemValue);
-      }
-      toggleItem(itemValue, itemLabel = itemValue) {
-        if (this.includesItem(itemValue)) {
-          this.opts.value.current = this.opts.value.current.filter((v) => v !== itemValue);
-        } else {
-          this.opts.value.current = [...this.opts.value.current, itemValue];
-        }
-        this.opts.inputValue.current = itemLabel;
-      }
-      setInitialHighlightedNode() {
-        afterTick(() => {
-          if (!this.domContext) return;
-          if (this.highlightedNode && this.domContext.getDocument().contains(this.highlightedNode)) return;
-          if (this.opts.value.current.length && this.opts.value.current[0] !== "") {
-            const node = this.getNodeByValue(this.opts.value.current[0]);
-            if (node) {
-              this.setHighlightedNode(node, true);
-              return;
-            }
-          }
-          this.setHighlightedToFirstCandidate(true);
-        });
-      }
-    };
-    SelectRootState = class {
-      static {
-        __name(this, "SelectRootState");
-      }
-      static create(props) {
-        const { type, ...rest } = props;
-        const rootState = type === "single" ? new SelectSingleRootState(rest) : new SelectMultipleRootState(rest);
-        return SelectRootContext.set(rootState);
-      }
-    };
-    SelectTriggerState = class _SelectTriggerState {
-      static {
-        __name(this, "SelectTriggerState");
-      }
-      static create(opts) {
-        return new _SelectTriggerState(opts, SelectRootContext.get());
-      }
-      opts;
-      root;
-      attachment;
-      #domTypeahead;
-      #dataTypeahead;
-      constructor(opts, root2) {
-        this.opts = opts;
-        this.root = root2;
-        this.attachment = attachRef(opts.ref, (v) => this.root.triggerNode = v);
-        this.root.domContext = new DOMContext(opts.ref);
-        this.#domTypeahead = new DOMTypeahead({
-          getCurrentItem: /* @__PURE__ */ __name(() => this.root.highlightedNode, "getCurrentItem"),
-          onMatch: /* @__PURE__ */ __name((node) => {
-            this.root.setHighlightedNode(node);
-          }, "onMatch"),
-          getActiveElement: /* @__PURE__ */ __name(() => this.root.domContext.getActiveElement(), "getActiveElement"),
-          getWindow: /* @__PURE__ */ __name(() => this.root.domContext.getWindow(), "getWindow")
-        });
-        this.#dataTypeahead = new DataTypeahead({
-          getCurrentItem: /* @__PURE__ */ __name(() => {
-            if (this.root.isMulti) return "";
-            return this.root.currentLabel;
-          }, "getCurrentItem"),
-          onMatch: /* @__PURE__ */ __name((label) => {
-            if (this.root.isMulti) return;
-            if (!this.root.opts.items.current) return;
-            const matchedItem = this.root.opts.items.current.find((item) => item.label === label);
-            if (!matchedItem) return;
-            this.root.opts.value.current = matchedItem.value;
-          }, "onMatch"),
-          enabled: /* @__PURE__ */ __name(() => !this.root.isMulti && this.root.dataTypeaheadEnabled, "enabled"),
-          candidateValues: /* @__PURE__ */ __name(() => this.root.isMulti ? [] : this.root.candidateLabels, "candidateValues"),
-          getWindow: /* @__PURE__ */ __name(() => this.root.domContext.getWindow(), "getWindow")
-        });
-        this.onkeydown = this.onkeydown.bind(this);
-        this.onpointerdown = this.onpointerdown.bind(this);
-        this.onpointerup = this.onpointerup.bind(this);
-        this.onclick = this.onclick.bind(this);
-      }
-      #handleOpen() {
-        this.root.opts.open.current = true;
-        this.#dataTypeahead.resetTypeahead();
-        this.#domTypeahead.resetTypeahead();
-      }
-      #handlePointerOpen(_) {
-        this.#handleOpen();
-      }
-      /**
-       * Logic used to handle keyboard selection/deselection.
-       *
-       * If it returns true, it means the item was selected and whatever is calling
-       * this function should return early
-       *
-       */
-      #handleKeyboardSelection() {
-        const isCurrentSelectedValue = this.root.highlightedValue === this.root.opts.value.current;
-        if (!this.root.opts.allowDeselect.current && isCurrentSelectedValue && !this.root.isMulti) {
-          this.root.handleClose();
-          return true;
-        }
-        if (this.root.highlightedValue !== null) {
-          this.root.toggleItem(this.root.highlightedValue, this.root.highlightedLabel ?? void 0);
-        }
-        if (!this.root.isMulti && !isCurrentSelectedValue) {
-          this.root.handleClose();
-          return true;
-        }
-        return false;
-      }
-      onkeydown(e3) {
-        this.root.isUsingKeyboard = true;
-        if (e3.key === ARROW_UP || e3.key === ARROW_DOWN) e3.preventDefault();
-        if (!this.root.opts.open.current) {
-          if (e3.key === ENTER || e3.key === SPACE || e3.key === ARROW_DOWN || e3.key === ARROW_UP) {
-            e3.preventDefault();
-            this.root.handleOpen();
-          } else if (!this.root.isMulti && this.root.dataTypeaheadEnabled) {
-            this.#dataTypeahead.handleTypeaheadSearch(e3.key);
-            return;
-          }
-          if (this.root.hasValue) return;
-          const candidateNodes2 = this.root.getCandidateNodes();
-          if (!candidateNodes2.length) return;
-          if (e3.key === ARROW_DOWN) {
-            const firstCandidate = candidateNodes2[0];
-            this.root.setHighlightedNode(firstCandidate);
-          } else if (e3.key === ARROW_UP) {
-            const lastCandidate = candidateNodes2[candidateNodes2.length - 1];
-            this.root.setHighlightedNode(lastCandidate);
-          }
-          return;
-        }
-        if (e3.key === TAB) {
-          this.root.handleClose();
-          return;
-        }
-        if ((e3.key === ENTER || // if we're currently "typing ahead", we don't want to select the item
-        // just yet as the item the user is trying to get to may have a space in it,
-        // so we defer handling the close for this case until further down
-        e3.key === SPACE && this.#domTypeahead.search === "") && !e3.isComposing) {
-          e3.preventDefault();
-          const shouldReturn = this.#handleKeyboardSelection();
-          if (shouldReturn) return;
-        }
-        if (e3.key === ARROW_UP && e3.altKey) {
-          this.root.handleClose();
-        }
-        if (FIRST_LAST_KEYS.includes(e3.key)) {
-          e3.preventDefault();
-          const candidateNodes2 = this.root.getCandidateNodes();
-          const currHighlightedNode = this.root.highlightedNode;
-          const currIndex = currHighlightedNode ? candidateNodes2.indexOf(currHighlightedNode) : -1;
-          const loop = this.root.opts.loop.current;
-          let nextItem;
-          if (e3.key === ARROW_DOWN) {
-            nextItem = next2(candidateNodes2, currIndex, loop);
-          } else if (e3.key === ARROW_UP) {
-            nextItem = prev(candidateNodes2, currIndex, loop);
-          } else if (e3.key === PAGE_DOWN) {
-            nextItem = forward(candidateNodes2, currIndex, 10, loop);
-          } else if (e3.key === PAGE_UP) {
-            nextItem = backward(candidateNodes2, currIndex, 10, loop);
-          } else if (e3.key === HOME) {
-            nextItem = candidateNodes2[0];
-          } else if (e3.key === END) {
-            nextItem = candidateNodes2[candidateNodes2.length - 1];
-          }
-          if (!nextItem) return;
-          this.root.setHighlightedNode(nextItem);
-          return;
-        }
-        const isModifierKey = e3.ctrlKey || e3.altKey || e3.metaKey;
-        const isCharacterKey = e3.key.length === 1;
-        const isSpaceKey = e3.key === SPACE;
-        const candidateNodes = this.root.getCandidateNodes();
-        if (e3.key === TAB) return;
-        if (!isModifierKey && (isCharacterKey || isSpaceKey)) {
-          const matchedNode = this.#domTypeahead.handleTypeaheadSearch(e3.key, candidateNodes);
-          if (!matchedNode && isSpaceKey) {
-            e3.preventDefault();
-            this.#handleKeyboardSelection();
-          }
-          return;
-        }
-        if (!this.root.highlightedNode) {
-          this.root.setHighlightedToFirstCandidate();
-        }
-      }
-      onclick(e3) {
-        const currTarget = e3.currentTarget;
-        currTarget.focus();
-      }
-      onpointerdown(e3) {
-        if (this.root.opts.disabled.current) return;
-        if (e3.pointerType === "touch") return e3.preventDefault();
-        const target = e3.target;
-        if (target?.hasPointerCapture(e3.pointerId)) {
-          target?.releasePointerCapture(e3.pointerId);
-        }
-        if (e3.button === 0 && e3.ctrlKey === false) {
-          if (this.root.opts.open.current === false) {
-            this.#handlePointerOpen(e3);
-          } else {
-            this.root.handleClose();
-          }
-        }
-      }
-      onpointerup(e3) {
-        if (this.root.opts.disabled.current) return;
-        e3.preventDefault();
-        if (e3.pointerType === "touch") {
-          if (this.root.opts.open.current === false) {
-            this.#handlePointerOpen(e3);
-          } else {
-            this.root.handleClose();
-          }
-        }
-      }
-      #props = derived(() => ({
-        id: this.opts.id.current,
-        disabled: this.root.opts.disabled.current ? true : void 0,
-        "aria-haspopup": "listbox",
-        "aria-expanded": boolToStr(this.root.opts.open.current),
-        "aria-activedescendant": this.root.highlightedId,
-        "data-state": getDataOpenClosed(this.root.opts.open.current),
-        "data-disabled": boolToEmptyStrOrUndef(this.root.opts.disabled.current),
-        "data-placeholder": this.root.hasValue ? void 0 : "",
-        [this.root.getBitsAttr("trigger")]: "",
-        onpointerdown: this.onpointerdown,
-        onkeydown: this.onkeydown,
-        onclick: this.onclick,
-        onpointerup: this.onpointerup,
-        ...this.attachment
-      }));
-      get props() {
-        return this.#props();
-      }
-      set props($$value) {
-        return this.#props($$value);
-      }
-    };
-    SelectContentState = class _SelectContentState {
-      static {
-        __name(this, "SelectContentState");
-      }
-      static create(opts) {
-        return SelectContentContext.set(new _SelectContentState(opts, SelectRootContext.get()));
-      }
-      opts;
-      root;
-      attachment;
-      isPositioned = false;
-      domContext;
-      constructor(opts, root2) {
-        this.opts = opts;
-        this.root = root2;
-        this.attachment = attachRef(opts.ref, (v) => this.root.contentNode = v);
-        this.domContext = new DOMContext(this.opts.ref);
-        if (this.root.domContext === null) {
-          this.root.domContext = this.domContext;
-        }
-        watch(() => this.root.opts.open.current, () => {
-          if (this.root.opts.open.current) return;
-          this.isPositioned = false;
-        });
-        this.onpointermove = this.onpointermove.bind(this);
-      }
-      onpointermove(_) {
-        this.root.isUsingKeyboard = false;
-      }
-      #styles = derived(() => {
-        return getFloatingContentCSSVars(this.root.isCombobox ? "combobox" : "select");
-      });
-      onInteractOutside = /* @__PURE__ */ __name((e3) => {
-        if (e3.target === this.root.triggerNode || e3.target === this.root.inputNode) {
-          e3.preventDefault();
-          return;
-        }
-        this.opts.onInteractOutside.current(e3);
-        if (e3.defaultPrevented) return;
-        this.root.handleClose();
-      }, "onInteractOutside");
-      onEscapeKeydown = /* @__PURE__ */ __name((e3) => {
-        this.opts.onEscapeKeydown.current(e3);
-        if (e3.defaultPrevented) return;
-        this.root.handleClose();
-      }, "onEscapeKeydown");
-      onOpenAutoFocus = /* @__PURE__ */ __name((e3) => {
-        e3.preventDefault();
-      }, "onOpenAutoFocus");
-      onCloseAutoFocus = /* @__PURE__ */ __name((e3) => {
-        e3.preventDefault();
-      }, "onCloseAutoFocus");
-      get shouldRender() {
-        return this.root.contentPresence.shouldRender;
-      }
-      #snippetProps = derived(() => ({ open: this.root.opts.open.current }));
-      get snippetProps() {
-        return this.#snippetProps();
-      }
-      set snippetProps($$value) {
-        return this.#snippetProps($$value);
-      }
-      #props = derived(() => ({
-        id: this.opts.id.current,
-        role: "listbox",
-        "aria-multiselectable": this.root.isMulti ? "true" : void 0,
-        "data-state": getDataOpenClosed(this.root.opts.open.current),
-        [this.root.getBitsAttr("content")]: "",
-        style: {
-          display: "flex",
-          flexDirection: "column",
-          outline: "none",
-          boxSizing: "border-box",
-          pointerEvents: "auto",
-          ...this.#styles()
-        },
-        onpointermove: this.onpointermove,
-        ...this.attachment
-      }));
-      get props() {
-        return this.#props();
-      }
-      set props($$value) {
-        return this.#props($$value);
-      }
-      popperProps = {
-        onInteractOutside: this.onInteractOutside,
-        onEscapeKeydown: this.onEscapeKeydown,
-        onOpenAutoFocus: this.onOpenAutoFocus,
-        onCloseAutoFocus: this.onCloseAutoFocus,
-        trapFocus: false,
-        loop: false,
-        onPlaced: /* @__PURE__ */ __name(() => {
-          if (this.root.opts.open.current) {
-            this.isPositioned = true;
-          }
-        }, "onPlaced")
-      };
-    };
-    SelectItemState = class _SelectItemState {
-      static {
-        __name(this, "SelectItemState");
-      }
-      static create(opts) {
-        return new _SelectItemState(opts, SelectRootContext.get());
-      }
-      opts;
-      root;
-      attachment;
-      #isSelected = derived(() => this.root.includesItem(this.opts.value.current));
-      get isSelected() {
-        return this.#isSelected();
-      }
-      set isSelected($$value) {
-        return this.#isSelected($$value);
-      }
-      #isHighlighted = derived(() => this.root.highlightedValue === this.opts.value.current);
-      get isHighlighted() {
-        return this.#isHighlighted();
-      }
-      set isHighlighted($$value) {
-        return this.#isHighlighted($$value);
-      }
-      prevHighlighted = new Previous(() => this.isHighlighted);
-      mounted = false;
-      constructor(opts, root2) {
-        this.opts = opts;
-        this.root = root2;
-        this.attachment = attachRef(opts.ref);
-        watch([() => this.isHighlighted, () => this.prevHighlighted.current], () => {
-          if (this.isHighlighted) {
-            this.opts.onHighlight.current();
-          } else if (this.prevHighlighted.current) {
-            this.opts.onUnhighlight.current();
-          }
-        });
-        watch(() => this.mounted, () => {
-          if (!this.mounted) return;
-          this.root.setInitialHighlightedNode();
-        });
-        this.onpointerdown = this.onpointerdown.bind(this);
-        this.onpointerup = this.onpointerup.bind(this);
-        this.onpointermove = this.onpointermove.bind(this);
-      }
-      handleSelect() {
-        if (this.opts.disabled.current) return;
-        const isCurrentSelectedValue = this.opts.value.current === this.root.opts.value.current;
-        if (!this.root.opts.allowDeselect.current && isCurrentSelectedValue && !this.root.isMulti) {
-          this.root.handleClose();
-          return;
-        }
-        this.root.toggleItem(this.opts.value.current, this.opts.label.current);
-        if (!this.root.isMulti && !isCurrentSelectedValue) {
-          this.root.handleClose();
-        }
-      }
-      #snippetProps = derived(() => ({ selected: this.isSelected, highlighted: this.isHighlighted }));
-      get snippetProps() {
-        return this.#snippetProps();
-      }
-      set snippetProps($$value) {
-        return this.#snippetProps($$value);
-      }
-      onpointerdown(e3) {
-        e3.preventDefault();
-      }
-      /**
-       * Using `pointerup` instead of `click` allows power users to pointerdown
-       * the trigger, then release pointerup on an item to select it vs having to do
-       * multiple clicks.
-       */
-      onpointerup(e3) {
-        if (e3.defaultPrevented || !this.opts.ref.current) return;
-        if (e3.pointerType === "touch" && !isIOS) {
-          on2(
-            this.opts.ref.current,
-            "click",
-            () => {
-              this.handleSelect();
-              this.root.setHighlightedNode(this.opts.ref.current);
-            },
-            { once: true }
-          );
-          return;
-        }
-        e3.preventDefault();
-        this.handleSelect();
-        if (e3.pointerType === "touch") {
-          this.root.setHighlightedNode(this.opts.ref.current);
-        }
-      }
-      onpointermove(e3) {
-        if (e3.pointerType === "touch") return;
-        if (this.root.highlightedNode !== this.opts.ref.current) {
-          this.root.setHighlightedNode(this.opts.ref.current);
-        }
-      }
-      #props = derived(() => ({
-        id: this.opts.id.current,
-        role: "option",
-        "aria-selected": this.root.includesItem(this.opts.value.current) ? "true" : void 0,
-        "data-value": this.opts.value.current,
-        "data-disabled": boolToEmptyStrOrUndef(this.opts.disabled.current),
-        "data-highlighted": this.root.highlightedValue === this.opts.value.current && !this.opts.disabled.current ? "" : void 0,
-        "data-selected": this.root.includesItem(this.opts.value.current) ? "" : void 0,
-        "data-label": this.opts.label.current,
-        [this.root.getBitsAttr("item")]: "",
-        onpointermove: this.onpointermove,
-        onpointerdown: this.onpointerdown,
-        onpointerup: this.onpointerup,
-        ...this.attachment
-      }));
-      get props() {
-        return this.#props();
-      }
-      set props($$value) {
-        return this.#props($$value);
-      }
-    };
-    SelectHiddenInputState = class _SelectHiddenInputState {
-      static {
-        __name(this, "SelectHiddenInputState");
-      }
-      static create(opts) {
-        return new _SelectHiddenInputState(opts, SelectRootContext.get());
-      }
-      opts;
-      root;
-      #shouldRender = derived(() => this.root.opts.name.current !== "");
-      get shouldRender() {
-        return this.#shouldRender();
-      }
-      set shouldRender($$value) {
-        return this.#shouldRender($$value);
-      }
-      constructor(opts, root2) {
-        this.opts = opts;
-        this.root = root2;
-        this.onfocus = this.onfocus.bind(this);
-      }
-      onfocus(e3) {
-        e3.preventDefault();
-        if (!this.root.isCombobox) {
-          this.root.triggerNode?.focus();
-        } else {
-          this.root.inputNode?.focus();
-        }
-      }
-      #props = derived(() => ({
-        disabled: boolToTrueOrUndef(this.root.opts.disabled.current),
-        required: boolToTrueOrUndef(this.root.opts.required.current),
-        name: this.root.opts.name.current,
-        value: this.opts.value.current,
-        onfocus: this.onfocus
-      }));
-      get props() {
-        return this.#props();
-      }
-      set props($$value) {
-        return this.#props($$value);
-      }
-    };
-    SelectViewportState = class _SelectViewportState {
-      static {
-        __name(this, "SelectViewportState");
-      }
-      static create(opts) {
-        return new _SelectViewportState(opts, SelectContentContext.get());
-      }
-      opts;
-      content;
-      root;
-      attachment;
-      prevScrollTop = 0;
-      constructor(opts, content) {
-        this.opts = opts;
-        this.content = content;
-        this.root = content.root;
-        this.attachment = attachRef(opts.ref, (v) => {
-          this.root.viewportNode = v;
-        });
-      }
-      #props = derived(() => ({
-        id: this.opts.id.current,
-        role: "presentation",
-        [this.root.getBitsAttr("viewport")]: "",
-        style: {
-          // we use position: 'relative' here on the `viewport` so that when we call
-          // `selectedItem.offsetTop` in calculations, the offset is relative to the viewport
-          // (independent of the scrollUpButton).
-          position: "relative",
-          flex: 1,
-          overflow: "auto"
-        },
-        ...this.attachment
-      }));
-      get props() {
-        return this.#props();
-      }
-      set props($$value) {
-        return this.#props($$value);
-      }
-    };
-    SelectScrollButtonImplState = class {
-      static {
-        __name(this, "SelectScrollButtonImplState");
-      }
-      opts;
-      content;
-      root;
-      attachment;
-      autoScrollTimer = null;
-      userScrollTimer = -1;
-      isUserScrolling = false;
-      onAutoScroll = noop3;
-      mounted = false;
-      constructor(opts, content) {
-        this.opts = opts;
-        this.content = content;
-        this.root = content.root;
-        this.attachment = attachRef(opts.ref);
-        watch([() => this.mounted], () => {
-          if (!this.mounted) {
-            this.isUserScrolling = false;
-            return;
-          }
-          if (this.isUserScrolling) return;
-        });
-        this.onpointerdown = this.onpointerdown.bind(this);
-        this.onpointermove = this.onpointermove.bind(this);
-        this.onpointerleave = this.onpointerleave.bind(this);
-      }
-      handleUserScroll() {
-        this.content.domContext.clearTimeout(this.userScrollTimer);
-        this.isUserScrolling = true;
-        this.userScrollTimer = this.content.domContext.setTimeout(
-          () => {
-            this.isUserScrolling = false;
-          },
-          200
-        );
-      }
-      clearAutoScrollInterval() {
-        if (this.autoScrollTimer === null) return;
-        this.content.domContext.clearTimeout(this.autoScrollTimer);
-        this.autoScrollTimer = null;
-      }
-      onpointerdown(_) {
-        if (this.autoScrollTimer !== null) return;
-        const autoScroll = /* @__PURE__ */ __name((tick2) => {
-          this.onAutoScroll();
-          this.autoScrollTimer = this.content.domContext.setTimeout(() => autoScroll(tick2 + 1), this.opts.delay.current(tick2));
-        }, "autoScroll");
-        this.autoScrollTimer = this.content.domContext.setTimeout(() => autoScroll(1), this.opts.delay.current(0));
-      }
-      onpointermove(e3) {
-        this.onpointerdown(e3);
-      }
-      onpointerleave(_) {
-        this.clearAutoScrollInterval();
-      }
-      #props = derived(() => ({
-        id: this.opts.id.current,
-        "aria-hidden": boolToStrTrueOrUndef(true),
-        style: { flexShrink: 0 },
-        onpointerdown: this.onpointerdown,
-        onpointermove: this.onpointermove,
-        onpointerleave: this.onpointerleave,
-        ...this.attachment
-      }));
-      get props() {
-        return this.#props();
-      }
-      set props($$value) {
-        return this.#props($$value);
-      }
-    };
-    SelectScrollDownButtonState = class _SelectScrollDownButtonState {
-      static {
-        __name(this, "SelectScrollDownButtonState");
-      }
-      static create(opts) {
-        return new _SelectScrollDownButtonState(new SelectScrollButtonImplState(opts, SelectContentContext.get()));
-      }
-      scrollButtonState;
-      content;
-      root;
-      canScrollDown = false;
-      scrollIntoViewTimer = null;
-      constructor(scrollButtonState) {
-        this.scrollButtonState = scrollButtonState;
-        this.content = scrollButtonState.content;
-        this.root = scrollButtonState.root;
-        this.scrollButtonState.onAutoScroll = this.handleAutoScroll;
-        watch(
-          [
-            () => this.root.viewportNode,
-            () => this.content.isPositioned
-          ],
-          () => {
-            if (!this.root.viewportNode || !this.content.isPositioned) return;
-            this.handleScroll(true);
-            return on2(this.root.viewportNode, "scroll", () => this.handleScroll());
-          }
-        );
-        watch(
-          [
-            () => this.root.opts.inputValue.current,
-            () => this.root.viewportNode,
-            () => this.content.isPositioned
-          ],
-          () => {
-            if (!this.root.viewportNode || !this.content.isPositioned) return;
-            this.handleScroll(true);
-          }
-        );
-        watch(() => this.scrollButtonState.mounted, () => {
-          if (!this.scrollButtonState.mounted) return;
-          if (this.scrollIntoViewTimer) {
-            clearTimeout(this.scrollIntoViewTimer);
-          }
-          this.scrollIntoViewTimer = afterSleep(5, () => {
-            const activeItem = this.root.highlightedNode;
-            activeItem?.scrollIntoView({ block: this.root.opts.scrollAlignment.current });
-          });
-        });
-      }
-      /**
-       * @param manual - if true, it means the function was invoked manually outside of an event
-       * listener, so we don't call `handleUserScroll` to prevent the auto scroll from kicking in.
-       */
-      handleScroll = /* @__PURE__ */ __name((manual = false) => {
-        if (!manual) {
-          this.scrollButtonState.handleUserScroll();
-        }
-        if (!this.root.viewportNode) return;
-        const maxScroll = this.root.viewportNode.scrollHeight - this.root.viewportNode.clientHeight;
-        const paddingTop = Number.parseInt(getComputedStyle(this.root.viewportNode).paddingTop, 10);
-        this.canScrollDown = Math.ceil(this.root.viewportNode.scrollTop) < maxScroll - paddingTop;
-      }, "handleScroll");
-      handleAutoScroll = /* @__PURE__ */ __name(() => {
-        const viewport = this.root.viewportNode;
-        const selectedItem = this.root.highlightedNode;
-        if (!viewport || !selectedItem) return;
-        viewport.scrollTop = viewport.scrollTop + selectedItem.offsetHeight;
-      }, "handleAutoScroll");
-      #props = derived(() => ({
-        ...this.scrollButtonState.props,
-        [this.root.getBitsAttr("scroll-down-button")]: ""
-      }));
-      get props() {
-        return this.#props();
-      }
-      set props($$value) {
-        return this.#props($$value);
-      }
-    };
-    SelectScrollUpButtonState = class _SelectScrollUpButtonState {
-      static {
-        __name(this, "SelectScrollUpButtonState");
-      }
-      static create(opts) {
-        return new _SelectScrollUpButtonState(new SelectScrollButtonImplState(opts, SelectContentContext.get()));
-      }
-      scrollButtonState;
-      content;
-      root;
-      canScrollUp = false;
-      constructor(scrollButtonState) {
-        this.scrollButtonState = scrollButtonState;
-        this.content = scrollButtonState.content;
-        this.root = scrollButtonState.root;
-        this.scrollButtonState.onAutoScroll = this.handleAutoScroll;
-        watch(
-          [
-            () => this.root.viewportNode,
-            () => this.content.isPositioned
-          ],
-          () => {
-            if (!this.root.viewportNode || !this.content.isPositioned) return;
-            this.handleScroll(true);
-            return on2(this.root.viewportNode, "scroll", () => this.handleScroll());
-          }
-        );
-      }
-      /**
-       * @param manual - if true, it means the function was invoked manually outside of an event
-       * listener, so we don't call `handleUserScroll` to prevent the auto scroll from kicking in.
-       */
-      handleScroll = /* @__PURE__ */ __name((manual = false) => {
-        if (!manual) {
-          this.scrollButtonState.handleUserScroll();
-        }
-        if (!this.root.viewportNode) return;
-        const paddingTop = Number.parseInt(getComputedStyle(this.root.viewportNode).paddingTop, 10);
-        this.canScrollUp = this.root.viewportNode.scrollTop - paddingTop > 0.1;
-      }, "handleScroll");
-      handleAutoScroll = /* @__PURE__ */ __name(() => {
-        if (!this.root.viewportNode || !this.root.highlightedNode) return;
-        this.root.viewportNode.scrollTop = this.root.viewportNode.scrollTop - this.root.highlightedNode.offsetHeight;
-      }, "handleAutoScroll");
-      #props = derived(() => ({
-        ...this.scrollButtonState.props,
-        [this.root.getBitsAttr("scroll-up-button")]: ""
-      }));
-      get props() {
-        return this.#props();
-      }
-      set props($$value) {
-        return this.#props($$value);
-      }
-    };
-    __name(Select_hidden_input, "Select_hidden_input");
-    __name(Floating_layer_anchor, "Floating_layer_anchor");
-    __name(Floating_layer_content, "Floating_layer_content");
-    __name(Floating_layer_content_static, "Floating_layer_content_static");
-    __name(Popper_content, "Popper_content");
-    __name(Popper_layer_inner, "Popper_layer_inner");
-    __name(Popper_layer, "Popper_layer");
-    __name(Popper_layer_force_mount, "Popper_layer_force_mount");
-    __name(Select_content$1, "Select_content$1");
-    __name(Mounted, "Mounted");
-    __name(Select_item$1, "Select_item$1");
-    __name(Select_viewport, "Select_viewport");
-    __name(Select_scroll_down_button$1, "Select_scroll_down_button$1");
-    __name(Select_scroll_up_button$1, "Select_scroll_up_button$1");
-    labelAttrs = createBitsAttrs({ component: "label", parts: ["root"] });
-    LabelRootState = class _LabelRootState {
-      static {
-        __name(this, "LabelRootState");
-      }
-      static create(opts) {
-        return new _LabelRootState(opts);
-      }
-      opts;
-      attachment;
-      constructor(opts) {
-        this.opts = opts;
-        this.attachment = attachRef(this.opts.ref);
-        this.onmousedown = this.onmousedown.bind(this);
-      }
-      onmousedown(e3) {
-        if (e3.detail > 1) e3.preventDefault();
-      }
-      #props = derived(() => ({
-        id: this.opts.id.current,
-        [labelAttrs.root]: "",
-        onmousedown: this.onmousedown,
-        ...this.attachment
-      }));
-      get props() {
-        return this.#props();
-      }
-      set props($$value) {
-        return this.#props($$value);
-      }
-    };
-    __name(Label$1, "Label$1");
-    __name(Select$1, "Select$1");
-    __name(Select_trigger$1, "Select_trigger$1");
-    __name(Card, "Card");
-    __name(Card_content, "Card_content");
-    __name(Card_header, "Card_header");
-    __name(Card_title, "Card_title");
-    __name(Label, "Label");
-    __name(Select, "Select");
-    __name(Check2, "Check");
-    __name(Select_item, "Select_item");
-    __name(Select_portal, "Select_portal");
-    __name(Chevron_up, "Chevron_up");
-    __name(Select_scroll_up_button, "Select_scroll_up_button");
-    __name(Chevron_down, "Chevron_down");
-    __name(Select_scroll_down_button, "Select_scroll_down_button");
-    __name(Select_content, "Select_content");
-    __name(Select_trigger, "Select_trigger");
-    badgeVariants = tv({
-      base: "focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive inline-flex w-fit shrink-0 items-center justify-center gap-1 overflow-hidden rounded-full border px-2 py-0.5 text-xs font-medium whitespace-nowrap transition-[color,box-shadow] focus-visible:ring-[3px] [&>svg]:pointer-events-none [&>svg]:size-3",
-      variants: {
-        variant: {
-          default: "bg-primary text-primary-foreground [a&]:hover:bg-primary/90 border-transparent",
-          secondary: "bg-secondary text-secondary-foreground [a&]:hover:bg-secondary/90 border-transparent",
-          destructive: "bg-destructive [a&]:hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/70 border-transparent text-white",
-          outline: "text-foreground [a&]:hover:bg-accent [a&]:hover:text-accent-foreground"
-        }
-      },
-      defaultVariants: { variant: "default" }
-    });
-    __name(Badge, "Badge");
-    __name(Play, "Play");
-    __name(Pause, "Pause");
-    __name(Trash_2, "Trash_2");
-    __name(InteractiveDemo, "InteractiveDemo");
-    __name(_page, "_page");
-  }
-});
-
-// .svelte-kit/output/server/nodes/2.js
-var __exports3 = {};
-__export(__exports3, {
-  component: () => component3,
-  fonts: () => fonts3,
-  imports: () => imports3,
-  index: () => index4,
-  stylesheets: () => stylesheets3
-});
-var index4, component_cache3, component3, imports3, stylesheets3, fonts3;
-var init__3 = __esm({
-  ".svelte-kit/output/server/nodes/2.js"() {
-    init_virtual_unenv_global_polyfill_cloudflare_unenv_preset_node_process();
-    init_virtual_unenv_global_polyfill_cloudflare_unenv_preset_node_console();
-    init_performance2();
-    index4 = 2;
-    component3 = /* @__PURE__ */ __name(async () => component_cache3 ??= (await Promise.resolve().then(() => (init_page_svelte(), page_svelte_exports))).default, "component");
-    imports3 = ["_app/immutable/nodes/2.O2opTA7k.js", "_app/immutable/chunks/CDtJAJDW.js", "_app/immutable/chunks/43DoFiGK.js", "_app/immutable/chunks/CdqBHIUe.js", "_app/immutable/chunks/D3R2J86X.js", "_app/immutable/chunks/B5-rS708.js", "_app/immutable/chunks/BqN1ELlW.js", "_app/immutable/chunks/DugyTYfm.js", "_app/immutable/chunks/C-T-am70.js", "_app/immutable/chunks/DnayzfWM.js", "_app/immutable/chunks/DcIzPOfe.js", "_app/immutable/chunks/B4gfF3h4.js", "_app/immutable/chunks/sg3Ep-aj.js"];
-    stylesheets3 = ["_app/immutable/assets/2.CV-KWLNP.css"];
-    fonts3 = [];
   }
 });
 
@@ -81738,6 +76025,271 @@ var init_CodeBlock = __esm({
     init_Icon();
     __name(Copy, "Copy");
     __name(CodeBlock, "CodeBlock");
+  }
+});
+
+// .svelte-kit/output/server/entries/pages/_page.svelte.js
+var page_svelte_exports = {};
+__export(page_svelte_exports, {
+  default: () => _page
+});
+function InteractiveDemo($$renderer, $$props) {
+  $$renderer.component(($$renderer2) => {
+    let inputValue = "AI agents";
+    let selectedDuration = 60;
+    let isStarting = false;
+    let tasks = [];
+    let now3 = Date.now();
+    const durationOptions = [
+      { label: "1 second", value: 1 },
+      { label: "10 seconds", value: 10 },
+      { label: "Demo (60s)", value: 60 },
+      { label: "Realistic (1 hour)", value: 3600 },
+      { label: "Production (1 week)", value: 604800 },
+      { label: "1 Month", value: 2592e3 },
+      { label: "1 Year", value: 31536e3 }
+    ];
+    const selectedLabel = durationOptions.find((d) => d.value === selectedDuration)?.label || "Demo (60s)";
+    onDestroy(() => {
+    });
+    function formatDuration(seconds) {
+      if (seconds < 60) return `${seconds}s`;
+      if (seconds < 3600) return `${Math.floor(seconds / 60)}m ${seconds % 60}s`;
+      if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ${Math.floor(seconds % 3600 / 60)}m`;
+      return `${Math.floor(seconds / 86400)}d ${Math.floor(seconds % 86400 / 3600)}h`;
+    }
+    __name(formatDuration, "formatDuration");
+    function formatElapsed(startedAt, pausedAt, totalPausedMs = 0, status, completedAt) {
+      const currentTime = status === "completed" && completedAt ? completedAt : now3;
+      if (pausedAt) {
+        return Math.floor((pausedAt - startedAt - totalPausedMs) / 1e3);
+      }
+      return Math.floor((currentTime - startedAt - totalPausedMs) / 1e3);
+    }
+    __name(formatElapsed, "formatElapsed");
+    $$renderer2.push(`<div class="p-6 bg-zinc-900/50 border border-zinc-800 rounded-xl mb-6"><div class="flex items-center gap-2 mb-4"><svg class="w-4 h-4 text-zinc-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round"${attr("stroke-width", 2)} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path></svg> <span class="text-sm font-medium text-zinc-300">Start a Task</span></div> <div class="flex flex-col sm:flex-row gap-3"><input type="text"${attr("value", inputValue)} placeholder="Task name..." class="flex-1 px-4 py-3 bg-zinc-950 border border-zinc-800 rounded-lg text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-zinc-700 font-mono transition-all"/> <div class="relative"><button class="w-full sm:w-48 px-4 py-3 bg-zinc-950 border border-zinc-800 rounded-lg text-sm text-zinc-300 text-left flex items-center justify-between hover:border-zinc-700 transition-colors"><span class="font-mono">${escape_html(selectedLabel)}</span> <svg${attr_class(`w-4 h-4 text-zinc-500 transition-transform ${stringify2("")}`)} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round"${attr("stroke-width", 2)} d="M19 9l-7 7-7-7"></path></svg></button> `);
+    {
+      $$renderer2.push("<!--[!-->");
+    }
+    $$renderer2.push(`<!--]--></div> <button${attr("disabled", isStarting, true)} class="px-6 py-3 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-medium text-sm rounded-lg transition-all disabled:opacity-50 flex items-center justify-center gap-2">`);
+    {
+      $$renderer2.push("<!--[!-->");
+      $$renderer2.push(`Start <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round"${attr("stroke-width", 2)} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path></svg>`);
+    }
+    $$renderer2.push(`<!--]--></button></div> <p class="mt-3 text-xs text-zinc-600">Simulates a long-running agent task with checkpoints: <code class="text-zinc-500">research</code> \u2192 <code class="text-zinc-500">analysis</code> \u2192 <code class="text-zinc-500">synthesis</code> \u2192 <code class="text-zinc-500">writeup</code></p></div> <div class="bg-zinc-900/30 border border-zinc-800/50 rounded-xl overflow-hidden"><div class="flex items-center justify-between px-5 py-4 border-b border-zinc-800/50"><h3 class="text-sm font-medium text-zinc-300">Running Tasks</h3> <div class="flex items-center gap-3 text-xs text-zinc-600"><span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> ${escape_html(tasks.filter((t2) => t2.status === "completed").length)} completed</span> <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span> ${escape_html(tasks.filter((t2) => t2.status === "running").length)} running</span></div></div> <div class="p-4 space-y-3">`);
+    if (tasks.length === 0) {
+      $$renderer2.push("<!--[-->");
+      $$renderer2.push(`<p class="text-sm text-zinc-600 text-center py-8">No tasks yet. Start one above to see the scheduler in action!</p>`);
+    } else {
+      $$renderer2.push("<!--[!-->");
+      $$renderer2.push(`<!--[-->`);
+      const each_array_1 = ensure_array_like(tasks);
+      for (let $$index_2 = 0, $$length = each_array_1.length; $$index_2 < $$length; $$index_2++) {
+        let task = each_array_1[$$index_2];
+        const elapsedSeconds = task.startedAt ? formatElapsed(task.startedAt, task.pausedAt, task.totalPausedMs || 0, task.status, task.completedAt) : 0;
+        const duration3 = task.duration || (task.progress?.totalSteps ? task.progress.totalSteps * 15 : 60);
+        const checkpoints = task.progress?.checkpoints || task.progress?.completedSteps || [];
+        $$renderer2.push(`<div class="p-4 bg-zinc-900/50 border border-zinc-800 rounded-xl hover:border-zinc-700 transition-colors"><div class="flex items-start justify-between mb-3"><div><code class="text-sm text-zinc-300 font-mono">${escape_html(task.taskId)}</code> <div class="flex items-center gap-2 mt-1"><span class="text-xs text-zinc-600">${escape_html(formatDuration(elapsedSeconds))} / ${escape_html(formatDuration(duration3))}</span></div></div> <span${attr_class(`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-mono uppercase tracking-wide border rounded-md ${stringify2(task.status === "completed" ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/20" : task.status === "running" ? "bg-amber-500/15 text-amber-400 border-amber-500/20" : "bg-zinc-500/15 text-zinc-400 border-zinc-500/20")}`)}>`);
+        if (task.status === "running") {
+          $$renderer2.push("<!--[-->");
+          $$renderer2.push(`<span class="w-1.5 h-1.5 bg-amber-400 rounded-full animate-pulse"></span>`);
+        } else {
+          $$renderer2.push("<!--[!-->");
+        }
+        $$renderer2.push(`<!--]--> `);
+        if (task.status === "completed") {
+          $$renderer2.push("<!--[-->");
+          $$renderer2.push(`<span class="w-1.5 h-1.5 bg-emerald-400 rounded-full"></span>`);
+        } else {
+          $$renderer2.push("<!--[!-->");
+        }
+        $$renderer2.push(`<!--]--> ${escape_html(task.status)}</span></div> <div class="w-full h-1 bg-zinc-800 rounded-full overflow-hidden mb-3"><div class="h-full bg-gradient-to-r from-amber-500 to-orange-500 transition-all duration-300"${attr_style(`width: ${stringify2(Math.min(elapsedSeconds / duration3 * 100, 100))}%`)}></div></div> <div class="flex items-center gap-1"><!--[-->`);
+        const each_array_2 = ensure_array_like(["research", "analysis", "synthesis", "writeup"]);
+        for (let i = 0, $$length2 = each_array_2.length; i < $$length2; i++) {
+          let step = each_array_2[i];
+          $$renderer2.push(`<span${attr_class(`text-xs font-mono ${stringify2(checkpoints.includes(step) ? "text-emerald-400" : "text-zinc-600")}`)}>${escape_html(step)}</span> `);
+          if (i < 3) {
+            $$renderer2.push("<!--[-->");
+            $$renderer2.push(`<span class="text-zinc-700 text-xs">\u2192</span>`);
+          } else {
+            $$renderer2.push("<!--[!-->");
+          }
+          $$renderer2.push(`<!--]-->`);
+        }
+        $$renderer2.push(`<!--]--></div></div>`);
+      }
+      $$renderer2.push(`<!--]-->`);
+    }
+    $$renderer2.push(`<!--]--></div></div>`);
+  });
+}
+function ApiMethod($$renderer, $$props) {
+  let { name, signature, description } = $$props;
+  $$renderer.push(`<div class="py-4 border-b border-zinc-800/50 last:border-0"><code class="text-sm text-orange-400 font-mono">${escape_html(name)}</code> <code class="text-sm text-zinc-500 font-mono ml-1">${escape_html(signature)}</code> <p class="text-sm text-zinc-500 mt-1">${escape_html(description)}</p></div>`);
+}
+function _page($$renderer) {
+  const quickStartCode = `import { ReliableScheduler } from 'ironalarm';
+
+export class MyDO {
+  private scheduler: ReliableScheduler;
+
+  constructor(state: DurableObjectState, env: any) {
+    // Initialize with DO storage
+    this.scheduler = new ReliableScheduler(state.storage);
+
+    // Register a resumable task handler
+    this.scheduler.register('my-task', async (sched, taskId, params) => {
+      if (!await sched.getCheckpoint(taskId, 'started')) {
+        await doWork(params);
+        await sched.checkpoint(taskId, 'started', true);
+      }
+      await sched.completeTask(taskId);
+    });
+  }
+
+  async alarm() {
+    await this.scheduler.alarm();
+  }
+}`;
+  head("1uha8ag", $$renderer, ($$renderer2) => {
+    $$renderer2.title(($$renderer3) => {
+      $$renderer3.push(`<title>ironalarm - Reliable task scheduling for Cloudflare Durable Objects</title>`);
+    });
+  });
+  $$renderer.push(`<div class="relative"><div class="fixed inset-0 overflow-hidden pointer-events-none"><div class="absolute -top-40 -right-40 w-[600px] h-[600px] bg-orange-500/5 rounded-full blur-3xl"></div> <div class="absolute top-1/2 -left-40 w-[400px] h-[400px] bg-amber-500/5 rounded-full blur-3xl"></div></div> <div class="relative max-w-5xl mx-auto px-6"><section class="py-20 border-b border-zinc-800/50"><div class="inline-flex items-center gap-2 px-3 py-1.5 bg-zinc-900 border border-zinc-800 rounded-full text-xs text-zinc-400 mb-6"><span class="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span> Now with checkpoint recovery</div> <h1 class="text-4xl md:text-5xl font-semibold tracking-tight mb-4">Reliable task scheduling for<br/> <span class="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-amber-400">Cloudflare Durable Objects</span></h1> <p class="text-lg text-zinc-500 max-w-2xl mb-8">The "reliable runNow" pattern for resilient long-running tasks with
+        automatic checkpoint recovery. Never lose progress to eviction again.</p> <div class="flex items-center gap-4 flex-wrap"><div class="flex items-center gap-2 px-4 py-2.5 bg-zinc-900 border border-zinc-800 rounded-lg font-mono text-sm"><span class="text-zinc-500">$</span> <span class="text-zinc-300">bun install ironalarm</span> <button class="ml-2 text-zinc-600 hover:text-zinc-400 transition-colors" aria-label="Copy install command"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round"${attr("stroke-width", 2)} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg></button></div> <a href="#demo" class="px-4 py-2.5 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 text-zinc-950 font-medium text-sm rounded-lg transition-all">Try the demo</a></div></section> <section id="docs" class="py-16 border-b border-zinc-800/50"><h2 class="text-2xl font-semibold mb-4">The Problem</h2> <p class="text-zinc-400 max-w-3xl">Cloudflare Durable Objects can evict your code after ~144 seconds of
+        inactivity. For long-running operations (like AI agent loops), a single
+        eviction mid-task breaks your workflow.</p> <p class="text-zinc-400 max-w-3xl mt-4"><span class="text-zinc-200">ironalarm</span> solves this with a lightweight,
+        userspace implementation that persists task state and uses a 30-second safety
+        alarm net\u2014if evicted, the task automatically retries and resumes from checkpoints.</p></section> <section class="py-16 border-b border-zinc-800/50"><h2 class="text-2xl font-semibold mb-8">Features</h2> <div class="grid md:grid-cols-2 gap-4"><!--[-->`);
+  const each_array = ensure_array_like([
+    {
+      title: "Reliable execution",
+      desc: "runNow() starts immediately with 30s safety alarm for eviction recovery"
+    },
+    {
+      title: "Checkpoints",
+      desc: "User-managed progress tracking for resumable work after evictions"
+    },
+    {
+      title: "Named handlers",
+      desc: "Register task handlers by name\u2014no function serialization required"
+    },
+    {
+      title: "Minimal",
+      desc: "~300 LOC, zero dependencies, fully serializable tasks"
+    }
+  ]);
+  for (let $$index = 0, $$length = each_array.length; $$index < $$length; $$index++) {
+    let f = each_array[$$index];
+    $$renderer.push(`<div class="p-5 bg-zinc-900/30 border border-zinc-800/50 rounded-xl"><h3 class="text-sm font-medium text-zinc-200 mb-1">${escape_html(f.title)}</h3> <p class="text-sm text-zinc-500">${escape_html(f.desc)}</p></div>`);
+  }
+  $$renderer.push(`<!--]--></div></section> <section class="py-16 border-b border-zinc-800/50"><h2 class="text-2xl font-semibold mb-6">Quick Start</h2> `);
+  CodeBlock($$renderer, { code: quickStartCode, lang: "typescript" });
+  $$renderer.push(`<!----></section> <section id="api" class="py-16 border-b border-zinc-800/50"><h2 class="text-2xl font-semibold mb-2">API Reference</h2> <p class="text-sm text-zinc-500 mb-8">All methods available on the ReliableScheduler class.</p> <div class="bg-zinc-900/30 border border-zinc-800/50 rounded-xl p-6"><div class="mb-6 pb-6 border-b border-zinc-800/50"><h3 class="text-sm font-medium text-zinc-300 mb-2">Constructor</h3> <code class="text-sm font-mono"><span class="text-purple-400">new</span> <span class="text-orange-400">ReliableScheduler</span>(<span class="text-zinc-400">storage: DurableObjectStorage</span>)</code> <p class="text-sm text-zinc-500 mt-2">Creates a new scheduler instance with the provided Durable Object
+            storage.</p></div> <h3 class="text-sm font-medium text-zinc-300 mb-4">Methods</h3> <div class="space-y-0 divide-y divide-zinc-800/50">`);
+  ApiMethod($$renderer, {
+    name: "register",
+    signature: "(taskName: string, handler: Function)",
+    description: "Register a named task handler. The handler receives the scheduler, taskId, and params."
+  });
+  $$renderer.push(`<!----> `);
+  ApiMethod($$renderer, {
+    name: "runNow",
+    signature: "(taskId: string, taskName: string, params?: any)",
+    description: "Start a task immediately with eviction safety. Sets a 30s safety alarm for automatic retry."
+  });
+  $$renderer.push(`<!----> `);
+  ApiMethod($$renderer, {
+    name: "schedule",
+    signature: "(at: number, taskId: string, taskName: string, params?: any)",
+    description: "Schedule a task to run at a future time (Unix timestamp)."
+  });
+  $$renderer.push(`<!----> `);
+  ApiMethod($$renderer, {
+    name: "checkpoint",
+    signature: "(taskId: string, key: string, value: any)",
+    description: "Save progress for a task. Use this to mark completion of expensive operations."
+  });
+  $$renderer.push(`<!----> `);
+  ApiMethod($$renderer, {
+    name: "getCheckpoint",
+    signature: "(taskId: string, key: string)",
+    description: "Retrieve saved progress for a task. Returns undefined if not found."
+  });
+  $$renderer.push(`<!----> `);
+  ApiMethod($$renderer, {
+    name: "completeTask",
+    signature: "(taskId: string)",
+    description: "Mark a task as complete and clean up its state."
+  });
+  $$renderer.push(`<!----> `);
+  ApiMethod($$renderer, {
+    name: "alarm",
+    signature: "()",
+    description: "Call this from your Durable Object's alarm handler to process scheduled tasks."
+  });
+  $$renderer.push(`<!----></div></div></section> <section id="demo" class="py-16 border-b border-zinc-800/50"><h2 class="text-2xl font-semibold mb-2">Interactive Demo</h2> <p class="text-sm text-zinc-500 mb-8">Start a simulated long-running task and watch the checkpoint system in
+        action.</p> `);
+  InteractiveDemo($$renderer);
+  $$renderer.push(`<!----></section> <section class="py-16 border-b border-zinc-800/50"><div class="flex justify-center"><a href="/mission" class="group relative flex items-center justify-center transition-transform w-full max-w-2xl bg-zinc-900/50 border-2 border-orange-500/50 hover:border-orange-400 rounded-xl overflow-hidden"><div class="relative overflow-hidden p-6 w-full flex items-center justify-center gap-6"><img src="/mining-game.png" alt="Mining Game" class="w-32 h-32 object-contain"/> <div class="text-left"><div class="text-lg font-semibold text-zinc-100 mb-1">Tired of boring developer docs?</div> <div class="text-sm text-zinc-400">Try <code class="font-mono bg-zinc-800 px-1.5 py-0.5 rounded text-orange-400">the Mining Game</code> \u2014 a fun interactive demo powered by ironalarm</div></div> <div class="absolute inset-0 bg-orange-500/10 opacity-0 group-hover:opacity-100 transition-opacity"></div></div></a></div></section> <section class="py-16"><h2 class="text-2xl font-semibold mb-6">Design</h2> <div class="grid sm:grid-cols-2 gap-4"><!--[-->`);
+  const each_array_1 = ensure_array_like([
+    {
+      title: "Eviction safety",
+      desc: "30s safety alarm retries if evicted"
+    },
+    {
+      title: "Checkpoints",
+      desc: "Skip already-done work on resume"
+    },
+    {
+      title: "Named handlers",
+      desc: "No function serialization needed"
+    },
+    { title: "Single queue", desc: "One alarm drives all tasks" }
+  ]);
+  for (let $$index_1 = 0, $$length = each_array_1.length; $$index_1 < $$length; $$index_1++) {
+    let item = each_array_1[$$index_1];
+    $$renderer.push(`<div class="flex items-start gap-3 p-4"><span class="w-1.5 h-1.5 rounded-full bg-zinc-600 mt-2"></span> <div><span class="text-sm text-zinc-300">${escape_html(item.title)}:</span> <span class="text-sm text-zinc-500 ml-1">${escape_html(item.desc)}</span></div></div>`);
+  }
+  $$renderer.push(`<!--]--></div></section> <footer class="py-8 border-t border-zinc-800/50 text-center"><p class="text-xs text-zinc-600">Built for Cloudflare Durable Objects. <a href="https://github.com/acoyfellow/ironalarm" class="text-zinc-500 hover:text-zinc-400 transition-colors">View on GitHub</a></p></footer></div></div>`);
+}
+var init_page_svelte = __esm({
+  ".svelte-kit/output/server/entries/pages/_page.svelte.js"() {
+    init_virtual_unenv_global_polyfill_cloudflare_unenv_preset_node_process();
+    init_virtual_unenv_global_polyfill_cloudflare_unenv_preset_node_console();
+    init_performance2();
+    init_async();
+    init_index_server();
+    init_data_remote();
+    init_CodeBlock();
+    init_clsx();
+    __name(InteractiveDemo, "InteractiveDemo");
+    __name(ApiMethod, "ApiMethod");
+    __name(_page, "_page");
+  }
+});
+
+// .svelte-kit/output/server/nodes/2.js
+var __exports3 = {};
+__export(__exports3, {
+  component: () => component3,
+  fonts: () => fonts3,
+  imports: () => imports3,
+  index: () => index4,
+  stylesheets: () => stylesheets3
+});
+var index4, component_cache3, component3, imports3, stylesheets3, fonts3;
+var init__3 = __esm({
+  ".svelte-kit/output/server/nodes/2.js"() {
+    init_virtual_unenv_global_polyfill_cloudflare_unenv_preset_node_process();
+    init_virtual_unenv_global_polyfill_cloudflare_unenv_preset_node_console();
+    init_performance2();
+    index4 = 2;
+    component3 = /* @__PURE__ */ __name(async () => component_cache3 ??= (await Promise.resolve().then(() => (init_page_svelte(), page_svelte_exports))).default, "component");
+    imports3 = ["_app/immutable/nodes/2.CSOV8AKe.js", "_app/immutable/chunks/DQV5tA9x.js", "_app/immutable/chunks/CcNfbX7c.js", "_app/immutable/chunks/CfNoEgQF.js", "_app/immutable/chunks/eKz8nVri.js", "_app/immutable/chunks/D35Q9rYS.js", "_app/immutable/chunks/CH4swi6y.js", "_app/immutable/chunks/CKz1hDdm.js", "_app/immutable/chunks/pjtpxPnz.js", "_app/immutable/chunks/C14RSf85.js", "_app/immutable/chunks/PPVm8Dsz.js"];
+    stylesheets3 = ["_app/immutable/assets/CodeBlock.K_WSiSu6.css"];
+    fonts3 = [];
   }
 });
 
@@ -82029,48 +76581,29 @@ await this.scheduler.runNow(
       $$renderer3.push(`<title>Documentation - ironalarm</title>`);
     });
   });
-  $$renderer.push(`<div class="min-h-screen bg-gradient-to-b from-background to-muted/20"><div class="container mx-auto px-6 py-16 max-w-5xl"><div class="text-center mb-16"><h1 class="text-4xl font-bold mb-4 tracking-tight">Documentation</h1> <p class="text-xl text-muted-foreground max-w-2xl mx-auto">Reliable task scheduling for Cloudflare Durable Objects. Handle
-        evictions gracefully with automatic retries and checkpoints.</p></div> <section class="mb-16"><div class="flex items-center gap-3 mb-6"><div class="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-bold">1</div> <h2 class="text-2xl font-semibold">Install</h2></div> `);
+  $$renderer.push(`<div class="min-h-screen"><div class="max-w-5xl mx-auto px-6 py-16"><div class="text-center mb-16"><h1 class="text-4xl font-bold mb-4 tracking-tight text-zinc-100">Documentation</h1> <p class="text-xl text-zinc-500 max-w-2xl mx-auto">Reliable task scheduling for Cloudflare Durable Objects. Handle
+        evictions gracefully with automatic retries and checkpoints.</p></div> <section class="mb-16"><div class="flex items-center gap-3 mb-6"><div class="w-8 h-8 rounded-lg bg-orange-500/10 flex items-center justify-center text-orange-400 font-bold">1</div> <h2 class="text-2xl font-semibold text-zinc-100">Install</h2></div> `);
   CodeBlock($$renderer, { code: installCode, lang: "bash" });
-  $$renderer.push(`<!----></section> <section class="mb-16"><div class="flex items-center gap-3 mb-6"><div class="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-bold">2</div> <h2 class="text-2xl font-semibold">Basic Setup</h2></div> `);
+  $$renderer.push(`<!----></section> <section class="mb-16"><div class="flex items-center gap-3 mb-6"><div class="w-8 h-8 rounded-lg bg-orange-500/10 flex items-center justify-center text-orange-400 font-bold">2</div> <h2 class="text-2xl font-semibold text-zinc-100">Basic Setup</h2></div> `);
   CodeBlock($$renderer, { code: basicSetupCode, lang: "typescript" });
-  $$renderer.push(`<!----></section> <section class="mb-16"><h2 class="text-2xl font-semibold mb-6">Core Concepts</h2> <div class="grid md:grid-cols-2 gap-4"><!--[-->`);
+  $$renderer.push(`<!----></section> <section class="mb-16"><h2 class="text-2xl font-semibold mb-6 text-zinc-100">Core Concepts</h2> <div class="grid md:grid-cols-2 gap-4"><!--[-->`);
   const each_array = ensure_array_like(concepts);
   for (let $$index = 0, $$length = each_array.length; $$index < $$length; $$index++) {
     let concept = each_array[$$index];
-    $$renderer.push(`<div class="p-5 rounded-xl border bg-card hover:border-primary/50 transition-colors"><div class="flex items-start gap-4"><div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">`);
-    concept.icon($$renderer, { class: "w-5 h-5 text-primary" });
-    $$renderer.push(`<!----></div> <div><h3 class="font-semibold mb-1">${escape_html(concept.title)}</h3> <p class="text-sm text-muted-foreground leading-relaxed">${escape_html(concept.description)}</p></div></div></div>`);
+    $$renderer.push(`<div class="p-5 rounded-xl border border-zinc-800/50 bg-zinc-900/30 hover:border-orange-500/50 transition-colors"><div class="flex items-start gap-4"><div class="w-10 h-10 rounded-lg bg-orange-500/10 flex items-center justify-center shrink-0">`);
+    concept.icon($$renderer, { class: "w-5 h-5 text-orange-400" });
+    $$renderer.push(`<!----></div> <div><h3 class="font-semibold mb-1 text-zinc-200">${escape_html(concept.title)}</h3> <p class="text-sm text-zinc-500 leading-relaxed">${escape_html(concept.description)}</p></div></div></div>`);
   }
-  $$renderer.push(`<!--]--></div></section> <section class="mb-16"><div class="flex items-center gap-3 mb-6"><div class="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-bold">3</div> <h2 class="text-2xl font-semibold">Multi-step Tasks</h2></div> <p class="text-muted-foreground mb-4">Use <code class="font-mono bg-muted px-1.5 py-0.5 rounded text-sm">runSteps()</code> for tasks with multiple stages. Progress is automatically tracked and resumable.</p> `);
+  $$renderer.push(`<!--]--></div></section> <section class="mb-16"><div class="flex items-center gap-3 mb-6"><div class="w-8 h-8 rounded-lg bg-orange-500/10 flex items-center justify-center text-orange-400 font-bold">3</div> <h2 class="text-2xl font-semibold text-zinc-100">Multi-step Tasks</h2></div> <p class="text-zinc-500 mb-4">Use <code class="font-mono bg-zinc-900 px-1.5 py-0.5 rounded text-sm text-zinc-300">runSteps()</code> for tasks with multiple stages. Progress is automatically tracked and resumable.</p> `);
   CodeBlock($$renderer, { code: multiStepCode, lang: "typescript" });
   $$renderer.push(`<!----></section> <section class="mb-16"><div class="flex items-center gap-3 mb-6"><div class="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-500 font-bold">`);
   Refresh_cw($$renderer, { class: "w-4 h-4" });
-  $$renderer.push(`<!----></div> <h2 class="text-2xl font-semibold">Infinite Loop Tasks</h2></div> <p class="text-muted-foreground mb-4">For background processors, game loops, or any task that runs forever.
-        Use <code class="font-mono bg-muted px-1.5 py-0.5 rounded text-sm">maxRetries: Infinity</code> to survive DO restarts.</p> `);
+  $$renderer.push(`<!----></div> <h2 class="text-2xl font-semibold">Infinite Loop Tasks</h2></div> <p class="text-zinc-500 mb-4">For background processors, game loops, or any task that runs forever.
+        Use <code class="font-mono bg-zinc-900 px-1.5 py-0.5 rounded text-sm text-zinc-300">maxRetries: Infinity</code> to survive DO restarts.</p> `);
   CodeBlock($$renderer, { code: infiniteLoopCode, lang: "typescript" });
-  $$renderer.push(`<!----> <div class="mt-4 p-4 rounded-xl bg-amber-500/10 border border-amber-500/20"><p class="text-sm text-amber-800"><strong>Note:</strong> After a DO restart, Effect generators don't
+  $$renderer.push(`<!----> <div class="mt-4 p-4 rounded-xl bg-amber-500/10 border border-amber-500/20"><p class="text-sm text-amber-400"><strong>Note:</strong> After a DO restart, Effect generators don't
           auto-resume. You need to manually restart infinite loop tasks in your
-          constructor. See the <a href="/docs/api" class="underline hover:text-amber-100">API reference</a> for the full pattern.</p></div></section> <section class="text-center py-12 border-t border-dashed border-muted-foreground/20"><h2 class="text-xl font-semibold mb-4">Ready to dive deeper?</h2> <div class="flex justify-center gap-4">`);
-  Button($$renderer, {
-    href: "/docs/api",
-    size: "lg",
-    children: /* @__PURE__ */ __name(($$renderer2) => {
-      $$renderer2.push(`<!---->API Reference`);
-    }, "children"),
-    $$slots: { default: true }
-  });
-  $$renderer.push(`<!----> `);
-  Button($$renderer, {
-    href: "/mission",
-    variant: "outline",
-    size: "lg",
-    children: /* @__PURE__ */ __name(($$renderer2) => {
-      $$renderer2.push(`<!---->Try the Demo`);
-    }, "children"),
-    $$slots: { default: true }
-  });
-  $$renderer.push(`<!----></div></section></div></div>`);
+          constructor. See the <a href="/docs/api" class="underline hover:text-amber-300 text-amber-400">API reference</a> for the full pattern.</p></div></section> <section class="text-center py-12 border-t border-dashed border-zinc-800/50"><h2 class="text-xl font-semibold mb-4 text-zinc-100">Ready to dive deeper?</h2> <div class="flex justify-center gap-4"><a href="/docs/api" class="px-4 py-2.5 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 text-zinc-950 font-medium text-sm rounded-lg transition-all">API Reference</a> <a href="#demo" class="px-4 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-medium text-sm rounded-lg transition-all border border-zinc-700">Try the Demo</a></div></section></div></div>`);
 }
 var init_page_svelte2 = __esm({
   ".svelte-kit/output/server/entries/pages/docs/_page.svelte.js"() {
@@ -82106,7 +76639,7 @@ var init__4 = __esm({
     init_performance2();
     index5 = 3;
     component4 = /* @__PURE__ */ __name(async () => component_cache4 ??= (await Promise.resolve().then(() => (init_page_svelte2(), page_svelte_exports2))).default, "component");
-    imports4 = ["_app/immutable/nodes/3.DKpluiyd.js", "_app/immutable/chunks/CDtJAJDW.js", "_app/immutable/chunks/43DoFiGK.js", "_app/immutable/chunks/CdqBHIUe.js", "_app/immutable/chunks/B5-rS708.js", "_app/immutable/chunks/D3R2J86X.js", "_app/immutable/chunks/DnayzfWM.js", "_app/immutable/chunks/DcIzPOfe.js", "_app/immutable/chunks/BgxKhnFH.js", "_app/immutable/chunks/PPVm8Dsz.js", "_app/immutable/chunks/sg3Ep-aj.js"];
+    imports4 = ["_app/immutable/nodes/3.DnettHrs.js", "_app/immutable/chunks/DQV5tA9x.js", "_app/immutable/chunks/CcNfbX7c.js", "_app/immutable/chunks/CfNoEgQF.js", "_app/immutable/chunks/eKz8nVri.js", "_app/immutable/chunks/D35Q9rYS.js", "_app/immutable/chunks/CsL-fT1w.js", "_app/immutable/chunks/fukTWLM2.js", "_app/immutable/chunks/C14RSf85.js", "_app/immutable/chunks/PPVm8Dsz.js"];
     stylesheets4 = ["_app/immutable/assets/CodeBlock.K_WSiSu6.css"];
     fonts4 = [];
   }
@@ -82147,84 +76680,84 @@ function _page3($$renderer, $$props) {
         $$renderer4.push(`<title>API Reference - ironalarm</title>`);
       });
     });
-    $$renderer2.push(`<div class="min-h-screen bg-gradient-to-b from-background to-muted/20"><div class="container mx-auto px-6 py-16 max-w-5xl"><div class="mb-12"><h1 class="text-4xl font-bold mb-4 tracking-tight">API Reference</h1> <p class="text-xl text-muted-foreground">Complete API documentation for the ReliableScheduler class.</p></div> <nav class="mb-12 p-4 rounded-xl bg-muted/50 border"><div class="flex flex-wrap gap-2 text-sm"><a href="#constructor" class="px-3 py-1.5 rounded-lg hover:bg-muted transition-colors">Constructor</a> <a href="#static" class="px-3 py-1.5 rounded-lg hover:bg-muted transition-colors">Static Methods</a> <a href="#core" class="px-3 py-1.5 rounded-lg hover:bg-muted transition-colors">Core Execution</a> <a href="#management" class="px-3 py-1.5 rounded-lg hover:bg-muted transition-colors">Task Management</a> <a href="#progress" class="px-3 py-1.5 rounded-lg hover:bg-muted transition-colors">Progress &amp; Steps</a> <a href="#utilities" class="px-3 py-1.5 rounded-lg hover:bg-muted transition-colors">Utilities</a></div></nav> <section id="constructor" class="mb-12"><h2 class="text-2xl font-semibold mb-6 pb-2 border-b">Constructor</h2> <!--[-->`);
+    $$renderer2.push(`<div class="min-h-screen"><div class="max-w-5xl mx-auto px-6 py-16"><div class="mb-12"><h1 class="text-4xl font-bold mb-4 tracking-tight text-zinc-100">API Reference</h1> <p class="text-xl text-zinc-500">Complete API documentation for the ReliableScheduler class.</p></div> <nav class="mb-12 p-4 rounded-xl bg-zinc-900/30 border border-zinc-800/50"><div class="flex flex-wrap gap-2 text-sm"><a href="#constructor" class="px-3 py-1.5 rounded-lg hover:bg-zinc-800 transition-colors text-zinc-400 hover:text-zinc-200">Constructor</a> <a href="#static" class="px-3 py-1.5 rounded-lg hover:bg-zinc-800 transition-colors text-zinc-400 hover:text-zinc-200">Static Methods</a> <a href="#core" class="px-3 py-1.5 rounded-lg hover:bg-zinc-800 transition-colors text-zinc-400 hover:text-zinc-200">Core Execution</a> <a href="#management" class="px-3 py-1.5 rounded-lg hover:bg-zinc-800 transition-colors text-zinc-400 hover:text-zinc-200">Task Management</a> <a href="#progress" class="px-3 py-1.5 rounded-lg hover:bg-zinc-800 transition-colors text-zinc-400 hover:text-zinc-200">Progress &amp; Steps</a> <a href="#utilities" class="px-3 py-1.5 rounded-lg hover:bg-zinc-800 transition-colors text-zinc-400 hover:text-zinc-200">Utilities</a></div></nav> <section id="constructor" class="mb-12"><h2 class="text-2xl font-semibold mb-6 pb-2 border-b border-zinc-800/50 text-zinc-100">Constructor</h2> <!--[-->`);
     const each_array = ensure_array_like(constructorMethods);
     for (let $$index = 0, $$length = each_array.length; $$index < $$length; $$index++) {
       let method = each_array[$$index];
       $$renderer2.push(`<div>`);
       CodeBlock($$renderer2, { code: method.signature, lang: "typescript" });
-      $$renderer2.push(`<!----> <p class="mt-3 text-muted-foreground">${escape_html(method.description)}</p></div>`);
+      $$renderer2.push(`<!----> <p class="mt-3 text-zinc-500">${escape_html(method.description)}</p></div>`);
     }
-    $$renderer2.push(`<!--]--></section> <section id="static" class="mb-12"><h2 class="text-2xl font-semibold mb-6 pb-2 border-b">Static Methods</h2> <div class="space-y-6"><!--[-->`);
+    $$renderer2.push(`<!--]--></section> <section id="static" class="mb-12"><h2 class="text-2xl font-semibold mb-6 pb-2 border-b border-zinc-800/50 text-zinc-100">Static Methods</h2> <div class="space-y-6"><!--[-->`);
     const each_array_1 = ensure_array_like(staticMethods);
     for (let $$index_1 = 0, $$length = each_array_1.length; $$index_1 < $$length; $$index_1++) {
       let method = each_array_1[$$index_1];
       $$renderer2.push(`<div>`);
       CodeBlock($$renderer2, { code: method.signature, lang: "typescript" });
-      $$renderer2.push(`<!----> <p class="mt-3 text-muted-foreground">${escape_html(method.description)}</p></div>`);
+      $$renderer2.push(`<!----> <p class="mt-3 text-zinc-500">${escape_html(method.description)}</p></div>`);
     }
-    $$renderer2.push(`<!--]--></div></section> <section id="core" class="mb-12"><h2 class="text-2xl font-semibold mb-6 pb-2 border-b">Core Execution</h2> <div class="space-y-6"><!--[-->`);
+    $$renderer2.push(`<!--]--></div></section> <section id="core" class="mb-12"><h2 class="text-2xl font-semibold mb-6 pb-2 border-b border-zinc-800/50 text-zinc-100">Core Execution</h2> <div class="space-y-6"><!--[-->`);
     const each_array_2 = ensure_array_like(getMethodsByNames(coreExecution));
     for (let $$index_2 = 0, $$length = each_array_2.length; $$index_2 < $$length; $$index_2++) {
       let method = each_array_2[$$index_2];
       if (method) {
         $$renderer2.push("<!--[-->");
-        $$renderer2.push(`<div><h3 class="font-mono text-lg font-semibold text-primary mb-2">${escape_html(method.name)}()</h3> `);
+        $$renderer2.push(`<div><h3 class="font-mono text-lg font-semibold text-orange-400 mb-2">${escape_html(method.name)}()</h3> `);
         CodeBlock($$renderer2, { code: method.signature, lang: "typescript" });
-        $$renderer2.push(`<!----> <p class="mt-3 text-muted-foreground">${escape_html(method.description)}</p></div>`);
+        $$renderer2.push(`<!----> <p class="mt-3 text-zinc-500">${escape_html(method.description)}</p></div>`);
       } else {
         $$renderer2.push("<!--[!-->");
       }
       $$renderer2.push(`<!--]-->`);
     }
-    $$renderer2.push(`<!--]--></div></section> <section id="management" class="mb-12"><h2 class="text-2xl font-semibold mb-6 pb-2 border-b">Task Management</h2> <div class="space-y-6"><!--[-->`);
+    $$renderer2.push(`<!--]--></div></section> <section id="management" class="mb-12"><h2 class="text-2xl font-semibold mb-6 pb-2 border-b border-zinc-800/50 text-zinc-100">Task Management</h2> <div class="space-y-6"><!--[-->`);
     const each_array_3 = ensure_array_like(getMethodsByNames(taskManagement));
     for (let $$index_3 = 0, $$length = each_array_3.length; $$index_3 < $$length; $$index_3++) {
       let method = each_array_3[$$index_3];
       if (method) {
         $$renderer2.push("<!--[-->");
-        $$renderer2.push(`<div><h3 class="font-mono text-lg font-semibold text-primary mb-2">${escape_html(method.name)}()</h3> `);
+        $$renderer2.push(`<div><h3 class="font-mono text-lg font-semibold text-orange-400 mb-2">${escape_html(method.name)}()</h3> `);
         CodeBlock($$renderer2, { code: method.signature, lang: "typescript" });
-        $$renderer2.push(`<!----> <p class="mt-3 text-muted-foreground">${escape_html(method.description)}</p></div>`);
+        $$renderer2.push(`<!----> <p class="mt-3 text-zinc-500">${escape_html(method.description)}</p></div>`);
       } else {
         $$renderer2.push("<!--[!-->");
       }
       $$renderer2.push(`<!--]-->`);
     }
-    $$renderer2.push(`<!--]--></div></section> <section id="progress" class="mb-12"><h2 class="text-2xl font-semibold mb-6 pb-2 border-b">Progress &amp; Steps</h2> <div class="space-y-6"><!--[-->`);
+    $$renderer2.push(`<!--]--></div></section> <section id="progress" class="mb-12"><h2 class="text-2xl font-semibold mb-6 pb-2 border-b border-zinc-800/50 text-zinc-100">Progress &amp; Steps</h2> <div class="space-y-6"><!--[-->`);
     const each_array_4 = ensure_array_like(getMethodsByNames(progress));
     for (let $$index_4 = 0, $$length = each_array_4.length; $$index_4 < $$length; $$index_4++) {
       let method = each_array_4[$$index_4];
       if (method) {
         $$renderer2.push("<!--[-->");
-        $$renderer2.push(`<div><h3 class="font-mono text-lg font-semibold text-primary mb-2">${escape_html(method.name)}()</h3> `);
+        $$renderer2.push(`<div><h3 class="font-mono text-lg font-semibold text-orange-400 mb-2">${escape_html(method.name)}()</h3> `);
         CodeBlock($$renderer2, { code: method.signature, lang: "typescript" });
-        $$renderer2.push(`<!----> <p class="mt-3 text-muted-foreground">${escape_html(method.description)}</p></div>`);
+        $$renderer2.push(`<!----> <p class="mt-3 text-zinc-500">${escape_html(method.description)}</p></div>`);
       } else {
         $$renderer2.push("<!--[!-->");
       }
       $$renderer2.push(`<!--]-->`);
     }
-    $$renderer2.push(`<!--]--></div></section> <section id="utilities" class="mb-12"><h2 class="text-2xl font-semibold mb-6 pb-2 border-b">Utilities</h2> <div class="space-y-6"><!--[-->`);
+    $$renderer2.push(`<!--]--></div></section> <section id="utilities" class="mb-12"><h2 class="text-2xl font-semibold mb-6 pb-2 border-b border-zinc-800/50 text-zinc-100">Utilities</h2> <div class="space-y-6"><!--[-->`);
     const each_array_5 = ensure_array_like(getMethodsByNames(utilities));
     for (let $$index_5 = 0, $$length = each_array_5.length; $$index_5 < $$length; $$index_5++) {
       let method = each_array_5[$$index_5];
       if (method) {
         $$renderer2.push("<!--[-->");
-        $$renderer2.push(`<div><h3 class="font-mono text-lg font-semibold text-primary mb-2">${escape_html(method.name)}()</h3> `);
+        $$renderer2.push(`<div><h3 class="font-mono text-lg font-semibold text-orange-400 mb-2">${escape_html(method.name)}()</h3> `);
         CodeBlock($$renderer2, { code: method.signature, lang: "typescript" });
-        $$renderer2.push(`<!----> <p class="mt-3 text-muted-foreground">${escape_html(method.description)}</p></div>`);
+        $$renderer2.push(`<!----> <p class="mt-3 text-zinc-500">${escape_html(method.description)}</p></div>`);
       } else {
         $$renderer2.push("<!--[!-->");
       }
       $$renderer2.push(`<!--]-->`);
     }
-    $$renderer2.push(`<!--]--></div></section> <section id="types" class="mb-12"><h2 class="text-2xl font-semibold mb-6 pb-2 border-b">Types</h2> <div class="space-y-6"><div><h3 class="font-mono text-lg font-semibold text-primary mb-2">TaskStatus</h3> `);
+    $$renderer2.push(`<!--]--></div></section> <section id="types" class="mb-12"><h2 class="text-2xl font-semibold mb-6 pb-2 border-b border-zinc-800/50 text-zinc-100">Types</h2> <div class="space-y-6"><div><h3 class="font-mono text-lg font-semibold text-orange-400 mb-2">TaskStatus</h3> `);
     CodeBlock($$renderer2, {
       code: 'type TaskStatus = "pending" | "running" | "paused" | "completed" | "failed"',
       lang: "typescript"
     });
-    $$renderer2.push(`<!----></div> <div><h3 class="font-mono text-lg font-semibold text-primary mb-2">Task</h3> `);
+    $$renderer2.push(`<!----></div> <div><h3 class="font-mono text-lg font-semibold text-orange-400 mb-2">Task</h3> `);
     CodeBlock($$renderer2, {
       code: `interface Task {
   taskId: string;
@@ -82241,7 +76774,7 @@ function _page3($$renderer, $$props) {
 }`,
       lang: "typescript"
     });
-    $$renderer2.push(`<!----></div> <div><h3 class="font-mono text-lg font-semibold text-primary mb-2">TaskHandler</h3> `);
+    $$renderer2.push(`<!----></div> <div><h3 class="font-mono text-lg font-semibold text-orange-400 mb-2">TaskHandler</h3> `);
     CodeBlock($$renderer2, {
       code: `type TaskHandler = (
   scheduler: ReliableScheduler,
@@ -82404,7 +76937,7 @@ var init__5 = __esm({
     init_performance2();
     index6 = 4;
     component5 = /* @__PURE__ */ __name(async () => component_cache5 ??= (await Promise.resolve().then(() => (init_page_svelte3(), page_svelte_exports3))).default, "component");
-    imports5 = ["_app/immutable/nodes/4.BGn0JU8L.js", "_app/immutable/chunks/CDtJAJDW.js", "_app/immutable/chunks/43DoFiGK.js", "_app/immutable/chunks/CdqBHIUe.js", "_app/immutable/chunks/B5-rS708.js", "_app/immutable/chunks/D3R2J86X.js", "_app/immutable/chunks/BgxKhnFH.js", "_app/immutable/chunks/PPVm8Dsz.js", "_app/immutable/chunks/sg3Ep-aj.js"];
+    imports5 = ["_app/immutable/nodes/4.t16LQi4P.js", "_app/immutable/chunks/DQV5tA9x.js", "_app/immutable/chunks/CcNfbX7c.js", "_app/immutable/chunks/CfNoEgQF.js", "_app/immutable/chunks/eKz8nVri.js", "_app/immutable/chunks/D35Q9rYS.js", "_app/immutable/chunks/C14RSf85.js", "_app/immutable/chunks/PPVm8Dsz.js"];
     stylesheets5 = ["_app/immutable/assets/CodeBlock.K_WSiSu6.css"];
     fonts5 = [];
   }
@@ -82791,7 +77324,7 @@ var init__6 = __esm({
     init_performance2();
     index7 = 5;
     component6 = /* @__PURE__ */ __name(async () => component_cache6 ??= (await Promise.resolve().then(() => (init_page_svelte4(), page_svelte_exports4))).default, "component");
-    imports6 = ["_app/immutable/nodes/5.DFTfBgus.js", "_app/immutable/chunks/CDtJAJDW.js", "_app/immutable/chunks/43DoFiGK.js", "_app/immutable/chunks/B5-rS708.js", "_app/immutable/chunks/D3R2J86X.js", "_app/immutable/chunks/DugyTYfm.js", "_app/immutable/chunks/C-T-am70.js", "_app/immutable/chunks/DnayzfWM.js", "_app/immutable/chunks/DcIzPOfe.js"];
+    imports6 = ["_app/immutable/nodes/5.CtMKXFAp.js", "_app/immutable/chunks/DQV5tA9x.js", "_app/immutable/chunks/CcNfbX7c.js", "_app/immutable/chunks/eKz8nVri.js", "_app/immutable/chunks/D35Q9rYS.js", "_app/immutable/chunks/CKz1hDdm.js", "_app/immutable/chunks/pjtpxPnz.js", "_app/immutable/chunks/CsL-fT1w.js", "_app/immutable/chunks/fukTWLM2.js"];
     stylesheets6 = ["_app/immutable/assets/5.BgV6DVex.css"];
     fonts6 = [];
   }
@@ -82824,12 +77357,12 @@ var init_server_ts = __esm({
     init_virtual_unenv_global_polyfill_cloudflare_unenv_preset_node_console();
     init_performance2();
     init_auth();
-    GET = /* @__PURE__ */ __name(async ({ request, platform: platform3 }) => {
-      const auth = initAuth(platform3?.env?.DB, platform3?.env);
+    GET = /* @__PURE__ */ __name(async ({ request, platform: platform2 }) => {
+      const auth = initAuth(platform2?.env?.DB, platform2?.env);
       return auth.handler(request);
     }, "GET");
-    POST = /* @__PURE__ */ __name(async ({ request, platform: platform3 }) => {
-      const auth = initAuth(platform3?.env?.DB, platform3?.env);
+    POST = /* @__PURE__ */ __name(async ({ request, platform: platform2 }) => {
+      const auth = initAuth(platform2?.env?.DB, platform2?.env);
       return auth.handler(request);
     }, "POST");
   }
@@ -82935,7 +77468,7 @@ async function deserialize_binary_form(request) {
     return chunks[index8];
   }
   __name(get_chunk, "get_chunk");
-  async function get_buffer(offset3, length) {
+  async function get_buffer(offset, length) {
     let start_chunk;
     let chunk_start = 0;
     let chunk_index;
@@ -82943,18 +77476,18 @@ async function deserialize_binary_form(request) {
       const chunk = await get_chunk(chunk_index);
       if (!chunk) return null;
       const chunk_end = chunk_start + chunk.byteLength;
-      if (offset3 >= chunk_start && offset3 < chunk_end) {
+      if (offset >= chunk_start && offset < chunk_end) {
         start_chunk = chunk;
         break;
       }
       chunk_start = chunk_end;
     }
-    if (offset3 + length <= chunk_start + start_chunk.byteLength) {
-      return start_chunk.subarray(offset3 - chunk_start, offset3 + length - chunk_start);
+    if (offset + length <= chunk_start + start_chunk.byteLength) {
+      return start_chunk.subarray(offset - chunk_start, offset + length - chunk_start);
     }
     const buffer = new Uint8Array(length);
-    buffer.set(start_chunk.subarray(offset3 - chunk_start));
-    let cursor = start_chunk.byteLength - offset3 + chunk_start;
+    buffer.set(start_chunk.subarray(offset - chunk_start));
+    let cursor = start_chunk.byteLength - offset + chunk_start;
     while (cursor < length) {
       chunk_index++;
       let chunk = await get_chunk(chunk_index);
@@ -82991,12 +77524,12 @@ async function deserialize_binary_form(request) {
     files_start_offset = 1 + 4 + 2 + data_length + file_offsets_length;
   }
   const [data, meta] = parse(text_decoder2.decode(data_buffer), {
-    File: /* @__PURE__ */ __name(([name, type, size3, last_modified, index8]) => {
+    File: /* @__PURE__ */ __name(([name, type, size, last_modified, index8]) => {
       return new Proxy(
         new LazyFile(
           name,
           type,
-          size3,
+          size,
           last_modified,
           get_chunk,
           files_start_offset + file_offsets[index8]
@@ -83035,14 +77568,14 @@ var LazyFile = class _LazyFile {
    * @param {(index: number) => Promise<Uint8Array<ArrayBuffer> | undefined>} get_chunk
    * @param {number} offset
    */
-  constructor(name, type, size3, last_modified, get_chunk, offset3) {
+  constructor(name, type, size, last_modified, get_chunk, offset) {
     this.name = name;
     this.type = type;
-    this.size = size3;
+    this.size = size;
     this.lastModified = last_modified;
     this.webkitRelativePath = "";
     this.#get_chunk = get_chunk;
-    this.#offset = offset3;
+    this.#offset = offset;
     this.arrayBuffer = this.arrayBuffer.bind(this);
     this.bytes = this.bytes.bind(this);
     this.slice = this.slice.bind(this);
@@ -83074,11 +77607,11 @@ var LazyFile = class _LazyFile {
     } else {
       end = Math.min(end, this.size);
     }
-    const size3 = Math.max(end - start, 0);
+    const size = Math.max(end - start, 0);
     const file2 = new _LazyFile(
       this.name,
       contentType,
-      size3,
+      size,
       this.lastModified,
       this.#get_chunk,
       this.#offset + start
@@ -83194,7 +77727,7 @@ function set_public_env(environment) {
   public_env = environment;
 }
 __name(set_public_env, "set_public_env");
-function hydration_mismatch(location2) {
+function hydration_mismatch(location) {
   {
     console.warn(`https://svelte.dev/e/hydration_mismatch`);
   }
@@ -83252,12 +77785,12 @@ function skip_nodes(remove = true) {
         depth += 1;
       }
     }
-    var next22 = (
+    var next2 = (
       /** @type {TemplateNode} */
       get_next_sibling(node)
     );
     if (remove) node.remove();
-    node = next22;
+    node = next2;
   }
 }
 __name(skip_nodes, "skip_nodes");
@@ -83851,8 +78384,8 @@ var Svelte4Component = class {
       });
     }
     this.#instance.$set = /** @param {Record<string, any>} next */
-    (next22) => {
-      Object.assign(props, next22);
+    (next2) => {
+      Object.assign(props, next2);
     };
     this.#instance.$destroy = () => {
       unmount(this.#instance);
@@ -84079,7 +78612,7 @@ var options = {
 		<div class="error">
 			<span class="status">` + status + '</span>\n			<div class="message">\n				<h1>' + message2 + "</h1>\n			</div>\n		</div>\n	</body>\n</html>\n", "error")
   },
-  version_hash: "zg7t5d"
+  version_hash: "1f8fxln"
 };
 async function get_hooks() {
   let handle2;
@@ -84289,10 +78822,10 @@ async function handle_error_and_jsonify(event, state3, options2, error210) {
   ) ?? { message: message2 };
 }
 __name(handle_error_and_jsonify, "handle_error_and_jsonify");
-function redirect_response(status, location2) {
+function redirect_response(status, location) {
   const response = new Response(void 0, {
     status,
-    headers: { location: location2 }
+    headers: { location }
   });
   return response;
 }
@@ -84770,9 +79303,9 @@ function create_async_iterator() {
         [Symbol.asyncIterator]() {
           return {
             next: /* @__PURE__ */ __name(async () => {
-              const next3 = deferred2[++returned];
-              if (!next3) return { value: null, done: true };
-              const value = await next3.promise;
+              const next2 = deferred2[++returned];
+              if (!next2) return { value: null, done: true };
+              const value = await next2.promise;
               return { value: transform3(value), done: false };
             }, "next")
           };
@@ -85257,10 +79790,10 @@ function create_universal_fetch(event, state3, fetched, csr, resolve_opts) {
       }
     });
     if (csr) {
-      const get3 = response.headers.get;
+      const get2 = response.headers.get;
       response.headers.get = (key2) => {
         const lower = key2.toLowerCase();
-        const value = get3.call(response.headers, lower);
+        const value = get2.call(response.headers, lower);
         if (value && !lower.startsWith("x-sveltekit-")) {
           const included = resolve_opts.filterSerializedResponseHeaders(lower, value);
           if (!included) {
@@ -85458,8 +79991,8 @@ __name(reverse_endianness, "reverse_endianness");
 function encode5(str) {
   const encoded = text_encoder2.encode(str);
   const length = encoded.length * 8;
-  const size3 = 512 * Math.ceil((length + 65) / 512);
-  const bytes = new Uint8Array(size3 / 8);
+  const size = 512 * Math.ceil((length + 65) / 512);
+  const bytes = new Uint8Array(size / 8);
   bytes.set(encoded);
   bytes[encoded.length] = 128;
   reverse_endianness(bytes);
@@ -87754,12 +82287,12 @@ async function internal_respond(request, options2, manifest2, state3) {
       }
     }
     if (is_data_request && response.status >= 300 && response.status <= 308) {
-      const location2 = response.headers.get("location");
-      if (location2) {
+      const location = response.headers.get("location");
+      if (location) {
         return redirect_json_response(new Redirect(
           /** @type {any} */
           response.status,
-          location2
+          location
         ));
       }
     }
@@ -88073,7 +82606,7 @@ var manifest = (() => {
     assets: /* @__PURE__ */ new Set(["astral.png", "cobalt.png", "copper.png", "favicon.png", "gold.png", "infernal.png", "iron.png", "mining-game.png", "obsidian.png", "silver.png"]),
     mimeTypes: { ".png": "image/png" },
     _: {
-      client: { start: "_app/immutable/entry/start.BKCYQEHE.js", app: "_app/immutable/entry/app.BKANaOnM.js", imports: ["_app/immutable/entry/start.BKCYQEHE.js", "_app/immutable/chunks/C-T-am70.js", "_app/immutable/chunks/43DoFiGK.js", "_app/immutable/entry/app.BKANaOnM.js", "_app/immutable/chunks/PPVm8Dsz.js", "_app/immutable/chunks/43DoFiGK.js", "_app/immutable/chunks/CDtJAJDW.js", "_app/immutable/chunks/BqN1ELlW.js", "_app/immutable/chunks/DcIzPOfe.js"], stylesheets: [], fonts: [], uses_env_dynamic_public: false },
+      client: { start: "_app/immutable/entry/start.BlpTYxpc.js", app: "_app/immutable/entry/app.BT6d2Bl0.js", imports: ["_app/immutable/entry/start.BlpTYxpc.js", "_app/immutable/chunks/pjtpxPnz.js", "_app/immutable/chunks/CcNfbX7c.js", "_app/immutable/entry/app.BT6d2Bl0.js", "_app/immutable/chunks/PPVm8Dsz.js", "_app/immutable/chunks/CcNfbX7c.js", "_app/immutable/chunks/DQV5tA9x.js", "_app/immutable/chunks/hjW-poWs.js", "_app/immutable/chunks/fukTWLM2.js"], stylesheets: [], fonts: [], uses_env_dynamic_public: false },
       nodes: [
         __memo(() => Promise.resolve().then(() => (init__(), __exports))),
         __memo(() => Promise.resolve().then(() => (init__2(), __exports2))),
@@ -88216,15 +82749,15 @@ var worker_default = {
     if (filename) {
       is_static_asset = manifest.assets.has(filename) || manifest.assets.has(filename + "/index.html") || filename in manifest._.server_assets || filename + "/index.html" in manifest._.server_assets;
     }
-    let location2 = pathname.at(-1) === "/" ? stripped_pathname : pathname + "/";
+    let location = pathname.at(-1) === "/" ? stripped_pathname : pathname + "/";
     if (is_static_asset || prerendered.has(pathname) || pathname === version_file || pathname.startsWith(immutable)) {
       res = await env22.ASSETS.fetch(req);
-    } else if (location2 && prerendered.has(location2)) {
-      if (search) location2 += search;
+    } else if (location && prerendered.has(location)) {
+      if (search) location += search;
       res = new Response("", {
         status: 308,
         headers: {
-          location: location2
+          location
         }
       });
     } else {

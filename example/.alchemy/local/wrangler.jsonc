@@ -30,10 +30,10 @@
   "d1_databases": [
     {
       "binding": "DB",
-      "database_id": "ironalarm-db",
+      "database_id": "0ee51bb0-db83-4efc-82a5-c7361cddc200",
       "database_name": "ironalarm-db",
       "migrations_dir": "migrations",
-      "preview_database_id": "ironalarm-db"
+      "preview_database_id": "0ee51bb0-db83-4efc-82a5-c7361cddc200"
     }
   ],
   "migrations": [

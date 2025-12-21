@@ -16,12 +16,12 @@
     "type": "d1",
     "id": "0ee51bb0-db83-4efc-82a5-c7361cddc200",
     "name": "ironalarm-db",
-    "migrationsDir": "migrations",
-    "migrationsTable": "d1_migrations",
     "dev": {
       "id": "ironalarm-db",
       "remote": false
     },
+    "migrationsDir": "migrations",
+    "migrationsTable": "d1_migrations",
     "jurisdiction": "default"
   },
   "props": {
@@ -36,7 +36,7 @@
     ],
     "importFiles": [],
     "dev": {
-      "force": true
+      "force": false
     }
   }
 }

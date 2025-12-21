@@ -25,7 +25,6 @@
         "sqlite": true
       }
     },
-    "url": "http://localhost:1337/",
     "type": "service",
     "id": "ironalarm-worker",
     "cwd": "",
@@ -33,9 +32,9 @@
     "compatibilityFlags": [],
     "format": "esm",
     "createdAt": 1766340115339,
-    "updatedAt": 1766360194476,
-    "routes": [],
-    "domains": [],
+    "updatedAt": {
+      "@date": "2025-12-21T23:52:34.985Z"
+    },
     "dev": {
       "hasRemote": true
     }

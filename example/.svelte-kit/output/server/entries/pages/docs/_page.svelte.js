@@ -1,5 +1,5 @@
-import { h as spread_props, z as head, j as ensure_array_like, m as escape_html } from "../../../chunks/async.js";
-import { B as Button } from "../../../chunks/button.js";
+import { h as spread_props, ad as head, k as ensure_array_like, m as escape_html } from "../../../chunks/async.js";
+import "../../../chunks/button.js";
 import { C as CodeBlock } from "../../../chunks/CodeBlock.js";
 import { I as Icon } from "../../../chunks/Icon.js";
 function Zap($$renderer, $$props) {
@@ -285,48 +285,29 @@ await this.scheduler.runNow(
       $$renderer3.push(`<title>Documentation - ironalarm</title>`);
     });
   });
-  $$renderer.push(`<div class="min-h-screen bg-gradient-to-b from-background to-muted/20"><div class="container mx-auto px-6 py-16 max-w-5xl"><div class="text-center mb-16"><h1 class="text-4xl font-bold mb-4 tracking-tight">Documentation</h1> <p class="text-xl text-muted-foreground max-w-2xl mx-auto">Reliable task scheduling for Cloudflare Durable Objects. Handle
-        evictions gracefully with automatic retries and checkpoints.</p></div> <section class="mb-16"><div class="flex items-center gap-3 mb-6"><div class="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-bold">1</div> <h2 class="text-2xl font-semibold">Install</h2></div> `);
+  $$renderer.push(`<div class="min-h-screen"><div class="max-w-5xl mx-auto px-6 py-16"><div class="text-center mb-16"><h1 class="text-4xl font-bold mb-4 tracking-tight text-zinc-100">Documentation</h1> <p class="text-xl text-zinc-500 max-w-2xl mx-auto">Reliable task scheduling for Cloudflare Durable Objects. Handle
+        evictions gracefully with automatic retries and checkpoints.</p></div> <section class="mb-16"><div class="flex items-center gap-3 mb-6"><div class="w-8 h-8 rounded-lg bg-orange-500/10 flex items-center justify-center text-orange-400 font-bold">1</div> <h2 class="text-2xl font-semibold text-zinc-100">Install</h2></div> `);
   CodeBlock($$renderer, { code: installCode, lang: "bash" });
-  $$renderer.push(`<!----></section> <section class="mb-16"><div class="flex items-center gap-3 mb-6"><div class="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-bold">2</div> <h2 class="text-2xl font-semibold">Basic Setup</h2></div> `);
+  $$renderer.push(`<!----></section> <section class="mb-16"><div class="flex items-center gap-3 mb-6"><div class="w-8 h-8 rounded-lg bg-orange-500/10 flex items-center justify-center text-orange-400 font-bold">2</div> <h2 class="text-2xl font-semibold text-zinc-100">Basic Setup</h2></div> `);
   CodeBlock($$renderer, { code: basicSetupCode, lang: "typescript" });
-  $$renderer.push(`<!----></section> <section class="mb-16"><h2 class="text-2xl font-semibold mb-6">Core Concepts</h2> <div class="grid md:grid-cols-2 gap-4"><!--[-->`);
+  $$renderer.push(`<!----></section> <section class="mb-16"><h2 class="text-2xl font-semibold mb-6 text-zinc-100">Core Concepts</h2> <div class="grid md:grid-cols-2 gap-4"><!--[-->`);
   const each_array = ensure_array_like(concepts);
   for (let $$index = 0, $$length = each_array.length; $$index < $$length; $$index++) {
     let concept = each_array[$$index];
-    $$renderer.push(`<div class="p-5 rounded-xl border bg-card hover:border-primary/50 transition-colors"><div class="flex items-start gap-4"><div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">`);
-    concept.icon($$renderer, { class: "w-5 h-5 text-primary" });
-    $$renderer.push(`<!----></div> <div><h3 class="font-semibold mb-1">${escape_html(concept.title)}</h3> <p class="text-sm text-muted-foreground leading-relaxed">${escape_html(concept.description)}</p></div></div></div>`);
+    $$renderer.push(`<div class="p-5 rounded-xl border border-zinc-800/50 bg-zinc-900/30 hover:border-orange-500/50 transition-colors"><div class="flex items-start gap-4"><div class="w-10 h-10 rounded-lg bg-orange-500/10 flex items-center justify-center shrink-0">`);
+    concept.icon($$renderer, { class: "w-5 h-5 text-orange-400" });
+    $$renderer.push(`<!----></div> <div><h3 class="font-semibold mb-1 text-zinc-200">${escape_html(concept.title)}</h3> <p class="text-sm text-zinc-500 leading-relaxed">${escape_html(concept.description)}</p></div></div></div>`);
   }
-  $$renderer.push(`<!--]--></div></section> <section class="mb-16"><div class="flex items-center gap-3 mb-6"><div class="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-bold">3</div> <h2 class="text-2xl font-semibold">Multi-step Tasks</h2></div> <p class="text-muted-foreground mb-4">Use <code class="font-mono bg-muted px-1.5 py-0.5 rounded text-sm">runSteps()</code> for tasks with multiple stages. Progress is automatically tracked and resumable.</p> `);
+  $$renderer.push(`<!--]--></div></section> <section class="mb-16"><div class="flex items-center gap-3 mb-6"><div class="w-8 h-8 rounded-lg bg-orange-500/10 flex items-center justify-center text-orange-400 font-bold">3</div> <h2 class="text-2xl font-semibold text-zinc-100">Multi-step Tasks</h2></div> <p class="text-zinc-500 mb-4">Use <code class="font-mono bg-zinc-900 px-1.5 py-0.5 rounded text-sm text-zinc-300">runSteps()</code> for tasks with multiple stages. Progress is automatically tracked and resumable.</p> `);
   CodeBlock($$renderer, { code: multiStepCode, lang: "typescript" });
   $$renderer.push(`<!----></section> <section class="mb-16"><div class="flex items-center gap-3 mb-6"><div class="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-500 font-bold">`);
   Refresh_cw($$renderer, { class: "w-4 h-4" });
-  $$renderer.push(`<!----></div> <h2 class="text-2xl font-semibold">Infinite Loop Tasks</h2></div> <p class="text-muted-foreground mb-4">For background processors, game loops, or any task that runs forever.
-        Use <code class="font-mono bg-muted px-1.5 py-0.5 rounded text-sm">maxRetries: Infinity</code> to survive DO restarts.</p> `);
+  $$renderer.push(`<!----></div> <h2 class="text-2xl font-semibold">Infinite Loop Tasks</h2></div> <p class="text-zinc-500 mb-4">For background processors, game loops, or any task that runs forever.
+        Use <code class="font-mono bg-zinc-900 px-1.5 py-0.5 rounded text-sm text-zinc-300">maxRetries: Infinity</code> to survive DO restarts.</p> `);
   CodeBlock($$renderer, { code: infiniteLoopCode, lang: "typescript" });
-  $$renderer.push(`<!----> <div class="mt-4 p-4 rounded-xl bg-amber-500/10 border border-amber-500/20"><p class="text-sm text-amber-800"><strong>Note:</strong> After a DO restart, Effect generators don't
+  $$renderer.push(`<!----> <div class="mt-4 p-4 rounded-xl bg-amber-500/10 border border-amber-500/20"><p class="text-sm text-amber-400"><strong>Note:</strong> After a DO restart, Effect generators don't
           auto-resume. You need to manually restart infinite loop tasks in your
-          constructor. See the <a href="/docs/api" class="underline hover:text-amber-100">API reference</a> for the full pattern.</p></div></section> <section class="text-center py-12 border-t border-dashed border-muted-foreground/20"><h2 class="text-xl font-semibold mb-4">Ready to dive deeper?</h2> <div class="flex justify-center gap-4">`);
-  Button($$renderer, {
-    href: "/docs/api",
-    size: "lg",
-    children: ($$renderer2) => {
-      $$renderer2.push(`<!---->API Reference`);
-    },
-    $$slots: { default: true }
-  });
-  $$renderer.push(`<!----> `);
-  Button($$renderer, {
-    href: "/mission",
-    variant: "outline",
-    size: "lg",
-    children: ($$renderer2) => {
-      $$renderer2.push(`<!---->Try the Demo`);
-    },
-    $$slots: { default: true }
-  });
-  $$renderer.push(`<!----></div></section></div></div>`);
+          constructor. See the <a href="/docs/api" class="underline hover:text-amber-300 text-amber-400">API reference</a> for the full pattern.</p></div></section> <section class="text-center py-12 border-t border-dashed border-zinc-800/50"><h2 class="text-xl font-semibold mb-4 text-zinc-100">Ready to dive deeper?</h2> <div class="flex justify-center gap-4"><a href="/docs/api" class="px-4 py-2.5 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 text-zinc-950 font-medium text-sm rounded-lg transition-all">API Reference</a> <a href="#demo" class="px-4 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-medium text-sm rounded-lg transition-all border border-zinc-700">Try the Demo</a></div></section></div></div>`);
 }
 export {
   _page as default

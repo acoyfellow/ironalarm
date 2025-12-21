@@ -3,4 +3,4 @@ dist/
 *.log
 .wrangler/
 bun.lock
-
+.svelte-kit/

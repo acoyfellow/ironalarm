@@ -201,11 +201,7 @@ for (const [name, fn] of Object.entries(m)) {
   fn.__.name = name;
 }
 export {
-  cancelTask as a,
-  clearCompleted as c,
   getTasks as g,
   m,
-  pauseTask as p,
-  resumeTask as r,
   startTask as s
 };

@@ -1296,7 +1296,7 @@
       "format": "esm"
     },
     ".svelte-kit/output/server/chunks/exports.js": {
-      "bytes": 7016,
+      "bytes": 7017,
       "imports": [
         {
           "path": ".svelte-kit/output/server/chunks/async.js",
@@ -1337,7 +1337,7 @@
       "format": "esm"
     },
     ".svelte-kit/output/server/chunks/events.js": {
-      "bytes": 53038,
+      "bytes": 53033,
       "imports": [
         {
           "path": ".svelte-kit/output/server/chunks/false.js",
@@ -24624,7 +24624,7 @@
       "format": "esm"
     },
     ".svelte-kit/output/server/chunks/internal.js": {
-      "bytes": 25919,
+      "bytes": 25920,
       "imports": [
         {
           "path": ".svelte-kit/output/server/chunks/async.js",
@@ -25297,7 +25297,7 @@
       "format": "esm"
     },
     ".svelte-kit/output/server/chunks/index.js": {
-      "bytes": 1061,
+      "bytes": 1062,
       "imports": [
         {
           "path": "node_modules/clsx/dist/clsx.mjs",
@@ -25328,6 +25328,73 @@
           "path": ".svelte-kit/output/server/chunks/utils.js",
           "kind": "import-statement",
           "original": "./utils.js"
+        },
+        {
+          "path": "/Users/jordan/Desktop/ironalarm/example/node_modules/alchemy/src/cloudflare/bundle/_virtual_unenv_global_polyfill-@cloudflare-unenv-preset-node-process",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "/Users/jordan/Desktop/ironalarm/example/node_modules/alchemy/src/cloudflare/bundle/_virtual_unenv_global_polyfill-@cloudflare-unenv-preset-node-console",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "/Users/jordan/Desktop/ironalarm/example/node_modules/@cloudflare/unenv-preset/dist/runtime/polyfill/performance.mjs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "<runtime>",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    ".svelte-kit/output/server/chunks/Icon.js": {
+      "bytes": 1531,
+      "imports": [
+        {
+          "path": ".svelte-kit/output/server/chunks/async.js",
+          "kind": "import-statement",
+          "original": "./async.js"
+        },
+        {
+          "path": "/Users/jordan/Desktop/ironalarm/example/node_modules/alchemy/src/cloudflare/bundle/_virtual_unenv_global_polyfill-@cloudflare-unenv-preset-node-process",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "/Users/jordan/Desktop/ironalarm/example/node_modules/alchemy/src/cloudflare/bundle/_virtual_unenv_global_polyfill-@cloudflare-unenv-preset-node-console",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "/Users/jordan/Desktop/ironalarm/example/node_modules/@cloudflare/unenv-preset/dist/runtime/polyfill/performance.mjs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "<runtime>",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    ".svelte-kit/output/server/chunks/index-server.js": {
+      "bytes": 418,
+      "imports": [
+        {
+          "path": ".svelte-kit/output/server/chunks/async.js",
+          "kind": "import-statement",
+          "original": "./async.js"
+        },
+        {
+          "path": "node_modules/clsx/dist/clsx.mjs",
+          "kind": "import-statement",
+          "original": "clsx"
         },
         {
           "path": "/Users/jordan/Desktop/ironalarm/example/node_modules/alchemy/src/cloudflare/bundle/_virtual_unenv_global_polyfill-@cloudflare-unenv-preset-node-process",
@@ -25532,37 +25599,6 @@
       ],
       "format": "esm"
     },
-    ".svelte-kit/output/server/chunks/Icon.js": {
-      "bytes": 1530,
-      "imports": [
-        {
-          "path": ".svelte-kit/output/server/chunks/async.js",
-          "kind": "import-statement",
-          "original": "./async.js"
-        },
-        {
-          "path": "/Users/jordan/Desktop/ironalarm/example/node_modules/alchemy/src/cloudflare/bundle/_virtual_unenv_global_polyfill-@cloudflare-unenv-preset-node-process",
-          "kind": "import-statement",
-          "external": true
-        },
-        {
-          "path": "/Users/jordan/Desktop/ironalarm/example/node_modules/alchemy/src/cloudflare/bundle/_virtual_unenv_global_polyfill-@cloudflare-unenv-preset-node-console",
-          "kind": "import-statement",
-          "external": true
-        },
-        {
-          "path": "/Users/jordan/Desktop/ironalarm/example/node_modules/@cloudflare/unenv-preset/dist/runtime/polyfill/performance.mjs",
-          "kind": "import-statement",
-          "external": true
-        },
-        {
-          "path": "<runtime>",
-          "kind": "import-statement",
-          "external": true
-        }
-      ],
-      "format": "esm"
-    },
     "node_modules/inline-style-parser/esm/index.mjs": {
       "bytes": 5090,
       "imports": [
@@ -25646,64 +25682,8 @@
       ],
       "format": "esm"
     },
-    ".svelte-kit/output/server/chunks/input.js": {
-      "bytes": 51463,
-      "imports": [
-        {
-          "path": "node_modules/clsx/dist/clsx.mjs",
-          "kind": "import-statement",
-          "original": "clsx"
-        },
-        {
-          "path": "node_modules/style-to-object/esm/index.mjs",
-          "kind": "import-statement",
-          "original": "style-to-object"
-        },
-        {
-          "path": ".svelte-kit/output/server/chunks/async.js",
-          "kind": "import-statement",
-          "original": "./async.js"
-        },
-        {
-          "path": ".svelte-kit/output/server/chunks/events.js",
-          "kind": "import-statement",
-          "original": "./events.js"
-        },
-        {
-          "path": "node_modules/tabbable/dist/index.esm.js",
-          "kind": "import-statement",
-          "original": "tabbable"
-        },
-        {
-          "path": ".svelte-kit/output/server/chunks/button.js",
-          "kind": "import-statement",
-          "original": "./button.js"
-        },
-        {
-          "path": "/Users/jordan/Desktop/ironalarm/example/node_modules/alchemy/src/cloudflare/bundle/_virtual_unenv_global_polyfill-@cloudflare-unenv-preset-node-process",
-          "kind": "import-statement",
-          "external": true
-        },
-        {
-          "path": "/Users/jordan/Desktop/ironalarm/example/node_modules/alchemy/src/cloudflare/bundle/_virtual_unenv_global_polyfill-@cloudflare-unenv-preset-node-console",
-          "kind": "import-statement",
-          "external": true
-        },
-        {
-          "path": "/Users/jordan/Desktop/ironalarm/example/node_modules/@cloudflare/unenv-preset/dist/runtime/polyfill/performance.mjs",
-          "kind": "import-statement",
-          "external": true
-        },
-        {
-          "path": "<runtime>",
-          "kind": "import-statement",
-          "external": true
-        }
-      ],
-      "format": "esm"
-    },
     ".svelte-kit/output/server/entries/pages/_layout.svelte.js": {
-      "bytes": 96785,
+      "bytes": 143960,
       "imports": [
         {
           "path": ".svelte-kit/output/server/chunks/async.js",
@@ -25741,19 +25721,34 @@
           "original": "../../chunks/index.js"
         },
         {
-          "path": ".svelte-kit/output/server/chunks/button.js",
-          "kind": "import-statement",
-          "original": "../../chunks/button.js"
-        },
-        {
           "path": ".svelte-kit/output/server/chunks/Icon.js",
           "kind": "import-statement",
           "original": "../../chunks/Icon.js"
         },
         {
-          "path": ".svelte-kit/output/server/chunks/input.js",
+          "path": ".svelte-kit/output/server/chunks/index-server.js",
           "kind": "import-statement",
-          "original": "../../chunks/input.js"
+          "original": "../../chunks/index-server.js"
+        },
+        {
+          "path": ".svelte-kit/output/server/chunks/button.js",
+          "kind": "import-statement",
+          "original": "../../chunks/button.js"
+        },
+        {
+          "path": "node_modules/style-to-object/esm/index.mjs",
+          "kind": "import-statement",
+          "original": "style-to-object"
+        },
+        {
+          "path": ".svelte-kit/output/server/chunks/events.js",
+          "kind": "import-statement",
+          "original": "../../chunks/events.js"
+        },
+        {
+          "path": "node_modules/tabbable/dist/index.esm.js",
+          "kind": "import-statement",
+          "original": "tabbable"
         },
         {
           "path": "/Users/jordan/Desktop/ironalarm/example/node_modules/alchemy/src/cloudflare/bundle/_virtual_unenv_global_polyfill-@cloudflare-unenv-preset-node-process",
@@ -25815,7 +25810,7 @@
       "format": "esm"
     },
     ".svelte-kit/output/server/entries/pages/_error.svelte.js": {
-      "bytes": 8025,
+      "bytes": 7690,
       "imports": [
         {
           "path": ".svelte-kit/output/server/chunks/async.js",
@@ -25933,7 +25928,7 @@
       "format": "esm"
     },
     ".svelte-kit/output/server/chunks/data.remote.js": {
-      "bytes": 5345,
+      "bytes": 5266,
       "imports": [
         {
           "path": "node_modules/@sveltejs/kit/src/exports/internal/server.js",
@@ -25988,242 +25983,6 @@
       ],
       "format": "esm"
     },
-    "node_modules/@floating-ui/utils/dist/floating-ui.utils.mjs": {
-      "bytes": 4201,
-      "imports": [
-        {
-          "path": "/Users/jordan/Desktop/ironalarm/example/node_modules/alchemy/src/cloudflare/bundle/_virtual_unenv_global_polyfill-@cloudflare-unenv-preset-node-process",
-          "kind": "import-statement",
-          "external": true
-        },
-        {
-          "path": "/Users/jordan/Desktop/ironalarm/example/node_modules/alchemy/src/cloudflare/bundle/_virtual_unenv_global_polyfill-@cloudflare-unenv-preset-node-console",
-          "kind": "import-statement",
-          "external": true
-        },
-        {
-          "path": "/Users/jordan/Desktop/ironalarm/example/node_modules/@cloudflare/unenv-preset/dist/runtime/polyfill/performance.mjs",
-          "kind": "import-statement",
-          "external": true
-        },
-        {
-          "path": "<runtime>",
-          "kind": "import-statement",
-          "external": true
-        }
-      ],
-      "format": "esm"
-    },
-    "node_modules/@floating-ui/core/dist/floating-ui.core.mjs": {
-      "bytes": 36167,
-      "imports": [
-        {
-          "path": "node_modules/@floating-ui/utils/dist/floating-ui.utils.mjs",
-          "kind": "import-statement",
-          "original": "@floating-ui/utils"
-        },
-        {
-          "path": "node_modules/@floating-ui/utils/dist/floating-ui.utils.mjs",
-          "kind": "import-statement",
-          "original": "@floating-ui/utils"
-        },
-        {
-          "path": "/Users/jordan/Desktop/ironalarm/example/node_modules/alchemy/src/cloudflare/bundle/_virtual_unenv_global_polyfill-@cloudflare-unenv-preset-node-process",
-          "kind": "import-statement",
-          "external": true
-        },
-        {
-          "path": "/Users/jordan/Desktop/ironalarm/example/node_modules/alchemy/src/cloudflare/bundle/_virtual_unenv_global_polyfill-@cloudflare-unenv-preset-node-console",
-          "kind": "import-statement",
-          "external": true
-        },
-        {
-          "path": "/Users/jordan/Desktop/ironalarm/example/node_modules/@cloudflare/unenv-preset/dist/runtime/polyfill/performance.mjs",
-          "kind": "import-statement",
-          "external": true
-        },
-        {
-          "path": "<runtime>",
-          "kind": "import-statement",
-          "external": true
-        }
-      ],
-      "format": "esm"
-    },
-    "node_modules/@floating-ui/utils/dist/floating-ui.utils.dom.mjs": {
-      "bytes": 6219,
-      "imports": [
-        {
-          "path": "/Users/jordan/Desktop/ironalarm/example/node_modules/alchemy/src/cloudflare/bundle/_virtual_unenv_global_polyfill-@cloudflare-unenv-preset-node-process",
-          "kind": "import-statement",
-          "external": true
-        },
-        {
-          "path": "/Users/jordan/Desktop/ironalarm/example/node_modules/alchemy/src/cloudflare/bundle/_virtual_unenv_global_polyfill-@cloudflare-unenv-preset-node-console",
-          "kind": "import-statement",
-          "external": true
-        },
-        {
-          "path": "/Users/jordan/Desktop/ironalarm/example/node_modules/@cloudflare/unenv-preset/dist/runtime/polyfill/performance.mjs",
-          "kind": "import-statement",
-          "external": true
-        },
-        {
-          "path": "<runtime>",
-          "kind": "import-statement",
-          "external": true
-        }
-      ],
-      "format": "esm"
-    },
-    "node_modules/@floating-ui/dom/dist/floating-ui.dom.mjs": {
-      "bytes": 27498,
-      "imports": [
-        {
-          "path": "node_modules/@floating-ui/core/dist/floating-ui.core.mjs",
-          "kind": "import-statement",
-          "original": "@floating-ui/core"
-        },
-        {
-          "path": "node_modules/@floating-ui/utils/dist/floating-ui.utils.mjs",
-          "kind": "import-statement",
-          "original": "@floating-ui/utils"
-        },
-        {
-          "path": "node_modules/@floating-ui/utils/dist/floating-ui.utils.dom.mjs",
-          "kind": "import-statement",
-          "original": "@floating-ui/utils/dom"
-        },
-        {
-          "path": "node_modules/@floating-ui/utils/dist/floating-ui.utils.dom.mjs",
-          "kind": "import-statement",
-          "original": "@floating-ui/utils/dom"
-        },
-        {
-          "path": "/Users/jordan/Desktop/ironalarm/example/node_modules/alchemy/src/cloudflare/bundle/_virtual_unenv_global_polyfill-@cloudflare-unenv-preset-node-process",
-          "kind": "import-statement",
-          "external": true
-        },
-        {
-          "path": "/Users/jordan/Desktop/ironalarm/example/node_modules/alchemy/src/cloudflare/bundle/_virtual_unenv_global_polyfill-@cloudflare-unenv-preset-node-console",
-          "kind": "import-statement",
-          "external": true
-        },
-        {
-          "path": "/Users/jordan/Desktop/ironalarm/example/node_modules/@cloudflare/unenv-preset/dist/runtime/polyfill/performance.mjs",
-          "kind": "import-statement",
-          "external": true
-        },
-        {
-          "path": "<runtime>",
-          "kind": "import-statement",
-          "external": true
-        }
-      ],
-      "format": "esm"
-    },
-    ".svelte-kit/output/server/entries/pages/_page.svelte.js": {
-      "bytes": 133745,
-      "imports": [
-        {
-          "path": ".svelte-kit/output/server/chunks/async.js",
-          "kind": "import-statement",
-          "original": "../../chunks/async.js"
-        },
-        {
-          "path": ".svelte-kit/output/server/chunks/input.js",
-          "kind": "import-statement",
-          "original": "../../chunks/input.js"
-        },
-        {
-          "path": ".svelte-kit/output/server/chunks/data.remote.js",
-          "kind": "import-statement",
-          "original": "../../chunks/data.remote.js"
-        },
-        {
-          "path": ".svelte-kit/output/server/chunks/button.js",
-          "kind": "import-statement",
-          "original": "../../chunks/button.js"
-        },
-        {
-          "path": "node_modules/clsx/dist/clsx.mjs",
-          "kind": "import-statement",
-          "original": "clsx"
-        },
-        {
-          "path": "node_modules/@floating-ui/dom/dist/floating-ui.dom.mjs",
-          "kind": "import-statement",
-          "original": "@floating-ui/dom"
-        },
-        {
-          "path": ".svelte-kit/output/server/chunks/events.js",
-          "kind": "import-statement",
-          "original": "../../chunks/events.js"
-        },
-        {
-          "path": ".svelte-kit/output/server/chunks/Icon.js",
-          "kind": "import-statement",
-          "original": "../../chunks/Icon.js"
-        },
-        {
-          "path": "node_modules/tailwind-variants/dist/index.js",
-          "kind": "import-statement",
-          "original": "tailwind-variants"
-        },
-        {
-          "path": "/Users/jordan/Desktop/ironalarm/example/node_modules/alchemy/src/cloudflare/bundle/_virtual_unenv_global_polyfill-@cloudflare-unenv-preset-node-process",
-          "kind": "import-statement",
-          "external": true
-        },
-        {
-          "path": "/Users/jordan/Desktop/ironalarm/example/node_modules/alchemy/src/cloudflare/bundle/_virtual_unenv_global_polyfill-@cloudflare-unenv-preset-node-console",
-          "kind": "import-statement",
-          "external": true
-        },
-        {
-          "path": "/Users/jordan/Desktop/ironalarm/example/node_modules/@cloudflare/unenv-preset/dist/runtime/polyfill/performance.mjs",
-          "kind": "import-statement",
-          "external": true
-        },
-        {
-          "path": "<runtime>",
-          "kind": "import-statement",
-          "external": true
-        }
-      ],
-      "format": "esm"
-    },
-    ".svelte-kit/output/server/nodes/2.js": {
-      "bytes": 753,
-      "imports": [
-        {
-          "path": "/Users/jordan/Desktop/ironalarm/example/node_modules/alchemy/src/cloudflare/bundle/_virtual_unenv_global_polyfill-@cloudflare-unenv-preset-node-process",
-          "kind": "import-statement",
-          "external": true
-        },
-        {
-          "path": "/Users/jordan/Desktop/ironalarm/example/node_modules/alchemy/src/cloudflare/bundle/_virtual_unenv_global_polyfill-@cloudflare-unenv-preset-node-console",
-          "kind": "import-statement",
-          "external": true
-        },
-        {
-          "path": "/Users/jordan/Desktop/ironalarm/example/node_modules/@cloudflare/unenv-preset/dist/runtime/polyfill/performance.mjs",
-          "kind": "import-statement",
-          "external": true
-        },
-        {
-          "path": ".svelte-kit/output/server/entries/pages/_page.svelte.js",
-          "kind": "dynamic-import",
-          "original": "../entries/pages/_page.svelte.js"
-        },
-        {
-          "path": "<runtime>",
-          "kind": "import-statement",
-          "external": true
-        }
-      ],
-      "format": "esm"
-    },
     ".svelte-kit/output/server/chunks/CodeBlock.js": {
       "bytes": 2920,
       "imports": [
@@ -26265,8 +26024,90 @@
       ],
       "format": "esm"
     },
+    ".svelte-kit/output/server/entries/pages/_page.svelte.js": {
+      "bytes": 18499,
+      "imports": [
+        {
+          "path": ".svelte-kit/output/server/chunks/async.js",
+          "kind": "import-statement",
+          "original": "../../chunks/async.js"
+        },
+        {
+          "path": ".svelte-kit/output/server/chunks/index-server.js",
+          "kind": "import-statement",
+          "original": "../../chunks/index-server.js"
+        },
+        {
+          "path": ".svelte-kit/output/server/chunks/data.remote.js",
+          "kind": "import-statement",
+          "original": "../../chunks/data.remote.js"
+        },
+        {
+          "path": ".svelte-kit/output/server/chunks/CodeBlock.js",
+          "kind": "import-statement",
+          "original": "../../chunks/CodeBlock.js"
+        },
+        {
+          "path": "node_modules/clsx/dist/clsx.mjs",
+          "kind": "import-statement",
+          "original": "clsx"
+        },
+        {
+          "path": "/Users/jordan/Desktop/ironalarm/example/node_modules/alchemy/src/cloudflare/bundle/_virtual_unenv_global_polyfill-@cloudflare-unenv-preset-node-process",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "/Users/jordan/Desktop/ironalarm/example/node_modules/alchemy/src/cloudflare/bundle/_virtual_unenv_global_polyfill-@cloudflare-unenv-preset-node-console",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "/Users/jordan/Desktop/ironalarm/example/node_modules/@cloudflare/unenv-preset/dist/runtime/polyfill/performance.mjs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "<runtime>",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
+    ".svelte-kit/output/server/nodes/2.js": {
+      "bytes": 689,
+      "imports": [
+        {
+          "path": "/Users/jordan/Desktop/ironalarm/example/node_modules/alchemy/src/cloudflare/bundle/_virtual_unenv_global_polyfill-@cloudflare-unenv-preset-node-process",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "/Users/jordan/Desktop/ironalarm/example/node_modules/alchemy/src/cloudflare/bundle/_virtual_unenv_global_polyfill-@cloudflare-unenv-preset-node-console",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": "/Users/jordan/Desktop/ironalarm/example/node_modules/@cloudflare/unenv-preset/dist/runtime/polyfill/performance.mjs",
+          "kind": "import-statement",
+          "external": true
+        },
+        {
+          "path": ".svelte-kit/output/server/entries/pages/_page.svelte.js",
+          "kind": "dynamic-import",
+          "original": "../entries/pages/_page.svelte.js"
+        },
+        {
+          "path": "<runtime>",
+          "kind": "import-statement",
+          "external": true
+        }
+      ],
+      "format": "esm"
+    },
     ".svelte-kit/output/server/entries/pages/docs/_page.svelte.js": {
-      "bytes": 15597,
+      "bytes": 15595,
       "imports": [
         {
           "path": ".svelte-kit/output/server/chunks/async.js",
@@ -26312,7 +26153,7 @@
       "format": "esm"
     },
     ".svelte-kit/output/server/nodes/3.js": {
-      "bytes": 694,
+      "bytes": 658,
       "imports": [
         {
           "path": "/Users/jordan/Desktop/ironalarm/example/node_modules/alchemy/src/cloudflare/bundle/_virtual_unenv_global_polyfill-@cloudflare-unenv-preset-node-process",
@@ -26343,7 +26184,7 @@
       "format": "esm"
     },
     ".svelte-kit/output/server/entries/pages/docs/api/_page.svelte.js": {
-      "bytes": 12957,
+      "bytes": 13357,
       "imports": [
         {
           "path": ".svelte-kit/output/server/chunks/async.js",
@@ -26379,7 +26220,7 @@
       "format": "esm"
     },
     ".svelte-kit/output/server/nodes/4.js": {
-      "bytes": 626,
+      "bytes": 590,
       "imports": [
         {
           "path": "/Users/jordan/Desktop/ironalarm/example/node_modules/alchemy/src/cloudflare/bundle/_virtual_unenv_global_polyfill-@cloudflare-unenv-preset-node-process",
@@ -26410,7 +26251,7 @@
       "format": "esm"
     },
     ".svelte-kit/output/server/entries/pages/mission/_page.svelte.js": {
-      "bytes": 18094,
+      "bytes": 18095,
       "imports": [
         {
           "path": ".svelte-kit/output/server/chunks/async.js",
@@ -26656,7 +26497,7 @@
       "imports": [],
       "exports": [],
       "inputs": {},
-      "bytes": 5225917
+      "bytes": 4910684
     },
     ".alchemy/out/ironalarm-app/_worker.js": {
       "imports": [
@@ -26756,7 +26597,7 @@
           "bytesInOutput": 974
         },
         "node_modules/@sveltejs/kit/src/exports/internal/index.js": {
-          "bytesInOutput": 1945
+          "bytesInOutput": 1943
         },
         "node_modules/esm-env/true.js": {
           "bytesInOutput": 295
@@ -26828,7 +26669,7 @@
           "bytesInOutput": 7897
         },
         ".svelte-kit/output/server/chunks/events.js": {
-          "bytesInOutput": 57918
+          "bytesInOutput": 57913
         },
         ".svelte-kit/output/server/chunks/environment.js": {
           "bytesInOutput": 354
@@ -26849,7 +26690,7 @@
           "bytesInOutput": 8795
         },
         "node_modules/@better-auth/core/dist/utils-NloIXYE0.mjs": {
-          "bytesInOutput": 1318
+          "bytesInOutput": 1316
         },
         "node_modules/@better-auth/core/dist/error-CzMAIrPb.mjs": {
           "bytesInOutput": 2155
@@ -26861,7 +26702,7 @@
           "bytesInOutput": 1477
         },
         "node_modules/@better-auth/utils/dist/base64.mjs": {
-          "bytesInOutput": 2797
+          "bytesInOutput": 2790
         },
         "node_modules/@better-auth/utils/dist/index.mjs": {
           "bytesInOutput": 565
@@ -26888,7 +26729,7 @@
           "bytesInOutput": 8390
         },
         "node_modules/zod/v4/core/checks.js": {
-          "bytesInOutput": 18974
+          "bytesInOutput": 18967
         },
         "node_modules/zod/v4/core/doc.js": {
           "bytesInOutput": 1373
@@ -27047,7 +26888,7 @@
           "bytesInOutput": 1902
         },
         "node_modules/zod/v4/core/api.js": {
-          "bytesInOutput": 23184
+          "bytesInOutput": 23176
         },
         "node_modules/zod/v4/core/to-json-schema.js": {
           "bytesInOutput": 30502
@@ -27071,7 +26912,7 @@
           "bytesInOutput": 1198
         },
         "node_modules/zod/v4/classic/schemas.js": {
-          "bytesInOutput": 37815
+          "bytesInOutput": 37811
         },
         "node_modules/zod/v4/classic/compat.js": {
           "bytesInOutput": 1092
@@ -27281,7 +27122,7 @@
           "bytesInOutput": 2781
         },
         "node_modules/kysely/dist/esm/operation-node/select-query-node.js": {
-          "bytesInOutput": 3760
+          "bytesInOutput": 3750
         },
         "node_modules/kysely/dist/esm/query-builder/join-builder.js": {
           "bytesInOutput": 1771
@@ -27425,7 +27266,7 @@
           "bytesInOutput": 1374
         },
         "node_modules/kysely/dist/esm/operation-node/offset-node.js": {
-          "bytesInOutput": 557
+          "bytesInOutput": 547
         },
         "node_modules/kysely/dist/esm/operation-node/group-by-item-node.js": {
           "bytesInOutput": 583
@@ -27449,7 +27290,7 @@
           "bytesInOutput": 813
         },
         "node_modules/kysely/dist/esm/query-builder/select-query-builder.js": {
-          "bytesInOutput": 13504
+          "bytesInOutput": 13502
         },
         "node_modules/kysely/dist/esm/operation-node/aggregate-function-node.js": {
           "bytesInOutput": 1979
@@ -27875,10 +27716,10 @@
           "bytesInOutput": 6317
         },
         "node_modules/@better-auth/core/dist/db/adapter/index.mjs": {
-          "bytesInOutput": 43202
+          "bytesInOutput": 43173
         },
         "node_modules/@noble/hashes/utils.js": {
-          "bytesInOutput": 5939
+          "bytesInOutput": 5930
         },
         "node_modules/@noble/hashes/hmac.js": {
           "bytesInOutput": 2572
@@ -27890,10 +27731,10 @@
           "bytesInOutput": 3672
         },
         "node_modules/@noble/hashes/sha2.js": {
-          "bytesInOutput": 4163
+          "bytesInOutput": 4160
         },
         "node_modules/jose/dist/webapi/lib/buffer_utils.js": {
-          "bytesInOutput": 1714
+          "bytesInOutput": 1710
         },
         "node_modules/jose/dist/webapi/lib/base64.js": {
           "bytesInOutput": 975
@@ -28019,7 +27860,7 @@
           "bytesInOutput": 1081
         },
         "node_modules/jose/dist/webapi/lib/jwt_claims_set.js": {
-          "bytesInOutput": 8304
+          "bytesInOutput": 8302
         },
         "node_modules/jose/dist/webapi/jwt/verify.js": {
           "bytesInOutput": 919
@@ -28070,13 +27911,13 @@
           "bytesInOutput": 2350
         },
         "node_modules/@noble/ciphers/utils.js": {
-          "bytesInOutput": 8944
+          "bytesInOutput": 8941
         },
         "node_modules/@noble/ciphers/_arx.js": {
           "bytesInOutput": 4206
         },
         "node_modules/@noble/ciphers/_poly1305.js": {
-          "bytesInOutput": 9360
+          "bytesInOutput": 9351
         },
         "node_modules/@noble/ciphers/chacha.js": {
           "bytesInOutput": 8066
@@ -28097,13 +27938,13 @@
           "bytesInOutput": 1905
         },
         "node_modules/@noble/hashes/scrypt.js": {
-          "bytesInOutput": 6210
+          "bytesInOutput": 6193
         },
         ".svelte-kit/output/server/chunks/url.js": {
           "bytesInOutput": 2887
         },
         "node_modules/@better-auth/telemetry/dist/index.mjs": {
-          "bytesInOutput": 20048
+          "bytesInOutput": 20046
         },
         "node_modules/@better-auth/core/dist/index.mjs": {
           "bytesInOutput": 270
@@ -28136,7 +27977,7 @@
           "bytesInOutput": 2433
         },
         "node_modules/drizzle-orm/pg-core/columns/common.js": {
-          "bytesInOutput": 7191
+          "bytesInOutput": 7187
         },
         "node_modules/drizzle-orm/pg-core/columns/enum.js": {
           "bytesInOutput": 2379
@@ -28184,7 +28025,7 @@
           "bytesInOutput": 1250
         },
         "node_modules/drizzle-orm/sql/expressions/conditions.js": {
-          "bytesInOutput": 4150
+          "bytesInOutput": 4142
         },
         "node_modules/drizzle-orm/sql/expressions/select.js": {
           "bytesInOutput": 455
@@ -28271,13 +28112,13 @@
           "bytesInOutput": 492
         },
         "node_modules/drizzle-orm/sqlite-core/dialect.js": {
-          "bytesInOutput": 27852
+          "bytesInOutput": 27799
         },
         "node_modules/drizzle-orm/query-builders/query-builder.js": {
           "bytesInOutput": 582
         },
         "node_modules/drizzle-orm/sqlite-core/query-builders/select.js": {
-          "bytesInOutput": 24852
+          "bytesInOutput": 24849
         },
         "node_modules/drizzle-orm/sqlite-core/query-builders/query-builder.js": {
           "bytesInOutput": 2719
@@ -28343,10 +28184,10 @@
           "bytesInOutput": 8890
         },
         ".svelte-kit/output/server/chunks/index2.js": {
-          "bytesInOutput": 11014
+          "bytesInOutput": 11001
         },
         ".svelte-kit/output/server/chunks/index3.js": {
-          "bytesInOutput": 16304
+          "bytesInOutput": 16291
         },
         ".svelte-kit/output/server/chunks/bun-sqlite-dialect.js": {
           "bytesInOutput": 5766
@@ -28355,7 +28196,7 @@
           "bytesInOutput": 5792
         },
         ".svelte-kit/output/server/chunks/auth.js": {
-          "bytesInOutput": 273084
+          "bytesInOutput": 273034
         },
         ".svelte-kit/output/server/chunks/hooks.server.js": {
           "bytesInOutput": 1382
@@ -28364,7 +28205,7 @@
           "bytesInOutput": 4744
         },
         "node_modules/set-cookie-parser/lib/set-cookie.js": {
-          "bytesInOutput": 6183
+          "bytesInOutput": 6180
         },
         ".svelte-kit/output/server/entries/pages/_layout.server.ts.js": {
           "bytesInOutput": 558
@@ -28384,6 +28225,12 @@
         ".svelte-kit/output/server/chunks/index.js": {
           "bytesInOutput": 1465
         },
+        ".svelte-kit/output/server/chunks/Icon.js": {
+          "bytesInOutput": 1783
+        },
+        ".svelte-kit/output/server/chunks/index-server.js": {
+          "bytesInOutput": 658
+        },
         "node_modules/tailwind-merge/dist/bundle-mjs.mjs": {
           "bytesInOutput": 111701
         },
@@ -28397,10 +28244,7 @@
           "bytesInOutput": 1595
         },
         ".svelte-kit/output/server/chunks/button.js": {
-          "bytesInOutput": 3348
-        },
-        ".svelte-kit/output/server/chunks/Icon.js": {
-          "bytesInOutput": 1793
+          "bytesInOutput": 3327
         },
         "node_modules/inline-style-parser/esm/index.mjs": {
           "bytesInOutput": 4347
@@ -28411,17 +28255,14 @@
         "node_modules/tabbable/dist/index.esm.js": {
           "bytesInOutput": 17703
         },
-        ".svelte-kit/output/server/chunks/input.js": {
-          "bytesInOutput": 61130
-        },
         ".svelte-kit/output/server/entries/pages/_layout.svelte.js": {
-          "bytesInOutput": 106576
+          "bytesInOutput": 163854
         },
         ".svelte-kit/output/server/nodes/0.js": {
           "bytesInOutput": 1323
         },
         ".svelte-kit/output/server/entries/pages/_error.svelte.js": {
-          "bytesInOutput": 8762
+          "bytesInOutput": 8270
         },
         ".svelte-kit/output/server/nodes/1.js": {
           "bytesInOutput": 1103
@@ -28432,38 +28273,26 @@
         ".svelte-kit/output/server/chunks/data.remote.js": {
           "bytesInOutput": 6250
         },
-        "node_modules/@floating-ui/utils/dist/floating-ui.utils.mjs": {
-          "bytesInOutput": 4871
-        },
-        "node_modules/@floating-ui/core/dist/floating-ui.core.mjs": {
-          "bytesInOutput": 26793
-        },
-        "node_modules/@floating-ui/utils/dist/floating-ui.utils.dom.mjs": {
-          "bytesInOutput": 6987
-        },
-        "node_modules/@floating-ui/dom/dist/floating-ui.dom.mjs": {
-          "bytesInOutput": 18364
-        },
-        ".svelte-kit/output/server/entries/pages/_page.svelte.js": {
-          "bytesInOutput": 148576
-        },
-        ".svelte-kit/output/server/nodes/2.js": {
-          "bytesInOutput": 1287
-        },
         ".svelte-kit/output/server/chunks/CodeBlock.js": {
           "bytesInOutput": 3195
         },
+        ".svelte-kit/output/server/entries/pages/_page.svelte.js": {
+          "bytesInOutput": 18854
+        },
+        ".svelte-kit/output/server/nodes/2.js": {
+          "bytesInOutput": 1221
+        },
         ".svelte-kit/output/server/entries/pages/docs/_page.svelte.js": {
-          "bytesInOutput": 16106
+          "bytesInOutput": 16052
         },
         ".svelte-kit/output/server/nodes/3.js": {
-          "bytesInOutput": 1223
+          "bytesInOutput": 1186
         },
         ".svelte-kit/output/server/entries/pages/docs/api/_page.svelte.js": {
-          "bytesInOutput": 13778
+          "bytesInOutput": 14177
         },
         ".svelte-kit/output/server/nodes/4.js": {
-          "bytesInOutput": 1149
+          "bytesInOutput": 1112
         },
         ".svelte-kit/output/server/entries/pages/mission/_page.svelte.js": {
           "bytesInOutput": 18699
@@ -28478,25 +28307,25 @@
           "bytesInOutput": 827
         },
         ".svelte-kit/cloudflare/_worker.js": {
-          "bytesInOutput": 4258
+          "bytesInOutput": 4243
         },
         ".svelte-kit/output/server/index.js": {
-          "bytesInOutput": 133033
+          "bytesInOutput": 133016
         },
         ".svelte-kit/output/server/chunks/server.js": {
           "bytesInOutput": 483
         },
         ".svelte-kit/output/server/chunks/form-utils.js": {
-          "bytesInOutput": 10101
+          "bytesInOutput": 10085
         },
         ".svelte-kit/output/server/chunks/internal.js": {
-          "bytesInOutput": 26337
+          "bytesInOutput": 26333
         },
         ".svelte-kit/cloudflare-tmp/manifest.js": {
           "bytesInOutput": 3065
         }
       },
-      "bytes": 3201419
+      "bytes": 3010593
     }
   }
 }

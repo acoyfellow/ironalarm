@@ -2,7 +2,7 @@
   "kind": "cloudflare::Worker",
   "id": "ironalarm-app",
   "fqn": "ironalarm/jordan/ironalarm-app",
-  "seq": 2,
+  "seq": 3,
   "data": {},
   "status": "updated",
   "output": {
@@ -12,7 +12,7 @@
     "Symbol(alchemy::ResourceScope)": {
       "@scope": null
     },
-    "Symbol(alchemy::ResourceSeq)": 2,
+    "Symbol(alchemy::ResourceSeq)": 3,
     "bindings": {
       "TASK_SCHEDULER_DO": {
         "type": "durable_object_namespace",
@@ -41,7 +41,6 @@
             "sqlite": true
           }
         },
-        "url": "http://localhost:1337/",
         "type": "service",
         "id": "ironalarm-worker",
         "cwd": "",
@@ -49,9 +48,9 @@
         "compatibilityFlags": [],
         "format": "esm",
         "createdAt": 1766340115339,
-        "updatedAt": 1766360194476,
-        "routes": [],
-        "domains": [],
+        "updatedAt": {
+          "@date": "2025-12-21T23:52:34.985Z"
+        },
         "dev": {
           "hasRemote": true
         }
@@ -67,16 +66,20 @@
         "type": "d1",
         "id": "0ee51bb0-db83-4efc-82a5-c7361cddc200",
         "name": "ironalarm-db",
-        "migrationsDir": "migrations",
-        "migrationsTable": "d1_migrations",
         "dev": {
           "id": "ironalarm-db",
           "remote": false
         },
+        "migrationsDir": "migrations",
+        "migrationsTable": "d1_migrations",
         "jurisdiction": "default"
+      },
+      "ASSETS": {
+        "type": "assets",
+        "path": ".svelte-kit/cloudflare"
       }
     },
-    "url": "http://localhost:5173/",
+    "url": "https://ironalarm-app.coy.workers.dev",
     "adopt": true,
     "env": {
       "BETTER_AUTH_SECRET": "807775cc270eef333bd405d2b573f7f808f5ef4a44ace4ec65a9c66db562223c",
@@ -105,9 +108,9 @@
     "id": "ironalarm-app",
     "format": "esm",
     "createdAt": 1766340116546,
-    "updatedAt": 1766360195724,
-    "routes": [],
-    "domains": []
+    "updatedAt": {
+      "@date": "2025-12-21T23:52:55.522Z"
+    }
   },
   "props": {
     "bindings": {
@@ -138,7 +141,6 @@
             "sqlite": true
           }
         },
-        "url": "http://localhost:1337/",
         "type": "service",
         "id": "ironalarm-worker",
         "cwd": "",
@@ -146,9 +148,9 @@
         "compatibilityFlags": [],
         "format": "esm",
         "createdAt": 1766340115339,
-        "updatedAt": 1766360194476,
-        "routes": [],
-        "domains": [],
+        "updatedAt": {
+          "@date": "2025-12-21T23:52:34.985Z"
+        },
         "dev": {
           "hasRemote": true
         }
@@ -164,13 +166,17 @@
         "type": "d1",
         "id": "0ee51bb0-db83-4efc-82a5-c7361cddc200",
         "name": "ironalarm-db",
-        "migrationsDir": "migrations",
-        "migrationsTable": "d1_migrations",
         "dev": {
           "id": "ironalarm-db",
           "remote": false
         },
+        "migrationsDir": "migrations",
+        "migrationsTable": "d1_migrations",
         "jurisdiction": "default"
+      },
+      "ASSETS": {
+        "type": "assets",
+        "path": ".svelte-kit/cloudflare"
       }
     },
     "url": true,
@@ -194,9 +200,6 @@
       "not_found_handling": "single-page-application",
       "run_worker_first": false,
       "directory": ".svelte-kit/cloudflare"
-    },
-    "dev": {
-      "url": "http://localhost:5173/"
     }
   }
 }

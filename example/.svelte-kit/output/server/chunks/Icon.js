@@ -1,4 +1,4 @@
-import { q as attributes, u as clsx, j as ensure_array_like, y as element } from "./async.js";
+import { v as attributes, y as clsx, k as ensure_array_like, ag as element } from "./async.js";
 const defaultAttributes = {
   xmlns: "http://www.w3.org/2000/svg",
   width: 24,

@@ -1,7 +1,7 @@
 import { h as spread_props, m as escape_html } from "../../chunks/async.js";
 import "clsx";
 import { p as page } from "../../chunks/index.js";
-import { B as Button } from "../../chunks/button.js";
+import "../../chunks/button.js";
 import { I as Icon } from "../../chunks/Icon.js";
 function House($$renderer, $$props) {
   $$renderer.component(($$renderer2) => {
@@ -149,43 +149,13 @@ function _error($$renderer, $$props) {
     SEO($$renderer2, {
       path: page.url.pathname
     });
-    $$renderer2.push(`<!----> <div class="min-h-screen flex items-center justify-center px-8 py-20 text-center gap-4 flex-col"><h1 class="text-6xl font-bold text-primary-600">${escape_html(page.status)}</h1> <p class="text-2xl font-semibold text-zinc-900">${escape_html(errorMessage)}</p> <p class="text-xl text-zinc-800 text-balance max-w-lg mx-auto">${escape_html(errorDescription)}</p> <div class="flex gap-4 justify-center py-10 flex-col md:flex-row">`);
-    Button($$renderer2, {
-      color: "alternative",
-      size: "lg",
-      onclick: () => history.back(),
-      class: "flex items-center gap-2 cursor-pointer",
-      children: ($$renderer3) => {
-        Arrow_left($$renderer3, { class: "w-4 h-4" });
-        $$renderer3.push(`<!----> Go Back`);
-      },
-      $$slots: { default: true }
-    });
-    $$renderer2.push(`<!----> `);
-    Button($$renderer2, {
-      color: "alternative",
-      size: "lg",
-      onclick: () => location.reload(),
-      class: "flex items-center gap-2 cursor-pointer",
-      children: ($$renderer3) => {
-        Refresh_ccw($$renderer3, { class: "w-4 h-4" });
-        $$renderer3.push(`<!----> Try Again`);
-      },
-      $$slots: { default: true }
-    });
-    $$renderer2.push(`<!----> `);
-    Button($$renderer2, {
-      color: "primary",
-      size: "lg",
-      href: "/",
-      class: "flex items-center gap-2",
-      children: ($$renderer3) => {
-        House($$renderer3, { class: "w-4 h-4" });
-        $$renderer3.push(`<!----> Go Home`);
-      },
-      $$slots: { default: true }
-    });
-    $$renderer2.push(`<!----></div></div>`);
+    $$renderer2.push(`<!----> <div class="min-h-screen flex items-center justify-center px-8 py-20 text-center gap-4 flex-col bg-zinc-950"><h1 class="text-6xl font-bold text-orange-400">${escape_html(page.status)}</h1> <p class="text-2xl font-semibold text-zinc-100">${escape_html(errorMessage)}</p> <p class="text-xl text-zinc-500 text-balance max-w-lg mx-auto">${escape_html(errorDescription)}</p> <div class="flex gap-4 justify-center py-10 flex-col md:flex-row"><button class="px-4 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-medium text-sm rounded-lg transition-all flex items-center gap-2">`);
+    Arrow_left($$renderer2, { class: "w-4 h-4" });
+    $$renderer2.push(`<!----> Go Back</button> <button class="px-4 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-medium text-sm rounded-lg transition-all flex items-center gap-2">`);
+    Refresh_ccw($$renderer2, { class: "w-4 h-4" });
+    $$renderer2.push(`<!----> Try Again</button> <a href="/" class="px-4 py-2.5 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 text-zinc-950 font-medium text-sm rounded-lg transition-all flex items-center gap-2">`);
+    House($$renderer2, { class: "w-4 h-4" });
+    $$renderer2.push(`<!----> Go Home</a></div></div>`);
   });
 }
 export {

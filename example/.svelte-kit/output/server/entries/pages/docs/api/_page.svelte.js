@@ -1,4 +1,4 @@
-import { z as head, j as ensure_array_like, m as escape_html } from "../../../../chunks/async.js";
+import { ad as head, k as ensure_array_like, m as escape_html } from "../../../../chunks/async.js";
 import { C as CodeBlock } from "../../../../chunks/CodeBlock.js";
 const API_METHODS = [
   {
@@ -151,84 +151,84 @@ function _page($$renderer, $$props) {
         $$renderer4.push(`<title>API Reference - ironalarm</title>`);
       });
     });
-    $$renderer2.push(`<div class="min-h-screen bg-gradient-to-b from-background to-muted/20"><div class="container mx-auto px-6 py-16 max-w-5xl"><div class="mb-12"><h1 class="text-4xl font-bold mb-4 tracking-tight">API Reference</h1> <p class="text-xl text-muted-foreground">Complete API documentation for the ReliableScheduler class.</p></div> <nav class="mb-12 p-4 rounded-xl bg-muted/50 border"><div class="flex flex-wrap gap-2 text-sm"><a href="#constructor" class="px-3 py-1.5 rounded-lg hover:bg-muted transition-colors">Constructor</a> <a href="#static" class="px-3 py-1.5 rounded-lg hover:bg-muted transition-colors">Static Methods</a> <a href="#core" class="px-3 py-1.5 rounded-lg hover:bg-muted transition-colors">Core Execution</a> <a href="#management" class="px-3 py-1.5 rounded-lg hover:bg-muted transition-colors">Task Management</a> <a href="#progress" class="px-3 py-1.5 rounded-lg hover:bg-muted transition-colors">Progress &amp; Steps</a> <a href="#utilities" class="px-3 py-1.5 rounded-lg hover:bg-muted transition-colors">Utilities</a></div></nav> <section id="constructor" class="mb-12"><h2 class="text-2xl font-semibold mb-6 pb-2 border-b">Constructor</h2> <!--[-->`);
+    $$renderer2.push(`<div class="min-h-screen"><div class="max-w-5xl mx-auto px-6 py-16"><div class="mb-12"><h1 class="text-4xl font-bold mb-4 tracking-tight text-zinc-100">API Reference</h1> <p class="text-xl text-zinc-500">Complete API documentation for the ReliableScheduler class.</p></div> <nav class="mb-12 p-4 rounded-xl bg-zinc-900/30 border border-zinc-800/50"><div class="flex flex-wrap gap-2 text-sm"><a href="#constructor" class="px-3 py-1.5 rounded-lg hover:bg-zinc-800 transition-colors text-zinc-400 hover:text-zinc-200">Constructor</a> <a href="#static" class="px-3 py-1.5 rounded-lg hover:bg-zinc-800 transition-colors text-zinc-400 hover:text-zinc-200">Static Methods</a> <a href="#core" class="px-3 py-1.5 rounded-lg hover:bg-zinc-800 transition-colors text-zinc-400 hover:text-zinc-200">Core Execution</a> <a href="#management" class="px-3 py-1.5 rounded-lg hover:bg-zinc-800 transition-colors text-zinc-400 hover:text-zinc-200">Task Management</a> <a href="#progress" class="px-3 py-1.5 rounded-lg hover:bg-zinc-800 transition-colors text-zinc-400 hover:text-zinc-200">Progress &amp; Steps</a> <a href="#utilities" class="px-3 py-1.5 rounded-lg hover:bg-zinc-800 transition-colors text-zinc-400 hover:text-zinc-200">Utilities</a></div></nav> <section id="constructor" class="mb-12"><h2 class="text-2xl font-semibold mb-6 pb-2 border-b border-zinc-800/50 text-zinc-100">Constructor</h2> <!--[-->`);
     const each_array = ensure_array_like(constructorMethods);
     for (let $$index = 0, $$length = each_array.length; $$index < $$length; $$index++) {
       let method = each_array[$$index];
       $$renderer2.push(`<div>`);
       CodeBlock($$renderer2, { code: method.signature, lang: "typescript" });
-      $$renderer2.push(`<!----> <p class="mt-3 text-muted-foreground">${escape_html(method.description)}</p></div>`);
+      $$renderer2.push(`<!----> <p class="mt-3 text-zinc-500">${escape_html(method.description)}</p></div>`);
     }
-    $$renderer2.push(`<!--]--></section> <section id="static" class="mb-12"><h2 class="text-2xl font-semibold mb-6 pb-2 border-b">Static Methods</h2> <div class="space-y-6"><!--[-->`);
+    $$renderer2.push(`<!--]--></section> <section id="static" class="mb-12"><h2 class="text-2xl font-semibold mb-6 pb-2 border-b border-zinc-800/50 text-zinc-100">Static Methods</h2> <div class="space-y-6"><!--[-->`);
     const each_array_1 = ensure_array_like(staticMethods);
     for (let $$index_1 = 0, $$length = each_array_1.length; $$index_1 < $$length; $$index_1++) {
       let method = each_array_1[$$index_1];
       $$renderer2.push(`<div>`);
       CodeBlock($$renderer2, { code: method.signature, lang: "typescript" });
-      $$renderer2.push(`<!----> <p class="mt-3 text-muted-foreground">${escape_html(method.description)}</p></div>`);
+      $$renderer2.push(`<!----> <p class="mt-3 text-zinc-500">${escape_html(method.description)}</p></div>`);
     }
-    $$renderer2.push(`<!--]--></div></section> <section id="core" class="mb-12"><h2 class="text-2xl font-semibold mb-6 pb-2 border-b">Core Execution</h2> <div class="space-y-6"><!--[-->`);
+    $$renderer2.push(`<!--]--></div></section> <section id="core" class="mb-12"><h2 class="text-2xl font-semibold mb-6 pb-2 border-b border-zinc-800/50 text-zinc-100">Core Execution</h2> <div class="space-y-6"><!--[-->`);
     const each_array_2 = ensure_array_like(getMethodsByNames(coreExecution));
     for (let $$index_2 = 0, $$length = each_array_2.length; $$index_2 < $$length; $$index_2++) {
       let method = each_array_2[$$index_2];
       if (method) {
         $$renderer2.push("<!--[-->");
-        $$renderer2.push(`<div><h3 class="font-mono text-lg font-semibold text-primary mb-2">${escape_html(method.name)}()</h3> `);
+        $$renderer2.push(`<div><h3 class="font-mono text-lg font-semibold text-orange-400 mb-2">${escape_html(method.name)}()</h3> `);
         CodeBlock($$renderer2, { code: method.signature, lang: "typescript" });
-        $$renderer2.push(`<!----> <p class="mt-3 text-muted-foreground">${escape_html(method.description)}</p></div>`);
+        $$renderer2.push(`<!----> <p class="mt-3 text-zinc-500">${escape_html(method.description)}</p></div>`);
       } else {
         $$renderer2.push("<!--[!-->");
       }
       $$renderer2.push(`<!--]-->`);
     }
-    $$renderer2.push(`<!--]--></div></section> <section id="management" class="mb-12"><h2 class="text-2xl font-semibold mb-6 pb-2 border-b">Task Management</h2> <div class="space-y-6"><!--[-->`);
+    $$renderer2.push(`<!--]--></div></section> <section id="management" class="mb-12"><h2 class="text-2xl font-semibold mb-6 pb-2 border-b border-zinc-800/50 text-zinc-100">Task Management</h2> <div class="space-y-6"><!--[-->`);
     const each_array_3 = ensure_array_like(getMethodsByNames(taskManagement));
     for (let $$index_3 = 0, $$length = each_array_3.length; $$index_3 < $$length; $$index_3++) {
       let method = each_array_3[$$index_3];
       if (method) {
         $$renderer2.push("<!--[-->");
-        $$renderer2.push(`<div><h3 class="font-mono text-lg font-semibold text-primary mb-2">${escape_html(method.name)}()</h3> `);
+        $$renderer2.push(`<div><h3 class="font-mono text-lg font-semibold text-orange-400 mb-2">${escape_html(method.name)}()</h3> `);
         CodeBlock($$renderer2, { code: method.signature, lang: "typescript" });
-        $$renderer2.push(`<!----> <p class="mt-3 text-muted-foreground">${escape_html(method.description)}</p></div>`);
+        $$renderer2.push(`<!----> <p class="mt-3 text-zinc-500">${escape_html(method.description)}</p></div>`);
       } else {
         $$renderer2.push("<!--[!-->");
       }
       $$renderer2.push(`<!--]-->`);
     }
-    $$renderer2.push(`<!--]--></div></section> <section id="progress" class="mb-12"><h2 class="text-2xl font-semibold mb-6 pb-2 border-b">Progress &amp; Steps</h2> <div class="space-y-6"><!--[-->`);
+    $$renderer2.push(`<!--]--></div></section> <section id="progress" class="mb-12"><h2 class="text-2xl font-semibold mb-6 pb-2 border-b border-zinc-800/50 text-zinc-100">Progress &amp; Steps</h2> <div class="space-y-6"><!--[-->`);
     const each_array_4 = ensure_array_like(getMethodsByNames(progress));
     for (let $$index_4 = 0, $$length = each_array_4.length; $$index_4 < $$length; $$index_4++) {
       let method = each_array_4[$$index_4];
       if (method) {
         $$renderer2.push("<!--[-->");
-        $$renderer2.push(`<div><h3 class="font-mono text-lg font-semibold text-primary mb-2">${escape_html(method.name)}()</h3> `);
+        $$renderer2.push(`<div><h3 class="font-mono text-lg font-semibold text-orange-400 mb-2">${escape_html(method.name)}()</h3> `);
         CodeBlock($$renderer2, { code: method.signature, lang: "typescript" });
-        $$renderer2.push(`<!----> <p class="mt-3 text-muted-foreground">${escape_html(method.description)}</p></div>`);
+        $$renderer2.push(`<!----> <p class="mt-3 text-zinc-500">${escape_html(method.description)}</p></div>`);
       } else {
         $$renderer2.push("<!--[!-->");
       }
       $$renderer2.push(`<!--]-->`);
     }
-    $$renderer2.push(`<!--]--></div></section> <section id="utilities" class="mb-12"><h2 class="text-2xl font-semibold mb-6 pb-2 border-b">Utilities</h2> <div class="space-y-6"><!--[-->`);
+    $$renderer2.push(`<!--]--></div></section> <section id="utilities" class="mb-12"><h2 class="text-2xl font-semibold mb-6 pb-2 border-b border-zinc-800/50 text-zinc-100">Utilities</h2> <div class="space-y-6"><!--[-->`);
     const each_array_5 = ensure_array_like(getMethodsByNames(utilities));
     for (let $$index_5 = 0, $$length = each_array_5.length; $$index_5 < $$length; $$index_5++) {
       let method = each_array_5[$$index_5];
       if (method) {
         $$renderer2.push("<!--[-->");
-        $$renderer2.push(`<div><h3 class="font-mono text-lg font-semibold text-primary mb-2">${escape_html(method.name)}()</h3> `);
+        $$renderer2.push(`<div><h3 class="font-mono text-lg font-semibold text-orange-400 mb-2">${escape_html(method.name)}()</h3> `);
         CodeBlock($$renderer2, { code: method.signature, lang: "typescript" });
-        $$renderer2.push(`<!----> <p class="mt-3 text-muted-foreground">${escape_html(method.description)}</p></div>`);
+        $$renderer2.push(`<!----> <p class="mt-3 text-zinc-500">${escape_html(method.description)}</p></div>`);
       } else {
         $$renderer2.push("<!--[!-->");
       }
       $$renderer2.push(`<!--]-->`);
     }
-    $$renderer2.push(`<!--]--></div></section> <section id="types" class="mb-12"><h2 class="text-2xl font-semibold mb-6 pb-2 border-b">Types</h2> <div class="space-y-6"><div><h3 class="font-mono text-lg font-semibold text-primary mb-2">TaskStatus</h3> `);
+    $$renderer2.push(`<!--]--></div></section> <section id="types" class="mb-12"><h2 class="text-2xl font-semibold mb-6 pb-2 border-b border-zinc-800/50 text-zinc-100">Types</h2> <div class="space-y-6"><div><h3 class="font-mono text-lg font-semibold text-orange-400 mb-2">TaskStatus</h3> `);
     CodeBlock($$renderer2, {
       code: 'type TaskStatus = "pending" | "running" | "paused" | "completed" | "failed"',
       lang: "typescript"
     });
-    $$renderer2.push(`<!----></div> <div><h3 class="font-mono text-lg font-semibold text-primary mb-2">Task</h3> `);
+    $$renderer2.push(`<!----></div> <div><h3 class="font-mono text-lg font-semibold text-orange-400 mb-2">Task</h3> `);
     CodeBlock($$renderer2, {
       code: `interface Task {
   taskId: string;
@@ -245,7 +245,7 @@ function _page($$renderer, $$props) {
 }`,
       lang: "typescript"
     });
-    $$renderer2.push(`<!----></div> <div><h3 class="font-mono text-lg font-semibold text-primary mb-2">TaskHandler</h3> `);
+    $$renderer2.push(`<!----></div> <div><h3 class="font-mono text-lg font-semibold text-orange-400 mb-2">TaskHandler</h3> `);
     CodeBlock($$renderer2, {
       code: `type TaskHandler = (
   scheduler: ReliableScheduler,
