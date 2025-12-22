@@ -266,11 +266,17 @@ export class TaskSchedulerDO extends DurableObject {
     // Store reference to this for broadcasting
     const doInstance = this;
 
-    // Register mine-resource-loop task handler - continuously loops mining resources
+    // Register mine-resource-loop task handler - alarm-based mining loop
     this.scheduler.register(
       "mine-resource-loop",
       (sched: ReliableScheduler, taskId: string, params: unknown) =>
         Effect.gen(function* () {
+          // Check if task is paused or cancelled before processing
+          const task = yield* Effect.promise(() => sched.getTask(taskId));
+          if (!task || task.status === "paused" || task.status === "failed") {
+            return;
+          }
+
           const p = params as Record<string, any>;
           const nodeId = (p.nodeId || "copper") as string;
           const yieldAmount = (p.yield || 1) as number;
@@ -279,95 +285,84 @@ export class TaskSchedulerDO extends DurableObject {
           // Get or initialize cycle counter
           let cycle = ((yield* Effect.promise(() => sched.getCheckpoint(taskId, "cycle"))) || 0) as number;
 
-          // Infinite loop - check if paused/cancelled each iteration
-          while (true) {
-            // Check if task is paused or cancelled
-            const task = yield* Effect.promise(() => sched.getTask(taskId));
-            if (!task || task.status === "paused" || task.status === "failed") {
-              return;
-            }
+          // Mining step - checkpoint will be batched at end
+          // Note: We don't wait here - the wait time is handled by scheduling the next cycle
+          // This allows the DO to hibernate between cycles instead of staying alive
 
-            // Mining step
-            yield* Effect.promise(() =>
-              sched.checkpoint(taskId, "step", `mining-${nodeId}`)
-            );
+          // Deposit resources to global state
+          const globalTaskId = `mission4-global-state`;
+          let globalTask = yield* Effect.promise(() => sched.getTask(globalTaskId));
 
-            // Wait for mining duration
-            yield* Effect.promise(
-              () => new Promise<void>((r) => setTimeout(r, timeMs))
-            );
-
-            // Check again after wait
-            const taskAfterWait = yield* Effect.promise(() => sched.getTask(taskId));
-            if (!taskAfterWait || taskAfterWait.status === "paused" || taskAfterWait.status === "failed") {
-              return;
-            }
-
-            // Deposit resources to global state
-            const globalTaskId = `mission4-global-state`;
-            let globalTask = yield* Effect.promise(() => sched.getTask(globalTaskId));
-
-            // Recreate global state if missing, completed, or failed
-            if (!globalTask || globalTask.status === "completed" || globalTask.status === "failed") {
-              const savedResources = globalTask?.progress?.resources;
-              if (globalTask) {
-                yield* Effect.promise(() => sched.cancelTask(globalTaskId));
-                yield* Effect.promise(() => new Promise<void>((r) => setTimeout(r, 100)));
-              }
-              yield* Effect.promise(() =>
-                sched.runNow(globalTaskId, "global-state", { namespace: "mission4" }, { maxRetries: Infinity })
-              );
-              yield* Effect.promise(() => new Promise<void>((r) => setTimeout(r, 200)));
-              globalTask = yield* Effect.promise(() => sched.getTask(globalTaskId));
-              // Restore resources if they existed
-              if (savedResources !== undefined && globalTask) {
-                const resourcesToRestore = typeof savedResources === "number"
-                  ? { copper: savedResources }
-                  : (savedResources as Record<string, number>);
-                yield* Effect.promise(() => sched.checkpoint(globalTaskId, "resources", resourcesToRestore));
-              }
-            }
-
+          // Recreate global state if missing, completed, or failed
+          if (!globalTask || globalTask.status === "completed" || globalTask.status === "failed") {
+            const savedResources = globalTask?.progress?.resources;
             if (globalTask) {
-              // Get current resources - handle both object and legacy number format
-              const rawResources = yield* Effect.promise(() =>
-                sched.getCheckpoint(globalTaskId, "resources")
-              );
-
-              // Convert to object format if needed
-              let currentResources: Record<string, number>;
-              if (rawResources === undefined || rawResources === null) {
-                currentResources = { copper: 0 };
-              } else if (typeof rawResources === "number") {
-                // Legacy format - convert to object
-                currentResources = { copper: rawResources };
-              } else {
-                currentResources = rawResources as Record<string, number>;
-              }
-
-              // Add mined resources
-              const resourceType = nodeId;
-              currentResources[resourceType] = (currentResources[resourceType] || 0) + yieldAmount;
-              currentResources.copper = (currentResources.copper || 0) + yieldAmount;
-
-              // Save resources
-              yield* Effect.promise(() =>
-                sched.checkpoint(globalTaskId, "resources", currentResources)
-              );
-
-              // Trigger broadcast to update clients
-              yield* Effect.promise(() => doInstance.triggerBroadcast());
+              yield* Effect.promise(() => sched.cancelTask(globalTaskId));
+              yield* Effect.promise(() => new Promise<void>((r) => setTimeout(r, 100)));
             }
-
-            // Increment cycle and save it
-            cycle++;
             yield* Effect.promise(() =>
-              sched.checkpoint(taskId, "cycle", cycle)
+              sched.runNow(globalTaskId, "global-state", { namespace: "mission4" }, { maxRetries: Infinity })
+            );
+            yield* Effect.promise(() => new Promise<void>((r) => setTimeout(r, 200)));
+            globalTask = yield* Effect.promise(() => sched.getTask(globalTaskId));
+            // Restore resources if they existed
+            if (savedResources !== undefined && globalTask) {
+              const resourcesToRestore = typeof savedResources === "number"
+                ? { copper: savedResources }
+                : (savedResources as Record<string, number>);
+              yield* Effect.promise(() => sched.checkpoint(globalTaskId, "resources", resourcesToRestore));
+            }
+          }
+
+          if (globalTask) {
+            // Get current resources - handle both object and legacy number format
+            const rawResources = yield* Effect.promise(() =>
+              sched.getCheckpoint(globalTaskId, "resources")
             );
 
-            // Trigger broadcast to update cycle counter
+            // Convert to object format if needed
+            let currentResources: Record<string, number>;
+            if (rawResources === undefined || rawResources === null) {
+              currentResources = { copper: 0 };
+            } else if (typeof rawResources === "number") {
+              // Legacy format - convert to object
+              currentResources = { copper: rawResources };
+            } else {
+              currentResources = rawResources as Record<string, number>;
+            }
+
+            // Add mined resources
+            const resourceType = nodeId;
+            currentResources[resourceType] = (currentResources[resourceType] || 0) + yieldAmount;
+            currentResources.copper = (currentResources.copper || 0) + yieldAmount;
+
+            // Save resources
+            yield* Effect.promise(() =>
+              sched.checkpoint(globalTaskId, "resources", currentResources)
+            );
+
+            // Trigger broadcast to update clients
             yield* Effect.promise(() => doInstance.triggerBroadcast());
           }
+
+          // Increment cycle and batch checkpoint updates (step and cycle) into single write
+          cycle++;
+          yield* Effect.promise(() =>
+            sched.checkpointMultiple(taskId, {
+              step: `mining-${nodeId}`,
+              cycle: cycle
+            })
+          );
+
+          // Trigger broadcast to update cycle counter
+          yield* Effect.promise(() => doInstance.triggerBroadcast());
+
+          // Schedule next cycle after mining duration
+          // This allows the DO to hibernate between cycles instead of using setTimeout
+          const nextCycleTime = Date.now() + timeMs;
+          yield* Effect.promise(() =>
+            sched.schedule(nextCycleTime, taskId, "mine-resource-loop", params)
+          );
         })
     );
 
@@ -443,7 +438,7 @@ export class TaskSchedulerDO extends DurableObject {
         })
     );
 
-    // Register global-state task handler - keeps state alive forever
+    // Register global-state task handler - alarm-based state keeper
     this.scheduler.register(
       "global-state",
       (sched: ReliableScheduler, taskId: string, params: unknown) =>
@@ -463,16 +458,21 @@ export class TaskSchedulerDO extends DurableObject {
             yield* Effect.promise(() => sched.checkpoint(taskId, "speedMultiplier", 1));
           }
 
-          // Keep task running forever
-          while (true) {
-            yield* Effect.promise(() => new Promise<void>((r) => setTimeout(r, 30000)));
-            const task = yield* Effect.promise(() => sched.getTask(taskId));
-            if (!task || task.status === "failed") return;
-            // Clear completed flag if somehow set
-            if (task.progress?.completed === true) {
-              yield* Effect.promise(() => sched.checkpoint(taskId, "completed", false));
-            }
+          // Check if task is still valid
+          const task = yield* Effect.promise(() => sched.getTask(taskId));
+          if (!task || task.status === "failed") return;
+          
+          // Clear completed flag if somehow set
+          if (task.progress?.completed === true) {
+            yield* Effect.promise(() => sched.checkpoint(taskId, "completed", false));
           }
+
+          // Schedule next wake in 30 seconds using alarm-based scheduling
+          // This allows the DO to hibernate between checks
+          const nextWakeTime = Date.now() + 30000;
+          yield* Effect.promise(() =>
+            sched.schedule(nextWakeTime, taskId, "global-state", params)
+          );
         })
     );
 
@@ -576,12 +576,21 @@ export class TaskSchedulerDO extends DurableObject {
   }
 
   // Helper to trigger broadcast from within task handlers
+  // Debounced to max once per 100ms to prevent broadcast storms
   async triggerBroadcast() {
-    const tasks = await this.scheduler.getTasks();
-    this.broadcast({
-      type: "tasks",
-      data: tasks.map((t) => this.formatTaskForUI(t)),
-    });
+    if (this.broadcastQueue) {
+      // Already queued, skip
+      return;
+    }
+    this.broadcastQueue = setTimeout(async () => {
+      const tasks = await this.scheduler.getCachedTasks();
+      const allTasks = tasks.length > 0 ? tasks : await this.scheduler.getTasks();
+      this.broadcast({
+        type: "tasks",
+        data: allTasks.map((t) => this.formatTaskForUI(t)),
+      });
+      this.broadcastQueue = null;
+    }, 100);
   }
 
   private setupRoutes() {
@@ -618,16 +627,41 @@ export class TaskSchedulerDO extends DurableObject {
         }
 
         if (globalTask) {
-          const currentResources = ((await this.scheduler.getCheckpoint(globalTaskId, "resources")) || {}) as Record<string, number>;
-          const currentCopper = currentResources.copper || 0;
+          // Use transaction to prevent race conditions (double-spending)
+          const updated = await this.scheduler.storage.transaction(async (txn: any) => {
+            const task = await txn.get(`task:${globalTaskId}`) as Task | undefined;
+            if (!task) return false;
+            
+            const rawResources = task.progress?.resources;
+            let currentResources: Record<string, number>;
+            if (rawResources === undefined || rawResources === null) {
+              currentResources = { copper: 0 };
+            } else if (typeof rawResources === "number") {
+              currentResources = { copper: rawResources };
+            } else {
+              currentResources = rawResources as Record<string, number>;
+            }
+            
+            const currentCopper = currentResources.copper || 0;
+            if (currentCopper < params.cost) {
+              return false; // Insufficient resources
+            }
 
-          if (currentCopper < params.cost) {
+            // Deduct cost atomically
+            currentResources.copper = currentCopper - params.cost;
+            task.progress.resources = currentResources;
+            await txn.put(`task:${globalTaskId}`, task);
+            return true;
+          });
+
+          if (!updated) {
+            const currentResources = ((await this.scheduler.getCheckpoint(globalTaskId, "resources")) || {}) as Record<string, number>;
+            const currentCopper = currentResources.copper || 0;
             return c.json({ error: `Insufficient resources. Need ${params.cost} Copper, have ${currentCopper}` }, 400);
           }
-
-          // Deduct cost
-          currentResources.copper = currentCopper - params.cost;
-          await this.scheduler.checkpoint(globalTaskId, "resources", currentResources);
+          
+          // Invalidate cache after transaction
+          (this.scheduler as any).invalidateCache();
         }
       }
 
@@ -829,8 +863,9 @@ export class TaskSchedulerDO extends DurableObject {
 
   async alarm() {
     await this.scheduler.alarm();
-    // Broadcast after alarm processing
-    const tasks = await this.scheduler.getTasks();
+    // Broadcast after alarm processing - use cached tasks if available
+    const cachedTasks = this.scheduler.getCachedTasks();
+    const tasks = cachedTasks.length > 0 ? cachedTasks : await this.scheduler.getTasks();
     this.broadcast({
       type: "tasks",
       data: tasks.map((t) => this.formatTaskForUI(t)),

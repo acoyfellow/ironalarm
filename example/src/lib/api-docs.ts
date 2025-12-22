@@ -36,6 +36,12 @@ export const API_METHODS = [
     type: "method" as const,
   },
   {
+    name: "checkpointMultiple",
+    signature: "async checkpointMultiple(taskId: string, updates: Record<string, unknown>): Promise<void>",
+    description: "Batch multiple checkpoint updates into a single write operation. Accepts an object of key-value pairs to update.",
+    type: "method" as const,
+  },
+  {
     name: "clearAll",
     signature: "async clearAll(): Promise<number>",
     description: "Delete all tasks regardless of status. Returns the count of deleted tasks.",
@@ -60,6 +66,12 @@ export const API_METHODS = [
     type: "method" as const,
   },
   {
+    name: "getCachedTasks",
+    signature: "getCachedTasks(status?: TaskStatus): Task[]",
+    description: "Get cached tasks if available, otherwise load from storage. This is more efficient than getTasks() when cache is valid.",
+    type: "method" as const,
+  },
+  {
     name: "getCheckpoint",
     signature: "async getCheckpoint(taskId: string, key: string): Promise<unknown>",
     description: "Retrieve saved progress for a task. Returns undefined if not found.",
@@ -81,6 +93,12 @@ export const API_METHODS = [
     name: "getTasks",
     signature: "async getTasks(status?: TaskStatus): Promise<Task[]>",
     description: "Get all tasks, optionally filtered by status.",
+    type: "method" as const,
+  },
+  {
+    name: "invalidateCache",
+    signature: "invalidateCache(): void",
+    description: "Invalidate the task cache. Call this after any task mutation.",
     type: "method" as const,
   },
   {

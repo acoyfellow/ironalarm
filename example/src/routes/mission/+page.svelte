@@ -359,8 +359,34 @@
 
     // WebSocket connection
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const host = import.meta.env.DEV ? "localhost:1337" : window.location.host;
+    const host = import.meta.env.DEV
+      ? "localhost:1337"
+      : "ironalarm-api.coey.dev";
     const wsUrl = `${protocol}//${host}/ws`;
+
+    let wsDisconnectedTime: number | null = null;
+    let pollInterval: ReturnType<typeof setInterval> | null = null;
+
+    const startPollingFallback = () => {
+      if (pollInterval) return;
+      pollInterval = setInterval(() => {
+        if (
+          !wsConnected &&
+          wsDisconnectedTime &&
+          Date.now() - wsDisconnectedTime > 5000
+        ) {
+          loadTasks();
+        }
+      }, 2000);
+    };
+
+    const stopPollingFallback = () => {
+      if (pollInterval) {
+        clearInterval(pollInterval);
+        pollInterval = null;
+      }
+      wsDisconnectedTime = null;
+    };
 
     const ws = createWebSocket(
       wsUrl,
@@ -377,9 +403,12 @@
       },
       () => {
         wsConnected = true;
+        stopPollingFallback();
       },
       () => {
         wsConnected = false;
+        wsDisconnectedTime = Date.now();
+        startPollingFallback();
       }
     );
     wsClose = ws.close;
@@ -416,14 +445,12 @@
       now = Date.now();
     }, 100);
 
-    // Poll for task/resource updates every 500ms for real-time updates
-    const pollInterval = setInterval(() => {
-      loadTasks();
-    }, 500);
+    // WebSocket handles real-time updates - polling only as fallback if disconnected >5s
+    // (pollInterval is managed by WebSocket connection handlers above)
 
     return () => {
       clearInterval(progressInterval);
-      clearInterval(pollInterval);
+      stopPollingFallback();
       wsClose?.();
     };
   });
@@ -433,25 +460,28 @@
   <title>Mining Game - ironalarm</title>
 </svelte:head>
 
-<div class="min-h-screen bg-black text-white p-4 space-y-4">
+<div class="min-h-screen bg-black text-white p-2 sm:p-4 space-y-3 sm:space-y-4">
   <!-- Game HUD -->
   <div class="max-w-5xl mx-auto">
     <div class="bg-gray-950 border border-gray-800 rounded-xl shadow-2xl">
-      <div class="flex items-stretch">
+      <div class="flex flex-col sm:flex-row items-stretch">
         <!-- Resource Section -->
-        <div class="flex-1 px-5 py-3 border-r border-gray-800/50">
-          <div class="flex items-baseline gap-3">
-            <div class="flex items-center gap-2">
+        <div
+          class="flex-1 px-3 sm:px-5 py-2.5 sm:py-3 border-b sm:border-b-0 sm:border-r border-gray-800/50"
+        >
+          <div class="flex items-baseline gap-2 sm:gap-3">
+            <div class="flex items-center gap-1.5 sm:gap-2">
               <div
-                class="w-3 h-3 rounded-sm"
+                class="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-sm"
                 style="background: #cd7f32; box-shadow: 0 0 8px #cd7f32;"
               ></div>
-              <span class="text-2xl font-bold tabular-nums text-white"
+              <span
+                class="text-xl sm:text-2xl font-bold tabular-nums text-white"
                 >{(resources.copper || 0).toLocaleString()}</span
               >
             </div>
             {#if copperPerSecond > 0}
-              <span class="text-sm text-emerald-400 font-medium"
+              <span class="text-xs sm:text-sm text-emerald-400 font-medium"
                 >+{copperPerSecond.toFixed(1)}/s</span
               >
             {/if}
@@ -462,10 +492,12 @@
         </div>
 
         <!-- Speed Upgrade Section -->
-        <div class="px-5 py-3 border-r border-gray-800/50">
-          <div class="flex items-center gap-3">
+        <div
+          class="px-3 sm:px-5 py-2.5 sm:py-3 border-b sm:border-b-0 sm:border-r border-gray-800/50"
+        >
+          <div class="flex items-center gap-2 sm:gap-3">
             <div class="text-center">
-              <div class="text-xl font-bold text-amber-400">
+              <div class="text-lg sm:text-xl font-bold text-amber-400">
                 {speedMultiplier}x
               </div>
               <div class="text-xs text-gray-500 uppercase tracking-wider">
@@ -475,12 +507,12 @@
             <button
               onclick={handleSpeedUpgrade}
               disabled={!canAffordUpgrade}
-              class="group relative px-4 py-2 rounded-lg transition-all duration-200 {canAffordUpgrade
+              class="group relative px-3 sm:px-4 py-2 rounded-lg transition-all duration-200 min-h-[44px] sm:min-h-0 {canAffordUpgrade
                 ? 'bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/50 hover:border-amber-400'
                 : 'bg-gray-800/50 border border-gray-700 opacity-50 cursor-not-allowed'}"
             >
               <div
-                class="text-sm font-semibold {canAffordUpgrade
+                class="text-xs sm:text-sm font-semibold {canAffordUpgrade
                   ? 'text-amber-400'
                   : 'text-gray-500'}"
               >
@@ -498,9 +530,13 @@
         </div>
 
         <!-- Miners Section -->
-        <div class="px-5 py-3 border-r border-gray-800/50">
+        <div
+          class="px-3 sm:px-5 py-2.5 sm:py-3 border-b sm:border-b-0 sm:border-r border-gray-800/50"
+        >
           <div class="text-center">
-            <div class="text-xl font-bold text-cyan-400">{miners.size}</div>
+            <div class="text-lg sm:text-xl font-bold text-cyan-400">
+              {miners.size}
+            </div>
             <div class="text-xs text-gray-500 uppercase tracking-wider">
               Active Miners
             </div>
@@ -508,11 +544,13 @@
         </div>
 
         <!-- Actions Section -->
-        <div class="px-5 py-3 flex items-center gap-3">
+        <div
+          class="px-3 sm:px-5 py-2.5 sm:py-3 flex items-center gap-2 sm:gap-3"
+        >
           {#if miners.size > 0}
             <button
               onclick={handleCancelAllMiners}
-              class="px-3 py-1.5 text-xs font-medium text-red-400 hover:text-red-300 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 hover:border-red-500/50 rounded-lg transition-all"
+              class="px-3 py-2 sm:py-1.5 text-xs font-medium text-red-400 hover:text-red-300 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 hover:border-red-500/50 rounded-lg transition-all min-h-[44px] sm:min-h-0"
             >
               Cancel All
             </button>
@@ -536,10 +574,12 @@
   </div>
 
   <!-- Mining grid -->
-  <div class="container mx-auto pb-8 px-4">
+  <div class="container mx-auto pb-6 sm:pb-8 px-2 sm:px-4">
     <div class="max-w-5xl mx-auto">
       <!-- Grid -->
-      <div class="grid grid-cols-4 gap-4">
+      <div
+        class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4"
+      >
         {#each gridNodes as node}
           {@const minersOnNode = getMinersOnNode(node.id)}
           {@const nodeTasks = Array.from(miners.entries()).filter(
@@ -549,7 +589,7 @@
           {@const atCapacity = minersOnNode >= MAX_MINERS_PER_NODE}
           <button
             type="button"
-            class="relative border-2 rounded-lg p-4 transition-all hover:scale-105 cursor-pointer text-left w-full {minersOnNode >
+            class="relative border-2 rounded-lg p-3 sm:p-4 transition-all hover:shadow-md hover:shadow-cyan-400 cursor-pointer text-left w-full min-h-[44px] {minersOnNode >
             0
               ? 'border-green-500 bg-green-950/30 shadow-lg'
               : 'border-gray-600 bg-gray-900/50'} {resources.copper >=
@@ -570,9 +610,9 @@
             }}
           >
             <!-- Node image -->
-            <div class="flex justify-center mb-3">
+            <div class="flex justify-center mb-2 sm:mb-3">
               <div
-                class="relative w-20 h-20 rounded-xl border-2 p-2 bg-gradient-to-br from-black/40 to-black/60 flex items-center justify-center transition-all duration-300 {minersOnNode >
+                class="relative w-16 h-16 sm:w-20 sm:h-20 rounded-xl border-2 p-1.5 sm:p-2 bg-gradient-to-br from-black/40 to-black/60 flex items-center justify-center transition-all duration-300 {minersOnNode >
                 0
                   ? 'shadow-2xl scale-105'
                   : ''}"
@@ -601,7 +641,10 @@
 
             <!-- Node info -->
             <div class="text-center mb-2">
-              <div class="text-lg font-bold" style="color: {node.color}">
+              <div
+                class="text-base sm:text-lg font-bold"
+                style="color: {node.color}"
+              >
                 {node.name}
               </div>
               <div class="text-xs text-gray-400">
@@ -609,7 +652,7 @@
               </div>
               {#if node.cost > 0}
                 <div class="text-xs text-yellow-400 mt-1">
-                  Cost: {node.cost} Copper
+                  Cost: {node.cost.toLocaleString()} Copper
                 </div>
               {:else}
                 <div class="text-xs text-green-400 mt-1">FREE</div>
@@ -625,11 +668,11 @@
 
             <!-- Miners on this node -->
             {#if minersOnNode > 0}
-              <div class="space-y-2 mt-4">
+              <div class="space-y-1.5 sm:space-y-2 mt-3 sm:mt-4">
                 {#each nodeTasks as [taskId, miner]}
                   {@const progress = getMinerProgress(taskId)}
                   <div
-                    class="bg-black/70 rounded p-2 border border-cyan-500/50 relative overflow-hidden"
+                    class="bg-black/70 rounded p-1.5 sm:p-2 border border-cyan-500/50 relative overflow-hidden"
                   >
                     <!-- Mining animation background -->
                     <div
@@ -638,20 +681,26 @@
                     ></div>
 
                     <div
-                      class="flex items-center justify-between mb-1 relative z-10"
+                      class="flex items-center justify-between mb-1 relative z-10 gap-2"
                     >
-                      <div class="flex items-center gap-2">
+                      <div
+                        class="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1"
+                      >
                         <div
-                          class="w-2 h-2 rounded-full bg-cyan-500 animate-pulse"
+                          class="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-cyan-500 animate-pulse flex-shrink-0"
                         ></div>
-                        <div class="text-xs font-mono">
+                        <div class="text-xs font-mono truncate">
                           <span class="text-cyan-400">Miner</span>
                           <span class="text-gray-500 ml-1">x{miner.cycle}</span>
                         </div>
                       </div>
-                      <div class="flex items-center gap-1.5">
+                      <div
+                        class="flex items-center gap-1 sm:gap-1.5 flex-shrink-0"
+                      >
                         {#if getSellValue(taskId) > 0}
-                          <span class="text-xs text-yellow-400 font-semibold">
+                          <span
+                            class="text-xs text-yellow-400 font-semibold whitespace-nowrap"
+                          >
                             {getSellValue(taskId).toLocaleString()}
                           </span>
                         {/if}
@@ -662,16 +711,16 @@
                             e.stopPropagation();
                             handleSellMiner(taskId);
                           }}
-                          class="h-6 w-6 text-green-400 hover:bg-green-900/30 transition-all hover:scale-110"
+                          class="h-7 w-7 sm:h-6 sm:w-6 text-green-400 hover:bg-green-900/30 transition-all hover:scale-110 touch-manipulation"
                           title={`Sell for ${getSellValue(taskId).toLocaleString()} Copper`}
                         >
-                          <DollarSign class="w-3 h-3" />
+                          <DollarSign class="w-3.5 h-3.5 sm:w-3 sm:h-3" />
                         </Button>
                       </div>
                     </div>
                     <!-- Progress bar -->
                     <div
-                      class="w-full h-2 bg-gray-800 rounded overflow-hidden relative z-10"
+                      class="w-full h-1.5 sm:h-2 bg-gray-800 rounded overflow-hidden relative z-10"
                     >
                       <div
                         class="h-full bg-gradient-to-r from-cyan-500 to-cyan-300 transition-all duration-100"
@@ -700,7 +749,9 @@
       </div>
 
       <!-- Instructions -->
-      <div class="mt-8 text-center text-gray-400 font-mono text-sm">
+      <div
+        class="mt-6 sm:mt-8 text-center text-gray-400 font-mono text-xs sm:text-sm px-2"
+      >
         Click a resource node to deploy a miner. Miners loop continuously until
         cancelled.
       </div>
@@ -735,5 +786,10 @@
     100% {
       transform: translateX(100%);
     }
+  }
+
+  /* Improve touch interactions on mobile */
+  button {
+    touch-action: manipulation;
   }
 </style>

@@ -4,3 +4,7 @@ dist/
 .wrangler/
 bun.lock
 .svelte-kit/
+.alchemy/
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal

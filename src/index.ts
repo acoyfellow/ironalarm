@@ -34,6 +34,8 @@ class HandlerMissing extends Data.TaggedError("HandlerMissing")<{
 export class ReliableScheduler {
   private storage: DurableObjectStorage;
   private handlers: Map<string, TaskHandler> = new Map();
+  private taskCache: Map<string, Task> | null = null;
+  private cacheValid = false;
 
   /**
    * Creates a new scheduler instance with the provided Durable Object storage.
@@ -81,16 +83,34 @@ export class ReliableScheduler {
 
       const scheduledAt = typeof at === "number" ? at : at.getTime();
 
+      // Check if task already exists - if so, preserve its state (for rescheduling loops)
+      const existingTask = yield* Effect.promise(() =>
+        this.storage.get<Task>(`task:${taskId}`)
+      );
+
       const now = Date.now();
-      const task: Task = {
-        taskId,
-        taskName,
-        params,
-        scheduledAt,
-        startedAt: now,
-        status: "pending",
-        progress: {},
-      };
+      const task: Task = existingTask
+        ? {
+          // Preserve existing task state when rescheduling
+          ...existingTask,
+          taskName,
+          params,
+          scheduledAt,
+          // Keep original startedAt, don't reset it
+          // Preserve status if running, otherwise set to pending
+          status: existingTask.status === "running" ? "running" : "pending",
+          // Preserve progress/checkpoints
+        }
+        : {
+          // New task
+          taskId,
+          taskName,
+          params,
+          scheduledAt,
+          startedAt: now,
+          status: "pending",
+          progress: {},
+        };
 
       yield* Effect.promise(() =>
         this.storage.transaction(async (txn: any) => {
@@ -99,6 +119,7 @@ export class ReliableScheduler {
           await this._updateAlarmSync(txn);
         })
       );
+      this.invalidateCache();
 
       if (scheduledAt <= Date.now()) {
         yield* Effect.promise(() => this.processTask(taskId));
@@ -149,6 +170,7 @@ export class ReliableScheduler {
           await txn.setAlarm(safetyAt);
         })
       );
+      this.invalidateCache();
 
       void this.processTask(taskId);
     });
@@ -168,11 +190,16 @@ export class ReliableScheduler {
   private _checkpoint(taskId: string, key: string, value: unknown) {
     return Effect.gen(this, function* () {
       const updated = yield* this._updateTask(taskId, (task) => {
-        // Allow checkpoints on running, completed, or failed tasks
+        // Allow checkpoints on pending (for initialization), running, completed, or failed tasks
         // Failed tasks can be checkpointed to allow recovery (especially for global-state)
-        if (task.status !== "running" && task.status !== "completed" && task.status !== "failed") {
+        // Pending tasks can be checkpointed for initialization (e.g., global-state setup)
+        if (task.status !== "pending" && task.status !== "running" && task.status !== "completed" && task.status !== "failed") {
           console.error(`[checkpoint] Task ${taskId} status is ${task.status}, cannot checkpoint`);
           return false;
+        }
+        // If task is pending, mark it as running (initialization checkpoint)
+        if (task.status === "pending") {
+          task.status = "running";
         }
         // If task is failed, mark it as running again to allow recovery
         if (task.status === "failed") {
@@ -185,7 +212,9 @@ export class ReliableScheduler {
         task.progress[key] = value;
         return true;
       });
-      if (!updated) {
+      if (updated) {
+        this.invalidateCache();
+      } else {
         console.error(`[checkpoint] Failed to update checkpoint ${key} for task ${taskId}`);
       }
     });
@@ -196,6 +225,46 @@ export class ReliableScheduler {
    */
   async getCheckpoint(taskId: string, key: string): Promise<unknown> {
     return Effect.runPromise(this._getCheckpoint(taskId, key));
+  }
+
+  /**
+   * Batch multiple checkpoint updates into a single write operation.
+   * Accepts an object of key-value pairs to update.
+   */
+  async checkpointMultiple(taskId: string, updates: Record<string, unknown>): Promise<void> {
+    return Effect.runPromise(this._checkpointMultiple(taskId, updates));
+  }
+
+  private _checkpointMultiple(taskId: string, updates: Record<string, unknown>) {
+    return Effect.gen(this, function* () {
+      const updated = yield* this._updateTask(taskId, (task) => {
+        // Allow checkpoints on pending (for initialization), running, completed, or failed tasks
+        if (task.status !== "pending" && task.status !== "running" && task.status !== "completed" && task.status !== "failed") {
+          console.error(`[checkpointMultiple] Task ${taskId} status is ${task.status}, cannot checkpoint`);
+          return false;
+        }
+        // If task is pending, mark it as running (initialization checkpoint)
+        if (task.status === "pending") {
+          task.status = "running";
+        }
+        // If task is failed, mark it as running again to allow recovery
+        if (task.status === "failed") {
+          task.status = "running";
+          task.retryCount = 0;
+          if (task.progress.error) {
+            delete task.progress.error;
+          }
+        }
+        // Update all checkpoint values in a single operation
+        Object.assign(task.progress, updates);
+        return true;
+      });
+      if (updated) {
+        this.invalidateCache();
+      } else {
+        console.error(`[checkpointMultiple] Failed to update checkpoints for task ${taskId}`);
+      }
+    });
   }
 
   private _getCheckpoint(taskId: string, key: string) {
@@ -216,11 +285,14 @@ export class ReliableScheduler {
 
   private _completeTask(taskId: string) {
     return Effect.gen(this, function* () {
-      yield* this._updateTask(taskId, (task) => {
+      const updated = yield* this._updateTask(taskId, (task) => {
         task.status = "completed";
         task.progress.completed = true;
         return true;
       });
+      if (updated) {
+        this.invalidateCache();
+      }
     });
   }
 
@@ -242,14 +314,41 @@ export class ReliableScheduler {
     return Effect.runPromise(this._getTasks(status));
   }
 
+  /**
+   * Get cached tasks if available, otherwise load from storage.
+   * This is more efficient than getTasks() when cache is valid.
+   */
+  getCachedTasks(status?: TaskStatus): Task[] {
+    if (!this.cacheValid || !this.taskCache) {
+      // Cache not available, return empty array (caller should use getTasks())
+      return [];
+    }
+    const tasks: Task[] = [];
+    for (const task of this.taskCache.values()) {
+      if (!status || task.status === status) {
+        tasks.push(task);
+      }
+    }
+    return tasks;
+  }
+
   private _getTasks(status?: TaskStatus) {
     return Effect.gen(this, function* () {
-      const list = yield* Effect.promise(() =>
-        this.storage.list({ prefix: "task:" })
-      );
+      // Use cached tasks if available and valid, otherwise load from storage
+      if (!this.cacheValid || !this.taskCache) {
+        const list = yield* Effect.promise(() =>
+          this.storage.list({ prefix: "task:" })
+        );
+        this.taskCache = new Map();
+        for (const [key, value] of list) {
+          const taskId = key.substring(5); // Remove "task:" prefix
+          this.taskCache.set(taskId, value as Task);
+        }
+        this.cacheValid = true;
+      }
+
       const tasks: Task[] = [];
-      for (const [, value] of list) {
-        const task = value as Task;
+      for (const task of this.taskCache.values()) {
         if (!status || task.status === status) {
           tasks.push(task);
         }
@@ -273,6 +372,7 @@ export class ReliableScheduler {
       if (!task) return false;
 
       yield* Effect.promise(() => this.storage.delete(`task:${taskId}`));
+      this.invalidateCache();
 
       yield* Effect.promise(() =>
         this.storage.transaction(async (txn: any) => {
@@ -307,6 +407,7 @@ export class ReliableScheduler {
       });
 
       if (updated) {
+        this.invalidateCache();
         yield* Effect.promise(() =>
           this.storage.transaction(async (txn: any) => {
             await this._rebuildQueueSync(txn);
@@ -345,6 +446,7 @@ export class ReliableScheduler {
       });
 
       if (updated) {
+        this.invalidateCache();
         yield* Effect.promise(() =>
           this.storage.transaction(async (txn: any) => {
             await this._rebuildQueueSync(txn);
@@ -543,14 +645,24 @@ export class ReliableScheduler {
 
   private async _rebuildQueueSync(txn: any): Promise<void> {
     const storage = txn || this.storage;
-    const list = await storage.list({ prefix: "task:" });
-    const taskIds = Array.from((list.keys() as any) as string[]).map(
-      (k: string) => k.substring(5)
-    );
+
+    // Use cached tasks if available and valid, otherwise load from storage
+    if (!this.cacheValid || !this.taskCache) {
+      const list = await storage.list({ prefix: "task:" });
+      this.taskCache = new Map();
+      for (const [key, value] of list) {
+        const taskId = key.substring(5); // Remove "task:" prefix
+        this.taskCache.set(taskId, value as Task);
+      }
+      this.cacheValid = true;
+    }
+
+    // Get task IDs from cache
+    const taskIds = Array.from(this.taskCache.keys());
 
     const activeTaskIds: string[] = [];
     for (const id of taskIds) {
-      const t = (await storage.get(`task:${id}`)) as Task | undefined;
+      const t = this.taskCache.get(id);
       if (
         t &&
         t.status !== "completed" &&
@@ -567,7 +679,7 @@ export class ReliableScheduler {
 
     const tasksWithTime: Array<{ id: string; time: number }> = [];
     for (const id of activeTaskIds) {
-      const t = (await storage.get(`task:${id}`)) as Task | undefined;
+      const t = this.taskCache.get(id);
       if (t) {
         const time = t.safetyAlarmAt ?? t.scheduledAt;
         tasksWithTime.push({ id, time });
@@ -593,11 +705,22 @@ export class ReliableScheduler {
       const queue = yield* this._getQueue();
       const due: string[] = [];
 
-      for (const taskId of queue) {
-        const taskResult = yield* Effect.promise(() =>
-          this.storage.get<Task>(`task:${taskId}`)
+      // Ensure cache is loaded
+      if (!this.cacheValid || !this.taskCache) {
+        const list = yield* Effect.promise(() =>
+          this.storage.list({ prefix: "task:" })
         );
-        const task = taskResult as Task | undefined;
+        this.taskCache = new Map();
+        for (const [key, value] of list) {
+          const taskId = key.substring(5); // Remove "task:" prefix
+          this.taskCache.set(taskId, value as Task);
+        }
+        this.cacheValid = true;
+      }
+
+      for (const taskId of queue) {
+        // Use cached task if available
+        const task = this.taskCache.get(taskId);
         if (!task) continue;
 
         const dueTime = task.safetyAlarmAt ?? task.scheduledAt;
@@ -620,7 +743,16 @@ export class ReliableScheduler {
     }
 
     const nextId = queue[0];
-    const nextTask = (await storage.get(`task:${nextId}`)) as Task | undefined;
+    if (!nextId) return;
+
+    // Use cached task if available, otherwise read from storage
+    let nextTask: Task | undefined;
+    if (this.cacheValid && this.taskCache) {
+      nextTask = this.taskCache.get(nextId);
+    }
+    if (!nextTask) {
+      nextTask = (await storage.get(`task:${nextId}`)) as Task | undefined;
+    }
     if (!nextTask) return;
 
     const nextTime = nextTask.safetyAlarmAt ?? nextTask.scheduledAt;
@@ -640,6 +772,14 @@ export class ReliableScheduler {
 
   private _updateAlarm(txn?: any): Effect.Effect<void> {
     return Effect.promise(() => this._updateAlarmSync(txn));
+  }
+
+  /**
+   * Invalidate the task cache. Call this after any task mutation.
+   */
+  private invalidateCache(): void {
+    this.cacheValid = false;
+    this.taskCache = null;
   }
 
   /**
