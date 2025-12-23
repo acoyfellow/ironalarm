@@ -33,8 +33,25 @@ async function callWorkerJSON<T>(
     const response = await callWorker(platform, endpoint, options);
 
     if (!response.ok) {
-      const errorText = await response.text().catch(() => 'Service error');
-      throw new Error(`Service error (${response.status}): ${errorText}`);
+      // Try to parse JSON error response
+      let errorMessage = 'Service error';
+      try {
+        const errorData = await response.json();
+        if (errorData.error) {
+          errorMessage = errorData.error;
+        } else if (typeof errorData === 'string') {
+          errorMessage = errorData;
+        }
+      } catch {
+        // If JSON parsing fails, try text
+        const errorText = await response.text().catch(() => 'Service error');
+        errorMessage = errorText;
+      }
+      
+      // Create error with proper message
+      const error = new Error(errorMessage);
+      (error as any).status = response.status;
+      throw error;
     }
 
     return response.json() as Promise<T>;
@@ -131,6 +148,17 @@ export const getTasks = command(
     const platform = getRequestEvent().platform;
     const url = namespace ? `/tasks?namespace=${encodeURIComponent(namespace)}` : "/tasks";
     return await callWorkerJSON<any[]>(platform, url);
+  }
+);
+
+export const getResources = query(
+  "unchecked",
+  async (namespace: string = "mission4"): Promise<{ namespace: string; resources: Record<string, number>; speedMultiplier: number }> => {
+    const platform = getRequestEvent().platform;
+    return await callWorkerJSON<{ namespace: string; resources: Record<string, number>; speedMultiplier: number }>(
+      platform,
+      `/resources?namespace=${encodeURIComponent(namespace)}`
+    );
   }
 );
 

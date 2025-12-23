@@ -21,26 +21,29 @@ export function createWebSocket(
       ws = new WebSocket(url);
 
       ws.onopen = () => {
+        console.log("[WS Client] Connected");
         onConnect?.();
       };
 
       ws.onmessage = (event) => {
         try {
           const message = JSON.parse(event.data);
+          console.log("[WS Client] Message:", message.type);
           onMessage(message);
         } catch {
           // Ignore parse errors
         }
       };
 
-      ws.onclose = () => {
+      ws.onclose = (event) => {
+        console.log("[WS Client] Closed:", event.code, event.reason);
         onDisconnect?.();
         // Reconnect after 2 seconds
         reconnectTimeout = setTimeout(connect, 2000);
       };
 
-      ws.onerror = () => {
-        // Error handling - will trigger onclose
+      ws.onerror = (event) => {
+        console.error("[WS Client] Error:", event);
       };
     } catch (e) {
       console.error("[WS] Connection failed:", e);

@@ -112,6 +112,9 @@ export class ReliableScheduler {
           progress: {},
         };
 
+      // Invalidate cache BEFORE transaction so queue rebuild uses fresh data
+      this.invalidateCache();
+      
       yield* Effect.promise(() =>
         this.storage.transaction(async (txn: any) => {
           await txn.put(`task:${taskId}`, task);
@@ -119,7 +122,6 @@ export class ReliableScheduler {
           await this._updateAlarmSync(txn);
         })
       );
-      this.invalidateCache();
 
       if (scheduledAt <= Date.now()) {
         yield* Effect.promise(() => this.processTask(taskId));
@@ -668,10 +670,9 @@ export class ReliableScheduler {
         t.status !== "completed" &&
         t.status !== "failed" &&
         t.status !== "paused" &&
+        !t.progress.completed &&
         (t.status === "pending" ||
-          (t.status === "running" &&
-            t.safetyAlarmAt &&
-            !t.progress.completed))
+          (t.status === "running" && (t.safetyAlarmAt || t.scheduledAt > 0)))
       ) {
         activeTaskIds.push(id);
       }
@@ -681,7 +682,9 @@ export class ReliableScheduler {
     for (const id of activeTaskIds) {
       const t = this.taskCache.get(id);
       if (t) {
-        const time = t.safetyAlarmAt ?? t.scheduledAt;
+        // Use scheduledAt for queue ordering (it's updated when rescheduling)
+        // safetyAlarmAt is only for eviction recovery, not scheduling
+        const time = t.scheduledAt;
         tasksWithTime.push({ id, time });
       }
     }
@@ -723,7 +726,9 @@ export class ReliableScheduler {
         const task = this.taskCache.get(taskId);
         if (!task) continue;
 
-        const dueTime = task.safetyAlarmAt ?? task.scheduledAt;
+        // Use scheduledAt for determining if task is due (it's updated when rescheduling)
+        // safetyAlarmAt is only for eviction recovery, not scheduling
+        const dueTime = task.scheduledAt;
         if (dueTime <= now && !task.progress.completed) {
           due.push(taskId);
         } else {
@@ -755,7 +760,9 @@ export class ReliableScheduler {
     }
     if (!nextTask) return;
 
-    const nextTime = nextTask.safetyAlarmAt ?? nextTask.scheduledAt;
+    // Use scheduledAt for alarm timing (it's updated when rescheduling)
+    // safetyAlarmAt is only for eviction recovery, not scheduling
+    const nextTime = nextTask.scheduledAt;
     if (nextTime > Date.now()) {
       await storage.setAlarm(nextTime);
     }

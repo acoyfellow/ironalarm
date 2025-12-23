@@ -3,7 +3,9 @@
   import { startTask, getTasks, cancelTask } from "$routes/data.remote";
   import { createWebSocket } from "$lib/websocket-service";
   import { Button } from "$lib/components/ui/button";
+  import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
   import DollarSign from "@lucide/svelte/icons/dollar-sign";
+  import MoreVertical from "@lucide/svelte/icons/more-vertical";
 
   // Resource node configuration
   const RESOURCE_NODES = [
@@ -242,6 +244,74 @@
     }
   }
 
+  async function handleBuyMaxMiners(nodeId: string) {
+    const node = RESOURCE_NODES.find((n) => n.id === nodeId);
+    if (!node) return;
+
+    const currentMiners = getMinersOnNode(nodeId);
+    const availableSlots = MAX_MINERS_PER_NODE - currentMiners;
+    if (availableSlots <= 0) {
+      alert(`Maximum ${MAX_MINERS_PER_NODE} miners per node!`);
+      return;
+    }
+
+    const currentCopper = resources.copper || 0;
+    if (currentCopper < node.cost) {
+      alert(
+        `Need ${node.cost} Copper to deploy ${node.name} miner. You have ${currentCopper}.`
+      );
+      return;
+    }
+
+    // Calculate how many we can afford
+    const affordable = Math.floor(currentCopper / node.cost);
+    const toBuy = Math.min(availableSlots, affordable);
+
+    if (toBuy === 0) {
+      alert(`Cannot afford any ${node.name} miners.`);
+      return;
+    }
+
+    const totalCost = toBuy * node.cost;
+    if (
+      !(await confirm(
+        `Buy ${toBuy} ${node.name} miner${toBuy > 1 ? "s" : ""} for ${totalCost.toLocaleString()} copper?`
+      ))
+    ) {
+      return;
+    }
+
+    // Buy miners one by one
+    let successCount = 0;
+    let failCount = 0;
+    for (let i = 0; i < toBuy; i++) {
+      try {
+        await startTask({
+          taskName: "mine-resource-loop",
+          nodeId,
+          namespace: "mission4",
+          yield: node.yield,
+          timeMs: node.timeMs,
+          cost: node.cost,
+        });
+        successCount++;
+        // Small delay to avoid overwhelming the server
+        await new Promise((r) => setTimeout(r, 50));
+      } catch (error) {
+        console.error(`Failed to deploy miner ${i + 1}/${toBuy}:`, error);
+        failCount++;
+      }
+    }
+
+    await loadTasks();
+
+    if (failCount > 0) {
+      alert(
+        `Bought ${successCount} miner${successCount > 1 ? "s" : ""}, ${failCount} failed.`
+      );
+    }
+  }
+
   async function handleCancelMiner(taskId: string) {
     try {
       await cancelTask(taskId);
@@ -251,7 +321,7 @@
     }
   }
 
-  // Calculate sell value: cycles * yield * multiplier
+  // Calculate sell value: original cost + (cycles * yield * multiplier)
   const SELL_MULTIPLIER = 2; // Each cycle's yield is worth 2x when sold
 
   function getSellValue(taskId: string): number {
@@ -261,10 +331,11 @@
     const node = RESOURCE_NODES.find((n) => n.id === miner.nodeId);
     if (!node) return 0;
 
-    // Total generated = cycles * yield per cycle
-    const totalGenerated = miner.cycle * node.yield;
-    // Sell value = total generated * multiplier
-    return totalGenerated * SELL_MULTIPLIER;
+    // Base value = original purchase cost (full refund)
+    const baseCost = node.cost;
+    // Bonus = cycles * yield * multiplier
+    const bonus = miner.cycle * node.yield * SELL_MULTIPLIER;
+    return baseCost + bonus;
   }
 
   async function handleSellMiner(taskId: string) {
@@ -341,15 +412,81 @@
     }
   }
 
-  async function handleCancelAllMiners() {
+  async function handleSellAllMinersOnNode(nodeId: string) {
+    const minerTaskIds = Array.from(miners.entries())
+      .filter(
+        ([id, m]) => id !== "mission4-global-state" && m.nodeId === nodeId
+      )
+      .map(([id]) => id);
+    if (minerTaskIds.length === 0) return;
+
+    let totalValue = 0;
+    for (const taskId of minerTaskIds) {
+      totalValue += getSellValue(taskId);
+    }
+
+    const node = RESOURCE_NODES.find((n) => n.id === nodeId);
+    if (
+      !(await confirm(
+        `Sell all ${minerTaskIds.length} ${node?.name || nodeId} miners for ${totalValue.toLocaleString()} copper?`
+      ))
+    )
+      return;
+
+    for (const taskId of minerTaskIds) {
+      const sellValue = getSellValue(taskId);
+      if (sellValue > 0) {
+        await startTask({
+          taskName: "sell-miner",
+          namespace: "mission4",
+          taskIdToCancel: taskId,
+          copperToAdd: sellValue,
+        });
+      } else {
+        await cancelTask(taskId);
+      }
+    }
+    await loadTasks();
+  }
+
+  async function handleSellAllMiners() {
     const minerTaskIds = Array.from(miners.keys()).filter(
       (id) => id !== "mission4-global-state"
     );
     if (minerTaskIds.length === 0) return;
-    if (!(await confirm(`Cancel all ${minerTaskIds.length} miners?`))) return;
 
+    // Calculate total sell value using same logic as individual sell
+    let totalValue = 0;
     for (const taskId of minerTaskIds) {
-      await cancelTask(taskId);
+      totalValue += getSellValue(taskId);
+    }
+
+    if (totalValue === 0) {
+      alert("No miners have generated resources yet!");
+      return;
+    }
+
+    if (
+      !(await confirm(
+        `Sell all ${minerTaskIds.length} miners for ${totalValue.toLocaleString()} copper?`
+      ))
+    )
+      return;
+
+    // Sell each miner
+    for (const taskId of minerTaskIds) {
+      const sellValue = getSellValue(taskId);
+      if (sellValue > 0) {
+        await startTask({
+          taskName: "sell-miner",
+          namespace: "mission4",
+          taskIdToCancel: taskId,
+          copperToAdd: sellValue,
+        });
+      } else {
+        // Just cancel miners with no value
+        await cancelTask(taskId);
+      }
     }
     await loadTasks();
   }
@@ -397,8 +534,15 @@
               (t: any) =>
                 t.taskId.startsWith("mission4-") || t.taskId === "global-state"
             );
-            updateResources();
           });
+        } else if (
+          message.type === "resources" &&
+          message.data?.namespace === "mission4"
+        ) {
+          console.log("[Client] Received resources:", message.data.resources);
+          // Direct assignment - no untrack, we WANT reactivity
+          resources = message.data.resources || { copper: 0 };
+          speedMultiplier = message.data.speedMultiplier || 1;
         }
       },
       () => {
@@ -549,10 +693,10 @@
         >
           {#if miners.size > 0}
             <button
-              onclick={handleCancelAllMiners}
-              class="px-3 py-2 sm:py-1.5 text-xs font-medium text-red-400 hover:text-red-300 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 hover:border-red-500/50 rounded-lg transition-all min-h-[44px] sm:min-h-0"
+              onclick={handleSellAllMiners}
+              class="px-3 py-2 sm:py-1.5 text-xs font-medium text-amber-400 hover:text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 hover:border-amber-500/50 rounded-lg transition-all min-h-[44px] sm:min-h-0"
             >
-              Cancel All
+              Sell All
             </button>
           {/if}
           <div
@@ -587,28 +731,50 @@
           )}
 
           {@const atCapacity = minersOnNode >= MAX_MINERS_PER_NODE}
-          <button
-            type="button"
-            class="relative border-2 rounded-lg p-3 sm:p-4 transition-all hover:shadow-md hover:shadow-cyan-400 cursor-pointer text-left w-full min-h-[44px] {minersOnNode >
+          <div
+            class="relative border-2 rounded-lg p-3 sm:p-4 transition-all text-left w-full min-h-[44px] {minersOnNode >
             0
               ? 'border-green-500 bg-green-950/30 shadow-lg'
-              : 'border-gray-600 bg-gray-900/50'} {resources.copper >=
-              node.cost && !atCapacity
-              ? 'hover:border-cyan-400'
-              : 'opacity-60'}"
+              : 'border-gray-600 bg-gray-900/50'}"
             style="border-color: {node.color}; box-shadow: {minersOnNode > 0
               ? `0 0 20px ${node.color}40`
               : 'none'};"
-            onclick={() => {
-              if (atCapacity) {
-                alert(`Maximum ${MAX_MINERS_PER_NODE} miners per node!`);
-              } else if (resources.copper >= node.cost) {
-                handleDeployMiner(node.id);
-              } else {
-                alert(`Need ${node.cost} Copper to deploy ${node.name} miner`);
-              }
-            }}
           >
+            <!-- Actions dropdown (top-right) -->
+            <div class="absolute top-2 right-2 z-20">
+              <DropdownMenu.Root>
+                <DropdownMenu.Trigger>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    class="h-7 w-7 text-gray-400 hover:text-white hover:bg-gray-800"
+                  >
+                    <MoreVertical class="w-4 h-4" />
+                  </Button>
+                </DropdownMenu.Trigger>
+                <DropdownMenu.Content class="bg-gray-900 border-gray-700">
+                  <DropdownMenu.Label class="text-gray-400"
+                    >{node.name}</DropdownMenu.Label
+                  >
+                  <DropdownMenu.Item
+                    class="text-emerald-400 hover:bg-emerald-500/20 cursor-pointer"
+                    onclick={() => handleBuyMaxMiners(node.id)}
+                    disabled={atCapacity || (resources.copper || 0) < node.cost}
+                  >
+                    Buy Max
+                  </DropdownMenu.Item>
+                  {#if minersOnNode > 0}
+                    <DropdownMenu.Separator class="bg-gray-700" />
+                    <DropdownMenu.Item
+                      class="text-amber-400 hover:bg-amber-500/20 cursor-pointer"
+                      onclick={() => handleSellAllMinersOnNode(node.id)}
+                    >
+                      Sell All ({minersOnNode} miners)
+                    </DropdownMenu.Item>
+                  {/if}
+                </DropdownMenu.Content>
+              </DropdownMenu.Root>
+            </div>
             <!-- Node image -->
             <div class="flex justify-center mb-2 sm:mb-3">
               <div
@@ -737,14 +903,37 @@
               </div>
             {/if}
 
+            <!-- Deploy button -->
+            {#if !atCapacity}
+              <button
+                type="button"
+                class="w-full mt-3 px-3 py-2 text-sm font-medium rounded-lg transition-all {resources.copper >=
+                node.cost
+                  ? 'bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 hover:text-cyan-300 border border-cyan-500/50 hover:border-cyan-400'
+                  : 'bg-gray-800/50 text-gray-500 border border-gray-700 cursor-not-allowed'}"
+                onclick={() => {
+                  if (resources.copper >= node.cost) {
+                    handleDeployMiner(node.id);
+                  } else {
+                    alert(
+                      `Need ${node.cost} Copper to deploy ${node.name} miner`
+                    );
+                  }
+                }}
+                disabled={resources.copper < node.cost}
+              >
+                + Deploy Miner
+              </button>
+            {/if}
+
             <!-- Mining animation overlay -->
             {#if minersOnNode > 0}
               <div
-                class="absolute inset-0 pointer-events-none opacity-30"
+                class="absolute inset-0 pointer-events-none opacity-30 rounded-lg"
                 style="background: radial-gradient(circle, {node.color} 0%, transparent 70%); animation: pulse 2s ease-in-out infinite;"
               ></div>
             {/if}
-          </button>
+          </div>
         {/each}
       </div>
 
