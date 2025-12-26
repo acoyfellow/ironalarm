@@ -114,7 +114,7 @@ export class ReliableScheduler {
 
       // Invalidate cache BEFORE transaction so queue rebuild uses fresh data
       this.invalidateCache();
-      
+
       yield* Effect.promise(() =>
         this.storage.transaction(async (txn: any) => {
           await txn.put(`task:${taskId}`, task);
@@ -314,6 +314,62 @@ export class ReliableScheduler {
    */
   async getTasks(status?: TaskStatus): Promise<Task[]> {
     return Effect.runPromise(this._getTasks(status));
+  }
+
+  /**
+   * Recover stuck tasks that are overdue (scheduled >1 minute ago).
+   * Call this in your DO's fetch() and alarm() methods to handle hibernation recovery.
+   * 
+   * @param taskNames - Optional array of task names to check. If not provided, checks all running tasks.
+   * @returns Number of tasks recovered
+   */
+  async recoverStuckTasks(taskNames?: string[]): Promise<number> {
+    return Effect.runPromise(this._recoverStuckTasks(taskNames));
+  }
+
+  private _recoverStuckTasks(taskNames?: string[]): Effect.Effect<number, never, never> {
+    return Effect.gen(this, function* () {
+      const now = Date.now();
+      const tasks = yield* this._getTasks();
+      let recovered = 0;
+
+      for (const task of tasks) {
+        // Only check specified task names, or all running tasks
+        if (taskNames && !taskNames.includes(task.taskName)) continue;
+        if (task.status !== "running" && task.status !== "failed" && task.status !== "completed") continue;
+
+        // Recover failed/completed tasks
+        if (task.status === "failed" || task.status === "completed") {
+          yield* this._checkpoint(task.taskId, "_recovered", true);
+          recovered++;
+          continue;
+        }
+
+        // Reschedule if stuck (scheduled >1min ago)
+        if (task.status === "running" && task.scheduledAt > 0 && now > task.scheduledAt + 60000) {
+          // Reschedule for immediate execution - use _schedule directly to avoid handler check
+          const scheduledAt = now + 100;
+          const existingTask = yield* Effect.promise(() =>
+            this.storage.get<Task>(`task:${task.taskId}`)
+          );
+          if (existingTask) {
+            existingTask.scheduledAt = scheduledAt;
+            existingTask.status = "pending";
+            yield* Effect.promise(() => this.storage.put(`task:${task.taskId}`, existingTask));
+            this.invalidateCache();
+            yield* Effect.promise(() =>
+              this.storage.transaction(async (txn: any) => {
+                await this._rebuildQueueSync(txn);
+                await this._updateAlarmSync(txn);
+              })
+            );
+            recovered++;
+          }
+        }
+      }
+
+      return recovered;
+    });
   }
 
   /**

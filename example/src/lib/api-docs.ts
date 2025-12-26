@@ -108,6 +108,12 @@ export const API_METHODS = [
     type: "method" as const,
   },
   {
+    name: "recoverStuckTasks",
+    signature: "async recoverStuckTasks(taskNames?: string[]): Promise<number>",
+    description: "Recover stuck tasks that are overdue (scheduled >1 minute ago). Call this in your DO's fetch() and alarm() methods to handle hibernation recovery. @param taskNames - Optional array of task names to check. If not provided, checks all running tasks. @returns Number of tasks recovered",
+    type: "method" as const,
+  },
+  {
     name: "register",
     signature: "register(taskName: string, handler: TaskHandler): void",
     description: "Register a named task handler. The handler receives the scheduler, taskId, and params.",

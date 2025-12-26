@@ -1,11 +1,22 @@
 <script lang="ts">
   import { onMount, untrack } from "svelte";
+  import { afterNavigate } from "$app/navigation";
+  import { page } from "$app/stores";
+  import { tweened, spring } from "svelte/motion";
+  import { cubicOut } from "svelte/easing";
   import { startTask, getTasks, cancelTask } from "$routes/data.remote";
   import { createWebSocket } from "$lib/websocket-service";
   import { Button } from "$lib/components/ui/button";
   import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
   import DollarSign from "@lucide/svelte/icons/dollar-sign";
   import MoreVertical from "@lucide/svelte/icons/more-vertical";
+  import FloatingNumber from "$lib/components/FloatingNumber.svelte";
+  import CriticalHit from "$lib/components/CriticalHit.svelte";
+  import MiningAura from "$lib/components/MiningAura.svelte";
+  import ResourceVelocity from "$lib/components/ResourceVelocity.svelte";
+  import Particle from "$lib/components/Particle.svelte";
+  import ResourceWave from "$lib/components/ResourceWave.svelte";
+  import NodeCard from "$lib/components/NodeCard.svelte";
 
   // Resource node configuration
   const RESOURCE_NODES = [
@@ -91,12 +102,139 @@
     },
   ];
 
+  // Motion configuration objects
+  const numberTweenConfig = {
+    duration: 400,
+    easing: cubicOut,
+  };
+
+  const colorTweenConfig = {
+    duration: 1000,
+    easing: cubicOut,
+  };
+
+  const defaultSpringConfig = {
+    stiffness: 0.1,
+    damping: 0.4,
+  };
+
+  const bouncySpringConfig = {
+    stiffness: 0.2,
+    damping: 0.3,
+  };
+
   let wsConnected = $state(false);
   let wsClose: (() => void) | null = null;
   let tasks = $state<any[]>([]);
   let resources = $state<Record<string, number>>({});
   let speedMultiplier = $state(1);
   let now = $state(Date.now());
+
+  // Floating number system
+  interface FloatingNumberData {
+    id: string;
+    value: number;
+    x: number;
+    y: number;
+    color: string;
+    multiplier?: number;
+  }
+
+  let floatingNumbers = $state<FloatingNumberData[]>([]);
+  let previousResources = $state<Record<string, number>>({});
+  let previousResourcesRef = { ...previousResources }; // Non-reactive copy for comparison
+
+  // Critical hit system
+  interface CriticalHitData {
+    id: string;
+    multiplier: number;
+    x: number;
+    y: number;
+    timestamp: number;
+  }
+
+  let criticalHits = $state<CriticalHitData[]>([]);
+
+  // Particle system
+  interface ParticleData {
+    id: string;
+    color: string;
+    angle: number;
+    distance: number;
+    x: number;
+    y: number;
+  }
+
+  let particles = $state<ParticleData[]>([]);
+
+  function triggerParticleBurst(
+    element: HTMLElement | null,
+    color: string = "#fbbf24",
+    count: number = 10
+  ) {
+    if (!element) return;
+
+    const rect = element.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+
+    for (let i = 0; i < count; i++) {
+      const angle = (Math.PI * 2 * i) / count;
+      const distance = 50 + Math.random() * 30;
+      const id = crypto.randomUUID();
+      particles = [
+        ...particles,
+        { id, color, angle, distance, x: centerX, y: centerY },
+      ];
+
+      // Remove after animation
+      setTimeout(() => {
+        particles = particles.filter((p) => p.id !== id);
+      }, 1000);
+    }
+  }
+
+  // Resource velocity system
+  let resourceVelocity = $state(0);
+  let lastResourceCheck = $state(Date.now());
+  let lastResourceCount = $state(0);
+
+  function triggerCriticalHit(x: number, y: number) {
+    // 5% chance for critical hit
+    if (Math.random() > 0.05) return;
+
+    const multipliers = [2, 3, 5];
+    const multiplier = multipliers[Math.floor(Math.random() * multipliers.length)];
+
+    const id = crypto.randomUUID();
+    criticalHits = [...criticalHits, { id, multiplier, x, y, timestamp: Date.now() }];
+
+    // Remove after animation
+    setTimeout(() => {
+      criticalHits = criticalHits.filter((h) => h.id !== id);
+    }, 1500);
+  }
+
+  function addFloatingNumber(
+    value: number,
+    x: number,
+    y: number,
+    color: string,
+    multiplier?: number
+  ) {
+    // Limit to 10 simultaneous floating numbers
+    if (floatingNumbers.length >= 10) {
+      floatingNumbers = floatingNumbers.slice(1);
+    }
+
+    const id = crypto.randomUUID();
+    floatingNumbers = [...floatingNumbers, { id, value, x, y, color, multiplier }];
+
+    // Auto-remove after animation
+    setTimeout(() => {
+      floatingNumbers = floatingNumbers.filter((n) => n.id !== id);
+    }, 2000);
+  }
 
   // Speed upgrade costs: 500, 2000, 8000, 32000... (4x each level)
   const getUpgradeCost = (currentLevel: number) =>
@@ -193,6 +331,35 @@
     updateResources();
   });
 
+  // Track resource changes and trigger floating numbers
+  $effect(() => {
+    const currentCopper = resources.copper || 0;
+    const previousCopper = previousResourcesRef.copper || 0;
+
+    if (currentCopper > previousCopper && previousCopper > 0) {
+      const diff = currentCopper - previousCopper;
+      // Get position of copper display (approximate center of header)
+      const x = window.innerWidth / 2;
+      const y = 100; // Approximate position of resource display
+      addFloatingNumber(diff, x, y, "#cd7f32");
+      // Trigger critical hit chance
+      triggerCriticalHit(x, y - 50);
+    }
+
+    // Calculate resource velocity
+    const now = Date.now();
+    const timeDelta = (now - lastResourceCheck) / 1000; // seconds
+    if (timeDelta > 0) {
+      const resourceDelta = currentCopper - lastResourceCount;
+      resourceVelocity = resourceDelta / timeDelta; // per second
+      lastResourceCheck = now;
+      lastResourceCount = currentCopper;
+    }
+
+    // Update non-reactive ref (doesn't trigger effect)
+    previousResourcesRef = { ...resources };
+  });
+
   async function loadTasks() {
     try {
       const fetchedTasks = await getTasks("mission4");
@@ -273,13 +440,6 @@
     }
 
     const totalCost = toBuy * node.cost;
-    if (
-      !(await confirm(
-        `Buy ${toBuy} ${node.name} miner${toBuy > 1 ? "s" : ""} for ${totalCost.toLocaleString()} copper?`
-      ))
-    ) {
-      return;
-    }
 
     // Buy miners one by one
     let successCount = 0;
@@ -375,6 +535,72 @@
   function getMinersOnNode(nodeId: string): number {
     return Array.from(miners.values()).filter((m) => m.nodeId === nodeId)
       .length;
+  }
+
+  // Calculate total sell value for all miners on a node
+  function getTotalSellValueForNode(nodeId: string): number {
+    const minerTaskIds = Array.from(miners.entries())
+      .filter(
+        ([id, m]) => id !== "mission4-global-state" && m.nodeId === nodeId
+      )
+      .map(([id]) => id);
+    
+    let totalValue = 0;
+    for (const taskId of minerTaskIds) {
+      totalValue += getSellValue(taskId);
+    }
+    return totalValue;
+  }
+
+  // ROI calculation: Higher tier = better ROI (incentivizes progression)
+  // ROI is tier-based: higher tier nodes have better ROI scores
+  // This encourages players to progress to better nodes
+  function getEfficiencyScore(nodeId: string): number {
+    const node = RESOURCE_NODES.find((n) => n.id === nodeId);
+    if (!node) return 0;
+    const minersOnNode = getMinersOnNode(nodeId);
+    if (minersOnNode === 0) return 0;
+
+    // Find tier index (0 = copper, 7 = infernal)
+    const tierIndex = RESOURCE_NODES.findIndex((n) => n.id === nodeId);
+    if (tierIndex === -1) return 0;
+
+    // Base ROI increases with tier: tier 0 = 1.0, tier 7 = 8.0
+    // This makes higher tiers have better ROI
+    const baseROI = 1.0 + tierIndex * 1.0;
+    
+    // Scale by yield per second to account for actual production
+    const yieldPerSecond = (node.yield / node.timeMs) * 1000 * speedMultiplier;
+    const yieldMultiplier = yieldPerSecond / 0.25; // Normalize to copper's base yield
+    
+    // Final ROI = base tier ROI * yield multiplier
+    // Higher tiers get both a base bonus and yield bonus
+    return baseROI * yieldMultiplier * 10; // Scale for display
+  }
+
+  // Efficiency color mapping
+  function getEfficiencyColor(score: number): string {
+    if (score > 50) return "#10b981"; // Green - very efficient
+    if (score > 20) return "#84cc16"; // Lime - efficient
+    if (score > 10) return "#eab308"; // Yellow - moderate
+    if (score > 5) return "#f97316"; // Orange - low
+    return "#ef4444"; // Red - very low
+  }
+
+  // Projected earnings calculation
+  function getProjectedEarnings(nodeId: string, timeSeconds: number = 60): number {
+    const node = RESOURCE_NODES.find((n) => n.id === nodeId);
+    if (!node) return 0;
+    const minersOnNode = getMinersOnNode(nodeId);
+    const yieldPerSecond = (node.yield / node.timeMs) * 1000 * speedMultiplier;
+    return yieldPerSecond * minersOnNode * timeSeconds;
+  }
+
+  // Synergy calculation (visual only)
+  function getSynergyBonus(nodeId: string): number {
+    const totalMiners = miners.size;
+    const synergy = 1 + totalMiners * 0.01;
+    return Math.min(synergy, 1.5); // Cap at 1.5x
   }
 
   // Calculate total copper per second from all miners (accounting for speed multiplier)
@@ -598,53 +824,100 @@
       wsClose?.();
     };
   });
+
+  // Reload tasks when navigating back to this page
+  afterNavigate(({ to, from }) => {
+    // Only reload if we're navigating TO the mission page
+    if (to?.url.pathname === "/mission" && from?.url.pathname !== "/mission") {
+      // Small delay to ensure WebSocket has time to reconnect
+      setTimeout(() => {
+        loadTasks();
+        // Also ensure resources are updated
+        updateResources();
+      }, 200);
+    }
+  });
 </script>
 
 <svelte:head>
   <title>Mining Game - ironalarm</title>
 </svelte:head>
 
-<div class="min-h-screen bg-black text-white p-2 sm:p-4 space-y-3 sm:space-y-4">
+<!-- Floating Numbers Overlay -->
+<div class="fixed inset-0 pointer-events-none z-[9998]">
+  {#each floatingNumbers as num}
+    <FloatingNumber
+      value={num.value}
+      x={num.x}
+      y={num.y}
+      color={num.color}
+      multiplier={num.multiplier}
+    />
+  {/each}
+</div>
+
+<!-- Critical Hits Overlay -->
+<div class="fixed inset-0 pointer-events-none z-[9999]">
+  {#each criticalHits as hit}
+    <CriticalHit multiplier={hit.multiplier} x={hit.x} y={hit.y} />
+  {/each}
+</div>
+
+<!-- Particles Overlay -->
+<div class="fixed inset-0 pointer-events-none z-[9997]">
+  {#each particles as particle}
+    <Particle
+      color={particle.color}
+      angle={particle.angle}
+      distance={particle.distance}
+      x={particle.x}
+      y={particle.y}
+    />
+  {/each}
+</div>
+
+<div class="min-h-screen bg-black text-white p-3 sm:p-6 space-y-4 sm:space-y-6">
   <!-- Game HUD -->
   <div class="max-w-5xl mx-auto">
     <div class="bg-gray-950 border border-gray-800 rounded-xl shadow-2xl">
       <div class="flex flex-col sm:flex-row items-stretch">
         <!-- Resource Section -->
         <div
-          class="flex-1 px-3 sm:px-5 py-2.5 sm:py-3 border-b sm:border-b-0 sm:border-r border-gray-800/50"
+          class="flex-1 px-4 sm:px-6 py-3 sm:py-4 border-b sm:border-b-0 sm:border-r border-gray-800/50"
         >
-          <div class="flex items-baseline gap-2 sm:gap-3">
-            <div class="flex items-center gap-1.5 sm:gap-2">
+          <div class="flex items-baseline gap-3 sm:gap-4">
+            <div class="flex items-center gap-2 sm:gap-2.5">
               <div
-                class="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-sm"
+                class="w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-sm"
                 style="background: #cd7f32; box-shadow: 0 0 8px #cd7f32;"
               ></div>
               <span
-                class="text-xl sm:text-2xl font-bold tabular-nums text-white"
+                class="text-2xl sm:text-3xl font-bold tabular-nums text-white leading-none"
                 >{(resources.copper || 0).toLocaleString()}</span
               >
             </div>
+            <ResourceVelocity velocity={resourceVelocity} />
             {#if copperPerSecond > 0}
-              <span class="text-xs sm:text-sm text-emerald-400 font-medium"
+              <span class="text-sm sm:text-base text-emerald-400 font-semibold"
                 >+{copperPerSecond.toFixed(1)}/s</span
               >
             {/if}
           </div>
-          <div class="text-xs text-gray-500 mt-0.5 uppercase tracking-wider">
+          <div class="text-xs text-gray-500 mt-1.5 uppercase tracking-wider font-medium">
             Copper
           </div>
         </div>
 
         <!-- Speed Upgrade Section -->
         <div
-          class="px-3 sm:px-5 py-2.5 sm:py-3 border-b sm:border-b-0 sm:border-r border-gray-800/50"
+          class="px-4 sm:px-6 py-3 sm:py-4 border-b sm:border-b-0 sm:border-r border-gray-800/50"
         >
-          <div class="flex items-center gap-2 sm:gap-3">
-            <div class="text-center">
-              <div class="text-lg sm:text-xl font-bold text-amber-400">
+          <div class="flex items-center gap-3 sm:gap-4">
+            <div>
+              <div class="text-2xl sm:text-3xl font-bold text-amber-400 leading-none">
                 {speedMultiplier}x
               </div>
-              <div class="text-xs text-gray-500 uppercase tracking-wider">
+              <div class="text-xs text-gray-500 uppercase tracking-wider mt-1.5 font-medium">
                 Speed
               </div>
             </div>
@@ -675,13 +948,13 @@
 
         <!-- Miners Section -->
         <div
-          class="px-3 sm:px-5 py-2.5 sm:py-3 border-b sm:border-b-0 sm:border-r border-gray-800/50"
+          class="px-4 sm:px-6 py-3 sm:py-4 border-b sm:border-b-0 sm:border-r border-gray-800/50"
         >
-          <div class="text-center">
-            <div class="text-lg sm:text-xl font-bold text-cyan-400">
+          <div>
+            <div class="text-2xl sm:text-3xl font-bold text-cyan-400 leading-none">
               {miners.size}
             </div>
-            <div class="text-xs text-gray-500 uppercase tracking-wider">
+            <div class="text-xs text-gray-500 uppercase tracking-wider mt-1.5 font-medium">
               Active Miners
             </div>
           </div>
@@ -689,12 +962,12 @@
 
         <!-- Actions Section -->
         <div
-          class="px-3 sm:px-5 py-2.5 sm:py-3 flex items-center gap-2 sm:gap-3"
+          class="px-4 sm:px-6 py-3 sm:py-4 flex items-center gap-3 sm:gap-4"
         >
           {#if miners.size > 0}
             <button
               onclick={handleSellAllMiners}
-              class="px-3 py-2 sm:py-1.5 text-xs font-medium text-amber-400 hover:text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 hover:border-amber-500/50 rounded-lg transition-all min-h-[44px] sm:min-h-0"
+              class="px-4 py-2.5 text-sm font-semibold text-amber-400 hover:text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 hover:border-amber-500/50 rounded-lg transition-all min-h-[44px] sm:min-h-0"
             >
               Sell All
             </button>
@@ -718,222 +991,44 @@
   </div>
 
   <!-- Mining grid -->
-  <div class="container mx-auto pb-6 sm:pb-8 px-2 sm:px-4">
+  <div class="container mx-auto pb-6 sm:pb-8 px-3 sm:px-6">
     <div class="max-w-5xl mx-auto">
       <!-- Grid -->
       <div
-        class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4"
+        class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5"
       >
         {#each gridNodes as node}
           {@const minersOnNode = getMinersOnNode(node.id)}
           {@const nodeTasks = Array.from(miners.entries()).filter(
             ([tid, m]) => m.nodeId === node.id
           )}
-
+          {@const efficiency = getEfficiencyScore(node.id)}
+          {@const efficiencyColor = getEfficiencyColor(efficiency)}
           {@const atCapacity = minersOnNode >= MAX_MINERS_PER_NODE}
-          <div
-            class="relative border-2 rounded-lg p-3 sm:p-4 transition-all text-left w-full min-h-[44px] {minersOnNode >
-            0
-              ? 'border-green-500 bg-green-950/30 shadow-lg'
-              : 'border-gray-600 bg-gray-900/50'}"
-            style="border-color: {node.color}; box-shadow: {minersOnNode > 0
-              ? `0 0 20px ${node.color}40`
-              : 'none'};"
-          >
-            <!-- Actions dropdown (top-right) -->
-            <div class="absolute top-2 right-2 z-20">
-              <DropdownMenu.Root>
-                <DropdownMenu.Trigger>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    class="h-7 w-7 text-gray-400 hover:text-white hover:bg-gray-800"
-                  >
-                    <MoreVertical class="w-4 h-4" />
-                  </Button>
-                </DropdownMenu.Trigger>
-                <DropdownMenu.Content class="bg-gray-900 border-gray-700">
-                  <DropdownMenu.Label class="text-gray-400"
-                    >{node.name}</DropdownMenu.Label
-                  >
-                  <DropdownMenu.Item
-                    class="text-emerald-400 hover:bg-emerald-500/20 cursor-pointer"
-                    onclick={() => handleBuyMaxMiners(node.id)}
-                    disabled={atCapacity || (resources.copper || 0) < node.cost}
-                  >
-                    Buy Max
-                  </DropdownMenu.Item>
-                  {#if minersOnNode > 0}
-                    <DropdownMenu.Separator class="bg-gray-700" />
-                    <DropdownMenu.Item
-                      class="text-amber-400 hover:bg-amber-500/20 cursor-pointer"
-                      onclick={() => handleSellAllMinersOnNode(node.id)}
-                    >
-                      Sell All ({minersOnNode} miners)
-                    </DropdownMenu.Item>
-                  {/if}
-                </DropdownMenu.Content>
-              </DropdownMenu.Root>
-            </div>
-            <!-- Node image -->
-            <div class="flex justify-center mb-2 sm:mb-3">
-              <div
-                class="relative w-16 h-16 sm:w-20 sm:h-20 rounded-xl border-2 p-1.5 sm:p-2 bg-gradient-to-br from-black/40 to-black/60 flex items-center justify-center transition-all duration-300 {minersOnNode >
-                0
-                  ? 'shadow-2xl scale-105'
-                  : ''}"
-                style="border-color: {minersOnNode > 0
-                  ? node.color
-                  : '#4b5563'}; box-shadow: {minersOnNode > 0
-                  ? `0 0 20px ${node.color}60, inset 0 0 20px ${node.color}20`
-                  : 'none'};"
-              >
-                {#if minersOnNode > 0}
-                  <div
-                    class="absolute inset-0 rounded-xl opacity-30"
-                    style="background: radial-gradient(circle, {node.color} 0%, transparent 70%); animation: pulse 2s ease-in-out infinite;"
-                  ></div>
-                {/if}
-                <img
-                  src={node.image}
-                  alt={node.name}
-                  class="relative z-10 w-full h-full object-contain drop-shadow-2xl filter {minersOnNode >
-                  0
-                    ? 'brightness-110'
-                    : ''}"
-                />
-              </div>
-            </div>
+          {@const projectedEarnings = minersOnNode > 0 ? getProjectedEarnings(node.id) : 0}
+          {@const synergy = getSynergyBonus(node.id)}
+          {@const totalSellValue = getTotalSellValueForNode(node.id)}
 
-            <!-- Node info -->
-            <div class="text-center mb-2">
-              <div
-                class="text-base sm:text-lg font-bold"
-                style="color: {node.color}"
-              >
-                {node.name}
-              </div>
-              <div class="text-xs text-gray-400">
-                Yield: {node.yield} | Time: {node.timeMs / 1000}s
-              </div>
-              {#if node.cost > 0}
-                <div class="text-xs text-yellow-400 mt-1">
-                  Cost: {node.cost.toLocaleString()} Copper
-                </div>
-              {:else}
-                <div class="text-xs text-green-400 mt-1">FREE</div>
-              {/if}
-              <div
-                class="text-xs mt-1 {atCapacity
-                  ? 'text-red-400'
-                  : 'text-gray-500'}"
-              >
-                {minersOnNode}/{MAX_MINERS_PER_NODE} miners
-              </div>
-            </div>
-
-            <!-- Miners on this node -->
-            {#if minersOnNode > 0}
-              <div class="space-y-1.5 sm:space-y-2 mt-3 sm:mt-4">
-                {#each nodeTasks as [taskId, miner]}
-                  {@const progress = getMinerProgress(taskId)}
-                  <div
-                    class="bg-black/70 rounded p-1.5 sm:p-2 border border-cyan-500/50 relative overflow-hidden"
-                  >
-                    <!-- Mining animation background -->
-                    <div
-                      class="absolute inset-0 opacity-10"
-                      style="background: linear-gradient(90deg, transparent 0%, {node.color} 50%, transparent 100%); animation: mining-sweep 2s linear infinite;"
-                    ></div>
-
-                    <div
-                      class="flex items-center justify-between mb-1 relative z-10 gap-2"
-                    >
-                      <div
-                        class="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1"
-                      >
-                        <div
-                          class="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-cyan-500 animate-pulse flex-shrink-0"
-                        ></div>
-                        <div class="text-xs font-mono truncate">
-                          <span class="text-cyan-400">Miner</span>
-                          <span class="text-gray-500 ml-1">x{miner.cycle}</span>
-                        </div>
-                      </div>
-                      <div
-                        class="flex items-center gap-1 sm:gap-1.5 flex-shrink-0"
-                      >
-                        {#if getSellValue(taskId) > 0}
-                          <span
-                            class="text-xs text-yellow-400 font-semibold whitespace-nowrap"
-                          >
-                            {getSellValue(taskId).toLocaleString()}
-                          </span>
-                        {/if}
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          onclick={(e) => {
-                            e.stopPropagation();
-                            handleSellMiner(taskId);
-                          }}
-                          class="h-7 w-7 sm:h-6 sm:w-6 text-green-400 hover:bg-green-900/30 transition-all hover:scale-110 touch-manipulation"
-                          title={`Sell for ${getSellValue(taskId).toLocaleString()} Copper`}
-                        >
-                          <DollarSign class="w-3.5 h-3.5 sm:w-3 sm:h-3" />
-                        </Button>
-                      </div>
-                    </div>
-                    <!-- Progress bar -->
-                    <div
-                      class="w-full h-1.5 sm:h-2 bg-gray-800 rounded overflow-hidden relative z-10"
-                    >
-                      <div
-                        class="h-full bg-gradient-to-r from-cyan-500 to-cyan-300 transition-all duration-100"
-                        style="width: {progress *
-                          100}%; box-shadow: 0 0 8px {node.color};"
-                      ></div>
-                      <div
-                        class="absolute inset-0 bg-white/20"
-                        style="animation: shimmer 1.5s infinite;"
-                      ></div>
-                    </div>
-                  </div>
-                {/each}
-              </div>
-            {/if}
-
-            <!-- Deploy button -->
-            {#if !atCapacity}
-              <button
-                type="button"
-                class="w-full mt-3 px-3 py-2 text-sm font-medium rounded-lg transition-all {resources.copper >=
-                node.cost
-                  ? 'bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 hover:text-cyan-300 border border-cyan-500/50 hover:border-cyan-400'
-                  : 'bg-gray-800/50 text-gray-500 border border-gray-700 cursor-not-allowed'}"
-                onclick={() => {
-                  if (resources.copper >= node.cost) {
-                    handleDeployMiner(node.id);
-                  } else {
-                    alert(
-                      `Need ${node.cost} Copper to deploy ${node.name} miner`
-                    );
-                  }
-                }}
-                disabled={resources.copper < node.cost}
-              >
-                + Deploy Miner
-              </button>
-            {/if}
-
-            <!-- Mining animation overlay -->
-            {#if minersOnNode > 0}
-              <div
-                class="absolute inset-0 pointer-events-none opacity-30 rounded-lg"
-                style="background: radial-gradient(circle, {node.color} 0%, transparent 70%); animation: pulse 2s ease-in-out infinite;"
-              ></div>
-            {/if}
-          </div>
+          <NodeCard
+            node={node}
+            minersOnNode={minersOnNode}
+            atCapacity={atCapacity}
+            efficiencyColor={efficiencyColor}
+            efficiency={efficiency}
+            projectedEarnings={projectedEarnings}
+            synergy={synergy}
+            totalSellValue={totalSellValue}
+            nodeTasks={nodeTasks}
+            getMinerProgress={getMinerProgress}
+            getSellValue={getSellValue}
+            handleSellMiner={handleSellMiner}
+            handleBuyMaxMiners={handleBuyMaxMiners}
+            handleSellAllMinersOnNode={handleSellAllMinersOnNode}
+            handleDeployMiner={handleDeployMiner}
+            triggerParticleBurst={triggerParticleBurst}
+            resources={resources}
+            MAX_MINERS_PER_NODE={MAX_MINERS_PER_NODE}
+          />
         {/each}
       </div>
 
@@ -949,33 +1044,6 @@
 </div>
 
 <style>
-  @keyframes pulse {
-    0%,
-    100% {
-      opacity: 0.2;
-    }
-    50% {
-      opacity: 0.4;
-    }
-  }
-
-  @keyframes mining-sweep {
-    0% {
-      transform: translateX(-100%);
-    }
-    100% {
-      transform: translateX(100%);
-    }
-  }
-
-  @keyframes shimmer {
-    0% {
-      transform: translateX(-100%);
-    }
-    100% {
-      transform: translateX(100%);
-    }
-  }
 
   /* Improve touch interactions on mobile */
   button {

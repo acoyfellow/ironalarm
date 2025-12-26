@@ -65,20 +65,20 @@ export class MyDO {
 For tasks that run forever (like game loops, background processors), use `maxRetries: Infinity`:
 
 ```typescript
-// Register an infinite loop handler
+// Register an infinite loop handler that reschedules itself
 this.scheduler.register('mining-loop', (sched, taskId, params) => {
   return Effect.gen(function* () {
-    while (true) {
-      // Check if cancelled/paused
-      const task = yield* Effect.promise(() => sched.getTask(taskId));
-      if (!task || task.status === 'paused' || task.status === 'failed') return;
+    // Check if cancelled/paused
+    const task = yield* Effect.promise(() => sched.getTask(taskId));
+    if (!task || task.status === 'paused' || task.status === 'failed') return false;
 
-      // Do work
-      yield* Effect.promise(() => mineResources(params));
+    // Do work
+    yield* Effect.promise(() => mineResources(params));
 
-      // Wait before next iteration
-      yield* Effect.promise(() => new Promise(r => setTimeout(r, 5000)));
-    }
+    // Reschedule for next cycle (critical for loops!)
+    const nextTime = Date.now() + 5000;
+    yield* Effect.promise(() => sched.schedule(nextTime, taskId, 'mining-loop', params));
+    return true; // Indicates we should continue
   });
 });
 
@@ -86,31 +86,94 @@ this.scheduler.register('mining-loop', (sched, taskId, params) => {
 await this.scheduler.runNow(taskId, 'mining-loop', params, { maxRetries: Infinity });
 ```
 
-**Important**: After a DO restart, the Effect generator won't automatically resume. You need to manually restart infinite loop tasks in your constructor:
+**Critical: Hibernation Recovery**
+
+Durable Objects hibernate after ~30 seconds of inactivity. When a DO hibernates for hours/days:
+- Tasks with `scheduledAt` times in the past become "stuck"
+- The alarm processes them, but they may not reschedule correctly
+- **You MUST check and recover stuck tasks on every DO wake-up**
+
+**Required Pattern**: Add recovery checks in your `fetch()` and `alarm()` methods:
 
 ```typescript
-constructor(state: DurableObjectState, env: any) {
-  this.scheduler = new ReliableScheduler(state.storage);
-  // ... register handlers ...
+export class MyDO extends DurableObject {
+  private scheduler: ReliableScheduler;
 
-  // Resume infinite loop tasks after DO restart
-  this.resumeLoopTasks();
-}
+  constructor(ctx: any, env: any) {
+    super(ctx, env);
+    this.scheduler = new ReliableScheduler(this.ctx.storage);
+    // ... register handlers ...
+    
+    // Resume tasks after DO restart
+    this.resumeRunningTasks();
+  }
 
-private async resumeLoopTasks() {
-  const LOOP_TASKS = ['mining-loop', 'game-state'];
-  const tasks = await this.scheduler.getTasks();
-  for (const task of tasks) {
-    if (task.status === 'running' && LOOP_TASKS.includes(task.taskName)) {
-      // Re-run the handler (it will pick up from checkpoints)
-      const handler = this.scheduler.getHandler(task.taskName);
-      if (handler) {
-        Effect.runPromise(handler(this.scheduler, task.taskId, task.params));
+  private async resumeRunningTasks() {
+    const LOOP_TASKS = ['mining-loop', 'game-state'];
+    const tasks = await this.scheduler.getTasks();
+    const now = Date.now();
+    
+    for (const task of tasks) {
+      if (LOOP_TASKS.includes(task.taskName) && 
+          (task.status === 'running' || task.status === 'failed' || task.status === 'completed')) {
+        
+        // Recover failed/completed tasks
+        if (task.status === 'failed' || task.status === 'completed') {
+          await this.scheduler.checkpoint(task.taskId, '_recovered', true);
+        }
+        
+        // If scheduled time is way in the past, reschedule immediately
+        if (task.scheduledAt > 0 && now > task.scheduledAt + 60000) {
+          const params = task.params;
+          await this.scheduler.schedule(now + 100, task.taskId, task.taskName, params);
+          continue;
+        }
+        
+        // Otherwise resume normally
+        const handler = this.scheduler.getHandler(task.taskName);
+        if (handler) {
+          Effect.runPromise(handler(this.scheduler, task.taskId, task.params));
+        }
+      }
+    }
+  }
+
+  async fetch(request: Request): Promise<Response> {
+    // CRITICAL: Check for stuck tasks on every wake-up
+    await this.recoverStuckTasks();
+    return this.app.fetch(request);
+  }
+
+  async alarm() {
+    await this.scheduler.alarm();
+    // CRITICAL: Check again after alarm processing
+    await this.recoverStuckTasks();
+  }
+
+  private async recoverStuckTasks() {
+    const LOOP_TASKS = ['mining-loop', 'game-state'];
+    const tasks = await this.scheduler.getTasks();
+    const now = Date.now();
+    
+    for (const task of tasks) {
+      if (!LOOP_TASKS.includes(task.taskName)) continue;
+      
+      // Recover failed/completed
+      if (task.status === 'failed' || task.status === 'completed') {
+        await this.scheduler.checkpoint(task.taskId, '_recovered', true);
+      }
+      
+      // Reschedule if stuck (scheduled >1min ago)
+      if (task.status === 'running' && task.scheduledAt > 0 && now > task.scheduledAt + 60000) {
+        const params = task.params;
+        await this.scheduler.schedule(now + 100, task.taskId, task.taskName, params);
       }
     }
   }
 }
 ```
+
+**Why This Matters**: Without recovery checks, tasks scheduled for "5 seconds from now" will be stuck if the DO hibernates for hours. The alarm processes overdue tasks, but they may not reschedule correctly. Recovery checks ensure they resume properly.
 
 ## API
 
@@ -135,6 +198,7 @@ private async resumeLoopTasks() {
 - `clearAll()` — Delete all tasks, returns count
 - `getHandler(taskName)` — Get registered handler by name (for manual re-execution)
 - `alarm()` — Call from DO's alarm handler
+- `recoverStuckTasks(taskNames?)` — Recover overdue tasks after hibernation (call in `fetch()` and `alarm()`)
 
 ## Design
 

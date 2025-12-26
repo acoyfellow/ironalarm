@@ -12,6 +12,7 @@ export class TaskSchedulerDO extends DurableObject {
   private scheduler!: ReliableScheduler;
   private app: Hono;
   private runningEffects: Set<string> = new Set(); // Track which tasks have active Effects
+  private broadcastQueue: ReturnType<typeof setTimeout> | null = null;
 
   constructor(ctx: any, env: Env) {
     super(ctx, env);
@@ -278,8 +279,14 @@ export class TaskSchedulerDO extends DurableObject {
         const miningLoop = Effect.gen(function* () {
           // Check if task is paused or cancelled before processing
           const task = yield* Effect.promise(() => sched.getTask(taskId));
-          if (!task || task.status === "paused" || task.status === "failed") {
+          if (!task || task.status === "paused") {
             return false; // Don't reschedule if cancelled/paused
+          }
+
+          // Recover from failed or completed state
+          if (task.status === "failed" || task.status === "completed") {
+            // Use checkpoint to recover - it will set status back to "running"
+            yield* Effect.promise(() => sched.checkpoint(taskId, "_recovered", true));
           }
 
           // Get or initialize cycle counter
@@ -291,30 +298,10 @@ export class TaskSchedulerDO extends DurableObject {
           const yieldMultiplier = 1 + Math.log10(cycle + 1);
           const actualYield = Math.floor(baseYield * yieldMultiplier);
 
-          // Deposit resources to global state
+          // Deposit resources to global state - ensure it's healthy first
           const globalTaskId = `mission4-global-state`;
+          yield* Effect.promise(() => doInstance.ensureGlobalStateHealthy("mission4"));
           let globalTask = yield* Effect.promise(() => sched.getTask(globalTaskId));
-
-          // Recreate global state if missing, completed, or failed
-          if (!globalTask || globalTask.status === "completed" || globalTask.status === "failed") {
-            const savedResources = globalTask?.progress?.resources;
-            if (globalTask) {
-              yield* Effect.promise(() => sched.cancelTask(globalTaskId));
-              yield* Effect.promise(() => new Promise<void>((r) => setTimeout(r, 100)));
-            }
-            yield* Effect.promise(() =>
-              sched.runNow(globalTaskId, "global-state", { namespace: "mission4" }, { maxRetries: Infinity })
-            );
-            yield* Effect.promise(() => new Promise<void>((r) => setTimeout(r, 200)));
-            globalTask = yield* Effect.promise(() => sched.getTask(globalTaskId));
-            // Restore resources if they existed
-            if (savedResources !== undefined && globalTask) {
-              const resourcesToRestore = typeof savedResources === "number"
-                ? { copper: savedResources }
-                : (savedResources as Record<string, number>);
-              yield* Effect.promise(() => sched.checkpoint(globalTaskId, "resources", resourcesToRestore));
-            }
-          }
 
           if (globalTask) {
             // Use transaction to prevent race conditions when multiple miners update simultaneously
@@ -373,7 +360,8 @@ export class TaskSchedulerDO extends DurableObject {
             return Effect.gen(function* () {
               const task = yield* Effect.promise(() => sched.getTask(taskId));
               // Only reschedule if task is still valid (not cancelled/paused)
-              return task && task.status !== "paused" && task.status !== "failed";
+              // Note: failed/completed tasks will be recovered above, so we allow them
+              return task && task.status !== "paused";
             });
           });
 
@@ -414,29 +402,10 @@ export class TaskSchedulerDO extends DurableObject {
           // Cancel the miner task
           yield* Effect.promise(() => sched.cancelTask(taskIdToCancel));
 
-          // Add copper to global state
+          // Add copper to global state - ensure it's healthy first
           const globalTaskId = `mission4-global-state`;
+          yield* Effect.promise(() => doInstance.ensureGlobalStateHealthy("mission4"));
           let globalTask = yield* Effect.promise(() => sched.getTask(globalTaskId));
-
-          // Ensure global state exists
-          if (!globalTask || globalTask.status === "completed" || globalTask.status === "failed") {
-            const savedResources = globalTask?.progress?.resources;
-            if (globalTask) {
-              yield* Effect.promise(() => sched.cancelTask(globalTaskId));
-              yield* Effect.promise(() => new Promise<void>((r) => setTimeout(r, 100)));
-            }
-            yield* Effect.promise(() =>
-              sched.runNow(globalTaskId, "global-state", { namespace: "mission4" }, { maxRetries: Infinity })
-            );
-            yield* Effect.promise(() => new Promise<void>((r) => setTimeout(r, 200)));
-            globalTask = yield* Effect.promise(() => sched.getTask(globalTaskId));
-            if (savedResources !== undefined && globalTask) {
-              const resourcesToRestore = typeof savedResources === "number"
-                ? { copper: savedResources }
-                : (savedResources as Record<string, number>);
-              yield* Effect.promise(() => sched.checkpoint(globalTaskId, "resources", resourcesToRestore));
-            }
-          }
 
           if (globalTask) {
             // Use transaction to prevent race conditions
@@ -494,7 +463,13 @@ export class TaskSchedulerDO extends DurableObject {
 
           // Check if task is still valid
           const task = yield* Effect.promise(() => sched.getTask(taskId));
-          if (!task || task.status === "failed") return;
+          if (!task) return;
+
+          // Recover from failed or completed state
+          if (task.status === "failed" || task.status === "completed") {
+            // Use checkpoint to recover - it will set status back to "running"
+            yield* Effect.promise(() => sched.checkpoint(taskId, "_recovered", true));
+          }
 
           // Clear completed flag if somehow set
           if (task.progress?.completed === true) {
@@ -518,6 +493,9 @@ export class TaskSchedulerDO extends DurableObject {
           const p = params as Record<string, any>;
           const cost = (p.cost || 0) as number;
           const globalTaskId = "mission4-global-state";
+
+          // Ensure global state is healthy first
+          yield* Effect.promise(() => doInstance.ensureGlobalStateHealthy("mission4"));
 
           // Get global state
           const globalTask = yield* Effect.promise(() => sched.getTask(globalTaskId));
@@ -581,21 +559,69 @@ export class TaskSchedulerDO extends DurableObject {
   private async resumeRunningTasks() {
     const RESUMABLE_TASKS = ["mine-resource-loop", "global-state"];
     const tasks = await this.scheduler.getTasks();
+    const now = Date.now();
+
     for (const task of tasks) {
       if (
         !this.runningEffects.has(task.taskId) &&
         RESUMABLE_TASKS.includes(task.taskName) &&
-        (task.status === "running" || task.status === "failed")
+        (task.status === "running" || task.status === "failed" || task.status === "completed" || task.status === "pending")
       ) {
-        // Recover failed tasks by checkpointing them (checkpoint method now auto-recovers failed tasks)
-        if (task.status === "failed") {
+        // Recover failed/completed tasks by checkpointing them (checkpoint method now auto-recovers failed tasks)
+        if (task.status === "failed" || task.status === "completed") {
           // Use checkpoint to recover - it will automatically set status back to "running"
           await this.scheduler.checkpoint(task.taskId, "_recovered", true);
         }
+
+        // For miners: if scheduled time is way in the past, reschedule for immediate execution
+        if (task.taskName === "mine-resource-loop") {
+          const scheduledAt = task.scheduledAt || 0;
+          if (scheduledAt > 0 && now > scheduledAt + 60000) {
+            // Task is way overdue - reschedule for immediate execution
+            const params = task.params as Record<string, any>;
+            await this.scheduler.schedule(now + 100, task.taskId, "mine-resource-loop", params);
+            continue; // Don't run handler directly, let alarm process it
+          } else if (scheduledAt === 0) {
+            // No scheduled time - reschedule it
+            const params = task.params as Record<string, any>;
+            const timeMs = (params.timeMs || 4000) as number;
+            await this.scheduler.schedule(now + 100, task.taskId, "mine-resource-loop", params);
+            continue;
+          }
+        }
+
         this.runningEffects.add(task.taskId);
         this.runTaskHandler(task.taskId, task.taskName, task.params);
       }
     }
+  }
+
+  // Ensure global-state task exists and is healthy - call this from multiple places
+  async ensureGlobalStateHealthy(namespace: string = "mission4") {
+    const globalTaskId = `${namespace}-global-state`;
+    let globalTask = await this.scheduler.getTask(globalTaskId);
+
+    // Recreate if missing, completed, or failed - preserve resources
+    if (!globalTask || globalTask.status === "completed" || globalTask.status === "failed") {
+      const savedResources = globalTask?.progress?.resources;
+      if (globalTask) {
+        await this.scheduler.cancelTask(globalTaskId);
+        await new Promise((r) => setTimeout(r, 100));
+      }
+      await this.scheduler.runNow(globalTaskId, "global-state", { namespace }, { maxRetries: Infinity });
+      await new Promise((r) => setTimeout(r, 200));
+      globalTask = await this.scheduler.getTask(globalTaskId);
+
+      // Restore resources if they existed
+      if (savedResources !== undefined && globalTask) {
+        const resourcesToRestore = typeof savedResources === "number"
+          ? { copper: savedResources }
+          : (savedResources as Record<string, number>);
+        await this.scheduler.checkpoint(globalTaskId, "resources", resourcesToRestore);
+      }
+    }
+
+    return globalTask;
   }
 
   // Run a task handler and track it
@@ -699,27 +725,13 @@ export class TaskSchedulerDO extends DurableObject {
       // Handle cost deduction for mine-resource-loop tasks
       if (params.taskName === "mine-resource-loop" && params.cost !== undefined && params.cost > 0) {
         const globalTaskId = namespace ? `${namespace}-global-state` : "global-state";
-        let globalTask = await this.scheduler.getTask(globalTaskId);
-
-        // Recreate global state if completed or failed, preserving resources
-        if (globalTask && (globalTask.status === "completed" || globalTask.status === "failed")) {
-          const oldResources = ((await this.scheduler.getCheckpoint(globalTaskId, "resources")) || { copper: 0 }) as Record<string, number>;
-          await this.scheduler.cancelTask(globalTaskId);
-          await this.scheduler.runNow(globalTaskId, "global-state", { namespace }, { maxRetries: Infinity });
-          await new Promise((r) => setTimeout(r, 100));
-          await this.scheduler.checkpoint(globalTaskId, "resources", oldResources);
-          globalTask = await this.scheduler.getTask(globalTaskId);
-        }
-
-        if (!globalTask) {
-          await this.scheduler.runNow(globalTaskId, "global-state", { namespace }, { maxRetries: Infinity });
-          await new Promise((r) => setTimeout(r, 100));
-          globalTask = await this.scheduler.getTask(globalTaskId);
-        }
+        // Ensure global state is healthy before checking resources
+        await this.ensureGlobalStateHealthy(namespace || "mission4");
+        const globalTask = await this.scheduler.getTask(globalTaskId);
 
         if (globalTask) {
           // Use transaction to prevent race conditions (double-spending)
-          const updated = await this.scheduler.storage.transaction(async (txn: any) => {
+          const updated = await this.ctx.storage.transaction(async (txn: any) => {
             const task = await txn.get(`task:${globalTaskId}`) as Task | undefined;
             if (!task) return false;
 
@@ -793,6 +805,16 @@ export class TaskSchedulerDO extends DurableObject {
     // Get all tasks (optionally filtered by namespace)
     this.app.get("/tasks", async (c) => {
       const namespace = c.req.query("namespace");
+
+      // Ensure global-state is healthy when fetching tasks (recovery check)
+      if (namespace) {
+        try {
+          await this.ensureGlobalStateHealthy(namespace);
+        } catch (error) {
+          console.error("[GET /tasks] Failed to ensure global-state healthy:", error);
+        }
+      }
+
       const tasks = await this.scheduler.getTasks();
       const filteredTasks = namespace
         ? tasks.filter((t) => t.taskId.startsWith(`${namespace}-`))
@@ -919,6 +941,13 @@ export class TaskSchedulerDO extends DurableObject {
       // Accept the WebSocket connection using Durable Object's hibernation API
       this.ctx.acceptWebSocket(server);
 
+      // Ensure global-state is healthy before sending initial state
+      try {
+        await this.ensureGlobalStateHealthy("mission4");
+      } catch (error) {
+        console.error("[WS] Failed to ensure global-state healthy:", error);
+      }
+
       // Send initial state
       const tasks = await this.scheduler.getTasks();
       server.send(JSON.stringify({
@@ -934,6 +963,18 @@ export class TaskSchedulerDO extends DurableObject {
   }
 
   async fetch(request: Request): Promise<Response> {
+    // CRITICAL: Recover stuck tasks on every wake-up (handles hibernation recovery)
+    // This ensures miners resume even if DO hibernated for hours/days
+    try {
+      await this.ensureGlobalStateHealthy("mission4");
+      const recovered = await this.scheduler.recoverStuckTasks(["mine-resource-loop", "global-state"]);
+      if (recovered > 0) {
+        console.log(`[fetch] Recovered ${recovered} stuck task(s) after hibernation`);
+      }
+    } catch (error) {
+      console.error("[fetch] Failed recovery:", error);
+    }
+
     return this.app.fetch(request);
   }
 
@@ -953,7 +994,32 @@ export class TaskSchedulerDO extends DurableObject {
   }
 
   async alarm() {
+    // CRITICAL: Recover stuck tasks before alarm processing
+    try {
+      const recovered = await this.scheduler.recoverStuckTasks(["mine-resource-loop", "global-state"]);
+      if (recovered > 0) {
+        console.log(`[alarm] Recovered ${recovered} stuck task(s) before processing`);
+      }
+    } catch (error) {
+      console.error("[alarm] Failed recovery:", error);
+    }
+
     await this.scheduler.alarm();
+
+    // Ensure global-state is healthy after alarm processing
+    try {
+      await this.ensureGlobalStateHealthy("mission4");
+    } catch (error) {
+      console.error("[alarm] Failed to ensure global-state healthy:", error);
+    }
+
+    // Recover again after alarm (in case alarm processing created new stuck tasks)
+    try {
+      await this.scheduler.recoverStuckTasks(["mine-resource-loop", "global-state"]);
+    } catch (error) {
+      console.error("[alarm] Failed recovery (post-alarm):", error);
+    }
+
     // Broadcast after alarm processing - use cached tasks if available
     const cachedTasks = this.scheduler.getCachedTasks();
     const tasks = cachedTasks.length > 0 ? cachedTasks : await this.scheduler.getTasks();
@@ -961,6 +1027,46 @@ export class TaskSchedulerDO extends DurableObject {
       type: "tasks",
       data: tasks.map((t) => this.formatTaskForUI(t)),
     });
+  }
+
+  // Health check: ensure all miners are running/rescheduled
+  // This runs periodically to catch miners that stopped after long evictions
+  private async healthCheckMiners() {
+    const tasks = await this.scheduler.getTasks();
+    const miners = tasks.filter(
+      (t) => t.taskName === "mine-resource-loop" && t.taskId.startsWith("mission4-")
+    );
+
+    for (const miner of miners) {
+      // If miner is in a bad state, recover it
+      if (miner.status === "failed" || miner.status === "completed") {
+        if (!this.runningEffects.has(miner.taskId)) {
+          console.log(`[healthCheck] Recovering miner ${miner.taskId} from ${miner.status}`);
+          await this.scheduler.checkpoint(miner.taskId, "_recovered", true);
+          this.runningEffects.add(miner.taskId);
+          this.runTaskHandler(miner.taskId, miner.taskName, miner.params);
+        }
+      }
+      // If miner is running but scheduled time is way in the past (hibernated), reschedule it immediately
+      else if (miner.status === "running" || miner.status === "pending") {
+        const scheduledAt = miner.scheduledAt || 0;
+        const now = Date.now();
+        const params = miner.params as Record<string, any>;
+        const timeMs = (params.timeMs || 4000) as number;
+
+        // If scheduled time is more than 1 minute in the past, it's stuck - reschedule immediately
+        if (scheduledAt > 0 && now > scheduledAt + 60000) {
+          console.log(`[healthCheck] Rescheduling stuck miner ${miner.taskId} (scheduled ${Math.round((now - scheduledAt) / 1000)}s ago)`);
+          // Reschedule for NOW (or very soon) so it runs immediately
+          await this.scheduler.schedule(now + 100, miner.taskId, "mine-resource-loop", params);
+        }
+        // If miner has no scheduled time but should be running, reschedule it
+        else if (scheduledAt === 0 && miner.status === "running") {
+          console.log(`[healthCheck] Miner ${miner.taskId} has no scheduled time, rescheduling`);
+          await this.scheduler.schedule(now + 100, miner.taskId, "mine-resource-loop", params);
+        }
+      }
+    }
   }
 
   private formatTaskForUI(task: Task): any {

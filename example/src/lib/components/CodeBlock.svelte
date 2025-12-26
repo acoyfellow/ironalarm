@@ -54,6 +54,7 @@
     <div
       class="bg-zinc-950 rounded-xl border border-zinc-800 overflow-hidden"
       class:max-h-[500px]={code.split("\n").length > 20}
+      class:overflow-y-auto={code.split("\n").length > 20}
     >
       <div class="overflow-x-auto">
         {@html highlighted}
