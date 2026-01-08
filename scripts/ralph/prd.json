@@ -145,28 +145,28 @@
        "test_file": "test/retry.test.ts",
        "verification": "bun run test (retry.test.ts passes), typecheck passes"
      },
-    {
-      "id": "006",
-      "title": "Replace Promise.all with Effect.forEach({ concurrency })",
-      "status": "pending",
-      "priority": "P1",
-      "description": "Use Effect's Fiber concurrency instead of Promise.all",
-      "acceptance_criteria": [
-        "Promise.all replaced with Effect.forEach",
-        "Concurrency limit parameter respected",
-        "Fibers interrupt properly on error",
-        "maxConcurrentTasks option still works",
-        "Tests verify concurrent execution and interrupt handling"
-      ],
-      "dependencies": [
-        "004"
-      ],
-      "files_to_modify": [
-        "src/index.ts"
-      ],
-      "test_file": "test/concurrency.test.ts",
-      "verification": "bun run test (concurrency.test.ts passes), typecheck passes"
-    },
+     {
+       "id": "006",
+       "title": "Replace Promise.all with Effect.forEach({ concurrency })",
+       "status": "completed",
+       "priority": "P1",
+       "description": "Use Effect's Fiber concurrency instead of Promise.all",
+       "acceptance_criteria": [
+         "Promise.all replaced with Effect.forEach",
+         "Concurrency limit parameter respected",
+         "Fibers interrupt properly on error",
+         "maxConcurrentTasks option still works",
+         "Tests verify concurrent execution and interrupt handling"
+       ],
+       "dependencies": [
+         "004"
+       ],
+       "files_to_modify": [
+         "src/index.ts"
+       ],
+       "test_file": "test/concurrency.test.ts",
+       "verification": "bun run test (concurrency.test.ts passes), typecheck passes"
+     },
     {
       "id": "007",
       "title": "Replace console.error with Effect.log* for structured logging",

@@ -436,9 +436,6 @@ export class ReliableScheduler {
                 })
               );
               recovered++;
-            }
-          }
-        }
       }
 
       return recovered;
@@ -689,10 +686,10 @@ export class ReliableScheduler {
       console.log(`[_alarm] Processing ${recoveryTasks.length} recovery tasks, ${normalTasks.length} normal tasks`);
 
       // Process recovery tasks first (they're more critical)
-      yield* Effect.promise(() => this._processTasksWithConcurrencyLimit(recoveryTasks));
+      yield* Effect.forEach(recoveryTasks, (taskId) => this._processTaskEffect(taskId), { concurrency: this.maxConcurrentTasks });
 
       // Then process normal tasks
-      yield* Effect.promise(() => this._processTasksWithConcurrencyLimit(normalTasks));
+      yield* Effect.forEach(normalTasks, (taskId) => this._processTaskEffect(taskId), { concurrency: this.maxConcurrentTasks });
 
       yield* Effect.promise(() =>
         this.storage.transaction(async (txn: any) => {
@@ -703,31 +700,11 @@ export class ReliableScheduler {
     });
   }
 
-  // Process tasks with concurrency limit to prevent CPU exhaustion
-  private async _processTasksWithConcurrencyLimit(taskIds: string[]): Promise<void> {
-    if (taskIds.length === 0) return;
-
-    console.log(`[_processTasksWithConcurrencyLimit] Processing ${taskIds.length} tasks in batches of ${this.maxConcurrentTasks}`);
-
-    // Process tasks in batches to respect concurrency limit
-    for (let i = 0; i < taskIds.length; i += this.maxConcurrentTasks) {
-      const batch = taskIds.slice(i, i + this.maxConcurrentTasks);
-      console.log(`[_processTasksWithConcurrencyLimit] Processing batch ${Math.floor(i / this.maxConcurrentTasks) + 1}: ${batch.length} tasks`);
-
-      const batchPromises = batch.map(taskId =>
-        this.processTask(taskId).catch((error) => {
-          console.error(`[scheduler] Failed to process task ${taskId}:`, error);
-          // Task will be marked for recovery on next check if it fails
-        })
-      );
-
-      // Wait for entire batch to complete before starting next batch
-      await Promise.all(batchPromises);
-      console.log(`[_processTasksWithConcurrencyLimit] Batch ${Math.floor(i / this.maxConcurrentTasks) + 1} completed`);
-    }
+  private _processTaskEffect(taskId: string): Effect.Effect<void, never, never> {
+    return Effect.promise(() => this._processTaskAsync(taskId));
   }
 
-  private async processTask(taskId: string): Promise<void> {
+  private async _processTaskAsync(taskId: string): Promise<void> {
     const startTime = Date.now();
     const task = await this.storage.get<Task>(`task:${taskId}`);
     if (!task) {
@@ -788,7 +765,9 @@ export class ReliableScheduler {
       if (duration > 1000) {
         console.warn(`[processTask] Task ${taskId} (${task.taskName}) took ${duration}ms`);
       }
-    }
+
+      return recovered;
+    });
   }
 
   private _updateTask(

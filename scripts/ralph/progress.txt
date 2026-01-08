@@ -27,7 +27,7 @@
 | 003 | Refactor TaskHandler for DI | pending | test/handler.test.ts |
 | 004 | Convert APIs to Effect types | completed | test/effect-api.test.ts |
 | 005 | Use Schedule.exponential for retry | completed | test/retry.test.ts |
-| 006 | Use Effect.forEach for concurrency | pending | test/concurrency.test.ts |
+| 006 | Use Effect.forEach for concurrency | completed | test/concurrency.test.ts |
 | 007 | Use Effect.log for observability | pending | test/logging.test.ts |
 
 ---
@@ -89,3 +89,11 @@ await scheduler.schedule(at, id, name, params).pipe(runPromise);
 - retryCount removed from Task interface (kept for compatibility)
 - Handlers can now fail and be retried automatically with exponential backoff
 - Effect.provide used to provide SchedulerService context to handlers
+
+## Learnings from Story 006
+
+- Replaced Promise.all with Effect.forEach for concurrent task processing
+- Used Effect.forEach with { concurrency: this.maxConcurrentTasks } to respect limits
+- Created _processTaskEffect wrapper to convert async task processing to Effect
+- Alarm processing now uses Effect.forEach for fiber-based concurrency
+- Removed manual batching logic in favor of Effect's built-in concurrency control
