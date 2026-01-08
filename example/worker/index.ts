@@ -561,7 +561,7 @@ export class TaskSchedulerDO extends DurableObject {
   // Also recover failed tasks that should be running
   private async resumeRunningTasks() {
     const RESUMABLE_TASKS = ["mine-resource-loop", "global-state"];
-    const tasks = await this.scheduler.getTasks();
+    const tasks = await Effect.runPromise(this.scheduler.getTasks());
     const now = Date.now();
 
     for (const task of tasks) {
@@ -586,7 +586,7 @@ export class TaskSchedulerDO extends DurableObject {
             console.log(`[resumeRunningTasks] Resuming stuck miner ${task.taskId}: ${reason}, rescheduling for immediate execution`);
             const params = task.params as Record<string, any>;
             // Schedule for immediate execution (now - 1ms so it's due immediately)
-            await this.scheduler.schedule(now - 1, task.taskId, "mine-resource-loop", params);
+            await Effect.runPromise(this.scheduler.schedule(now - 1, task.taskId, "mine-resource-loop", params));
             continue; // Don't run handler directly, let alarm process it
           }
         }
@@ -600,16 +600,16 @@ export class TaskSchedulerDO extends DurableObject {
   // Ensure global-state task exists and is healthy - call this from multiple places
   async ensureGlobalStateHealthy(namespace: string = "mission4") {
     const globalTaskId = `${namespace}-global-state`;
-    let globalTask = await this.scheduler.getTask(globalTaskId);
+    let globalTask = await Effect.runPromise(this.scheduler.getTask(globalTaskId));
 
     // Recreate if missing, completed, or failed - preserve resources
     if (!globalTask || globalTask.status === "completed" || globalTask.status === "failed") {
       const savedResources = globalTask?.progress?.resources;
       if (globalTask) {
-        await this.scheduler.cancelTask(globalTaskId);
+        await Effect.runPromise(this.scheduler.cancelTask(globalTaskId));
       }
-      await this.scheduler.runNow(globalTaskId, "global-state", { namespace }, { maxRetries: Infinity });
-      globalTask = await this.scheduler.getTask(globalTaskId);
+      await Effect.runPromise(this.scheduler.runNow(globalTaskId, "global-state", { namespace }, { maxRetries: Infinity }));
+      globalTask = await Effect.runPromise(this.scheduler.getTask(globalTaskId));
 
       // Restore resources if they existed
       if (savedResources !== undefined && globalTask) {
@@ -685,7 +685,7 @@ export class TaskSchedulerDO extends DurableObject {
   // Lightweight broadcast for resources updates only
   async broadcastResources(namespace: string = "mission4") {
     const globalTaskId = `${namespace}-global-state`;
-    const rawResources = await this.scheduler.getCheckpoint(globalTaskId, "resources");
+    const rawResources = await Effect.runPromise(this.scheduler.getCheckpoint(globalTaskId, "resources"));
 
     let resources: Record<string, number>;
     if (rawResources === undefined || rawResources === null) {
@@ -696,7 +696,7 @@ export class TaskSchedulerDO extends DurableObject {
       resources = rawResources as Record<string, number>;
     }
 
-    const speedMultiplier = (await this.scheduler.getCheckpoint(globalTaskId, "speedMultiplier")) as number || 1;
+    const speedMultiplier = (await Effect.runPromise(this.scheduler.getCheckpoint(globalTaskId, "speedMultiplier"))) as number || 1;
 
     console.log(`[broadcastResources] Sending resources:`, resources);
     this.broadcast({
@@ -978,7 +978,7 @@ export class TaskSchedulerDO extends DurableObject {
       }
 
       await this.ensureGlobalStateHealthy("mission4");
-      const recovered = await this.scheduler.recoverStuckTasks(["mine-resource-loop", "global-state"]);
+      const recovered = await Effect.runPromise(this.scheduler.recoverStuckTasks(["mine-resource-loop", "global-state"]));
       if (recovered > 0) {
         console.log(`[fetch] Recovered ${recovered} stuck task(s) after hibernation, triggering alarm to process them`);
         // Trigger alarm immediately to process recovered tasks
@@ -1015,7 +1015,7 @@ export class TaskSchedulerDO extends DurableObject {
       const minersBefore = tasksBefore.filter(t => t.taskName === "mine-resource-loop" && t.taskId.startsWith("mission4-"));
       console.log(`[alarm] Processing alarm: ${minersBefore.length} miners before recovery`);
 
-      const recovered = await this.scheduler.recoverStuckTasks(["mine-resource-loop", "global-state"]);
+      const recovered = await Effect.runPromise(this.scheduler.recoverStuckTasks(["mine-resource-loop", "global-state"]));
       if (recovered > 0) {
         console.log(`[alarm] Recovered ${recovered} stuck task(s) before processing`);
       }
@@ -1023,7 +1023,7 @@ export class TaskSchedulerDO extends DurableObject {
       console.error("[alarm] Failed recovery:", error);
     }
 
-    await this.scheduler.alarm();
+        await Effect.runPromise(this.scheduler.alarm());
 
     // Ensure global-state is healthy after alarm processing
     try {
@@ -1064,7 +1064,7 @@ export class TaskSchedulerDO extends DurableObject {
   // Health check: ensure all miners are running/rescheduled
   // This runs periodically to catch miners that stopped after long evictions
   private async healthCheckMiners() {
-    const tasks = await this.scheduler.getTasks();
+    const tasks = await Effect.runPromise(this.scheduler.getTasks());
     const miners = tasks.filter(
       (t) => t.taskName === "mine-resource-loop" && t.taskId.startsWith("mission4-")
     );
