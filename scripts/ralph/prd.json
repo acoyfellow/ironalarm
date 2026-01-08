@@ -9,21 +9,29 @@
       {
         "tag": "HandlerMissing",
         "message": "No handler registered for task name",
-        "fields": { "taskName": "string" },
+        "fields": {
+          "taskName": "string"
+        },
         "when": "schedule() or runNow() called with unregistered taskName",
         "user_action": "Register handler via scheduler.register(name, handler) before scheduling"
       },
       {
         "tag": "TaskNotFound",
         "message": "Task does not exist",
-        "fields": { "taskId": "string" },
+        "fields": {
+          "taskId": "string"
+        },
         "when": "Operation on non-existent task",
         "user_action": "Verify taskId exists before operation"
       },
       {
         "tag": "TaskConflict",
         "message": "Task operation conflicts with current state",
-        "fields": { "taskId": "string", "currentStatus": "string", "attemptedOperation": "string" },
+        "fields": {
+          "taskId": "string",
+          "currentStatus": "string",
+          "attemptedOperation": "string"
+        },
         "when": "Pausing running task, resuming non-paused task, etc.",
         "user_action": "Check task status before operation"
       }
@@ -33,7 +41,7 @@
     {
       "id": "001",
       "title": "Design and implement tagged errors",
-      "status": "pending",
+      "status": "completed",
       "priority": "P0",
       "description": "Define all error types as tagged errors. All errors must be raiseable via yield* in Effect context.",
       "acceptance_criteria": [
@@ -43,7 +51,9 @@
         "Tests verify error types and messages"
       ],
       "dependencies": [],
-      "files_to_modify": ["src/index.ts"],
+      "files_to_modify": [
+        "src/index.ts"
+      ],
       "test_file": "test/errors.test.ts",
       "verification": "bun run test (errors.test.ts passes), typecheck passes"
     },
@@ -59,8 +69,12 @@
         "Tests can mock SchedulerService via Layer.succeed",
         "Live implementation uses actual scheduler"
       ],
-      "dependencies": ["001"],
-      "files_to_modify": ["src/index.ts"],
+      "dependencies": [
+        "001"
+      ],
+      "files_to_modify": [
+        "src/index.ts"
+      ],
       "test_file": "test/context.test.ts",
       "verification": "bun run test (context.test.ts passes), typecheck passes"
     },
@@ -76,8 +90,12 @@
         "Handler can access service via Effect.service(SchedulerService)",
         "Tests mock handler and verify service access"
       ],
-      "dependencies": ["002"],
-      "files_to_modify": ["src/index.ts"],
+      "dependencies": [
+        "002"
+      ],
+      "files_to_modify": [
+        "src/index.ts"
+      ],
       "test_file": "test/handler.test.ts",
       "verification": "bun run test (handler.test.ts passes), typecheck passes"
     },
@@ -96,8 +114,12 @@
         "getTasks() returns Effect.Effect<Task[], never, SchedulerService>",
         "Tests verify Effect types and error channels"
       ],
-      "dependencies": ["003"],
-      "files_to_modify": ["src/index.ts"],
+      "dependencies": [
+        "003"
+      ],
+      "files_to_modify": [
+        "src/index.ts"
+      ],
       "test_file": "test/effect-api.test.ts",
       "verification": "bun run test (effect-api.test.ts passes), typecheck passes"
     },
@@ -114,8 +136,12 @@
         "Retry uses exponential backoff with jitter",
         "Tests verify retry behavior (fail 2x, succeed on 3rd attempt)"
       ],
-      "dependencies": ["004"],
-      "files_to_modify": ["src/index.ts"],
+      "dependencies": [
+        "004"
+      ],
+      "files_to_modify": [
+        "src/index.ts"
+      ],
       "test_file": "test/retry.test.ts",
       "verification": "bun run test (retry.test.ts passes), typecheck passes"
     },
@@ -132,8 +158,12 @@
         "maxConcurrentTasks option still works",
         "Tests verify concurrent execution and interrupt handling"
       ],
-      "dependencies": ["004"],
-      "files_to_modify": ["src/index.ts"],
+      "dependencies": [
+        "004"
+      ],
+      "files_to_modify": [
+        "src/index.ts"
+      ],
       "test_file": "test/concurrency.test.ts",
       "verification": "bun run test (concurrency.test.ts passes), typecheck passes"
     },
@@ -150,8 +180,12 @@
         "Logging still outputs to console via runtime",
         "Tests verify log output structure"
       ],
-      "dependencies": ["004"],
-      "files_to_modify": ["src/index.ts"],
+      "dependencies": [
+        "004"
+      ],
+      "files_to_modify": [
+        "src/index.ts"
+      ],
       "test_file": "test/logging.test.ts",
       "verification": "bun run test (logging.test.ts passes), typecheck passes"
     }
