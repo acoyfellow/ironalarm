@@ -1,5 +1,6 @@
 import { env, runInDurableObject } from "cloudflare:test";
 import { describe, it, expect, beforeEach } from "vitest";
+import { Effect } from "effect";
 
 describe("ReliableScheduler Core API", () => {
   // Get a fresh DO instance for each test
@@ -11,15 +12,19 @@ describe("ReliableScheduler Core API", () => {
   describe("runNow", () => {
     it("creates a task that starts running", async () => {
       const stub = getScheduler();
-      await stub.runNow("task-1", "test-task", { foo: "bar" });
+      await runInDurableObject(stub, async (instance) => {
+        instance.scheduler.register("test-task", (taskId, params) => Effect.succeed(void 0));
 
-      const task = await stub.getTask("task-1");
-      expect(task).toBeDefined();
-      expect(task?.taskId).toBe("task-1");
-      expect(task?.taskName).toBe("test-task");
-      expect(task?.params).toEqual({ foo: "bar" });
-      // Task starts running but may complete quickly
-      expect(["running", "completed"]).toContain(task?.status);
+        await Effect.runPromise(instance.scheduler.runNow("task-1", "test-task", { foo: "bar" }));
+
+        const task = await Effect.runPromise(instance.scheduler.getTask("task-1"));
+        expect(task).toBeDefined();
+        expect(task?.taskId).toBe("task-1");
+        expect(task?.taskName).toBe("test-task");
+        expect(task?.params).toEqual({ foo: "bar" });
+        // Task starts running but may complete quickly
+        expect(["running", "completed"]).toContain(task?.status);
+      });
     });
 
     it("sets default priority to 1", async () => {

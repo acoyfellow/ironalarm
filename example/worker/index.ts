@@ -1,5 +1,5 @@
 import { DurableObject } from "cloudflare:workers";
-import { ReliableScheduler } from "../../src/index";
+import { ReliableScheduler, SchedulerService } from "../../src/index";
 import { Effect } from "effect";
 import type { Task } from "../../src/index";
 import { Hono } from "hono";
@@ -7,6 +7,15 @@ import { Hono } from "hono";
 type Env = {
   TASK_SCHEDULER_DO: DurableObjectNamespace<TaskSchedulerDO>;
 };
+
+// Simple hash function for DO sharding
+function getShardId(key: string, numShards: number = 3): string {
+  let hash = 0;
+  for (let i = 0; i < key.length; i++) {
+    hash = ((hash << 5) - hash + key.charCodeAt(i)) & 0xffffffff;
+  }
+  return `scheduler-${Math.abs(hash) % numShards}`;
+}
 
 export class TaskSchedulerDO extends DurableObject {
   private scheduler!: ReliableScheduler;
@@ -27,8 +36,9 @@ export class TaskSchedulerDO extends DurableObject {
     // Register agent-loop task using runSteps helper
     this.scheduler.register(
       "agent-loop",
-      (sched: ReliableScheduler, taskId: string, params: unknown) =>
+      (taskId: string, params: unknown) =>
         Effect.gen(function* () {
+          const svc = yield* SchedulerService;
           const p = params as Record<string, any>;
           const complexity = (p.complexity || "demo") as string;
 
@@ -73,31 +83,29 @@ export class TaskSchedulerDO extends DurableObject {
           const steps = stepTemplates.slice(0, stepCount);
 
           // Use runSteps - library handles all the complexity
-          yield* Effect.promise(() =>
-            sched.runSteps(taskId, steps, {
-              stepDuration,
-              result: "Task finished successfully",
-              autoComplete: true, // Library auto-completes
-              onStep: async (stepName, stepIndex) => {
-                // Sub-steps for longer tasks - library handles pause checks & progress
-                const subSteps =
-                  complexity === "production"
-                    ? 5
-                    : complexity === "realistic"
-                      ? 3
-                      : 1;
+          yield* svc.runSteps(taskId, steps, {
+            stepDuration,
+            result: "Task finished successfully",
+            autoComplete: true, // Library auto-completes
+            onStep: async (stepName, stepIndex) => {
+              // Sub-steps for longer tasks - library handles pause checks & progress
+              const subSteps =
+                complexity === "production"
+                  ? 5
+                  : complexity === "realistic"
+                    ? 3
+                    : 1;
 
-                await sched.runSubSteps(
-                  taskId,
-                  stepName,
-                  stepIndex,
-                  steps.length,
-                  subSteps,
-                  stepDuration / subSteps
-                );
-              },
-            })
-          );
+              await Effect.runPromise(svc.runSubSteps(
+                taskId,
+                stepName,
+                stepIndex,
+                steps.length,
+                subSteps,
+                stepDuration / subSteps
+              ));
+            },
+          });
         })
     );
 
@@ -1121,21 +1129,21 @@ const workerApp = new Hono();
 
 workerApp.on(["GET", "POST"], "/task/*", async (c) => {
   const env = c.env as Env;
-  const id = env.TASK_SCHEDULER_DO.idFromName("scheduler");
+  const id = env.TASK_SCHEDULER_DO.idFromName(getShardId("scheduler"));
   const doInstance = env.TASK_SCHEDULER_DO.get(id);
   return await doInstance.fetch(c.req.raw);
 });
 
 workerApp.on(["GET", "POST"], "/tasks*", async (c) => {
   const env = c.env as Env;
-  const id = env.TASK_SCHEDULER_DO.idFromName("scheduler");
+  const id = env.TASK_SCHEDULER_DO.idFromName(getShardId("scheduler"));
   const doInstance = env.TASK_SCHEDULER_DO.get(id);
   return await doInstance.fetch(c.req.raw);
 });
 
 workerApp.get("/ws", async (c) => {
   const env = c.env as Env;
-  const id = env.TASK_SCHEDULER_DO.idFromName("scheduler");
+  const id = env.TASK_SCHEDULER_DO.idFromName(getShardId("scheduler"));
   const doInstance = env.TASK_SCHEDULER_DO.get(id);
   return await doInstance.fetch(c.req.raw);
 });

@@ -189,7 +189,7 @@ export class ReliableScheduler {
       );
 
       if (scheduledAt <= Date.now()) {
-        yield* Effect.promise(() => this.processTask(taskId));
+        yield* Effect.promise(() => this._processTaskAsync(taskId));
       }
     });
   }
@@ -241,7 +241,7 @@ export class ReliableScheduler {
       );
       this.invalidateCache();
 
-      void this.processTask(taskId);
+      void this._processTaskAsync(taskId);
     });
   }
 
@@ -424,7 +424,7 @@ export class ReliableScheduler {
             );
             if (existingTask) {
               const reason = scheduledAt === 0 ? "never scheduled" : `${Math.round((now - scheduledAt) / 1000)}s overdue`;
-              console.log(`[recoverStuckTasks] Recovering task ${task.taskId} (${task.taskName}): ${reason}, rescheduling for immediate execution`);
+              yield* Effect.log(`[recoverStuckTasks] Recovering task ${task.taskId} (${task.taskName}): ${reason}, rescheduling for immediate execution`);
               existingTask.scheduledAt = newScheduledAt;
               existingTask.status = "pending";
               yield* Effect.promise(() => this.storage.put(`task:${task.taskId}`, existingTask));
@@ -436,6 +436,9 @@ export class ReliableScheduler {
                 })
               );
               recovered++;
+            }
+          }
+        }
       }
 
       return recovered;
@@ -582,7 +585,7 @@ export class ReliableScheduler {
           })
         );
         // Actually resume execution
-        void this.processTask(taskId);
+        void this._processTaskAsync(taskId);
       }
 
       return updated;
@@ -708,33 +711,33 @@ export class ReliableScheduler {
     const startTime = Date.now();
     const task = await this.storage.get<Task>(`task:${taskId}`);
     if (!task) {
-    await Effect.runPromise(Effect.log(`[processTask] Task ${taskId} not found, skipping`));
-    return;
-  }
+      await Effect.runPromise(Effect.log(`[processTask] Task ${taskId} not found, skipping`));
+      return;
+    }
 
-  await Effect.runPromise(Effect.log(`[processTask] Processing task ${taskId} (${task.taskName}), status=${task.status}, scheduled=${task.scheduledAt}`));
+    await Effect.runPromise(Effect.log(`[processTask] Processing task ${taskId} (${task.taskName}), status=${task.status}, scheduled=${task.scheduledAt}`));
 
-  if (task.status === "paused") {
-    await Effect.runPromise(Effect.log(`[processTask] Task ${taskId} is paused, skipping`));
-    return;
-  }
+    if (task.status === "paused") {
+      await Effect.runPromise(Effect.log(`[processTask] Task ${taskId} is paused, skipping`));
+      return;
+    }
 
-  if (task.progress.completed) {
-    await Effect.runPromise(Effect.log(`[processTask] Task ${taskId} is completed, marking as completed`));
-    await this._updateTaskSync(taskId, (t) => {
-      t.status = "completed";
-      return true;
-    });
-    return;
-  }
+    if (task.progress.completed) {
+      await Effect.runPromise(Effect.log(`[processTask] Task ${taskId} is completed, marking as completed`));
+      await this._updateTaskSync(taskId, (t) => {
+        t.status = "completed";
+        return true;
+      });
+      return;
+    }
 
-  const handler = this.handlers.get(task.taskName);
-  if (!handler) {
-    await Effect.runPromise(Effect.logError(`[processTask] No handler for taskName "${task.taskName}"`));
-    return;
-  }
+    const handler = this.handlers.get(task.taskName);
+    if (!handler) {
+      await Effect.runPromise(Effect.logError(`[processTask] No handler for taskName "${task.taskName}"`));
+      return;
+    }
 
-  await Effect.runPromise(Effect.log(`[processTask] Running handler for task ${taskId} (${task.taskName})`));
+    await Effect.runPromise(Effect.log(`[processTask] Running handler for task ${taskId} (${task.taskName})`));
 
     // Mark task as running if not already
     const updated = await this._updateTaskSync(taskId, (t) => {
@@ -750,7 +753,7 @@ export class ReliableScheduler {
       const layer = this._createServiceLayer();
       const maxRetries = task.maxRetries ?? 3;
       const schedule = Schedule.exponential(Duration.millis(100));
-      const result = await Effect.runPromise((Effect.provide(Effect.retry(handler(taskId, task.params), schedule), layer) as unknown) as Effect.Effect<void, unknown, never>);
+      const result = await Effect.runPromise(Effect.provide(Effect.retry(handler(taskId, task.params), schedule), layer) as Effect.Effect<void, unknown, never>);
     } catch (err) {
       console.error(`Task ${taskId} (${task.taskName}) threw:`, err);
       const errorMessage = err instanceof Error ? err.message : String(err);
@@ -765,9 +768,7 @@ export class ReliableScheduler {
       if (duration > 1000) {
         console.warn(`[processTask] Task ${taskId} (${task.taskName}) took ${duration}ms`);
       }
-
-      return recovered;
-    });
+    }
   }
 
   private _updateTask(
