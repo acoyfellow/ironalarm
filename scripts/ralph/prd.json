@@ -167,28 +167,28 @@
        "test_file": "test/concurrency.test.ts",
        "verification": "bun run test (concurrency.test.ts passes), typecheck passes"
      },
-    {
-      "id": "007",
-      "title": "Replace console.error with Effect.log* for structured logging",
-      "status": "pending",
-      "priority": "P2",
-      "description": "Use Effect's logging module for observability",
-      "acceptance_criteria": [
-        "console.error calls replaced with Effect.logError",
-        "console.log calls replaced with Effect.log",
-        "Log levels appropriate (debug, info, error)",
-        "Logging still outputs to console via runtime",
-        "Tests verify log output structure"
-      ],
-      "dependencies": [
-        "004"
-      ],
-      "files_to_modify": [
-        "src/index.ts"
-      ],
-      "test_file": "test/logging.test.ts",
-      "verification": "bun run test (logging.test.ts passes), typecheck passes"
-    }
+     {
+       "id": "007",
+       "title": "Replace console.error with Effect.log* for structured logging",
+       "status": "completed",
+       "priority": "P2",
+       "description": "Use Effect's logging module for observability",
+       "acceptance_criteria": [
+         "console.error calls replaced with Effect.logError",
+         "console.log calls replaced with Effect.log",
+         "Log levels appropriate (debug, info, error)",
+         "Logging still outputs to console via runtime",
+         "Tests verify log output structure"
+       ],
+       "dependencies": [
+         "004"
+       ],
+       "files_to_modify": [
+         "src/index.ts"
+       ],
+       "test_file": "test/logging.test.ts",
+       "verification": "bun run test (logging.test.ts passes), typecheck passes"
+     }
   ],
   "completed": [],
   "next_story_id": "001",

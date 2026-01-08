@@ -263,7 +263,7 @@ export class ReliableScheduler {
         // Failed tasks can be checkpointed to allow recovery (especially for global-state)
         // Pending tasks can be checkpointed for initialization (e.g., global-state setup)
         if (task.status !== "pending" && task.status !== "running" && task.status !== "completed" && task.status !== "failed") {
-          console.error(`[checkpoint] Task ${taskId} status is ${task.status}, cannot checkpoint`);
+          yield* Effect.logError(`[checkpoint] Task ${taskId} status is ${task.status}, cannot checkpoint`);
           return false;
         }
         // If task is pending, mark it as running (initialization checkpoint)
@@ -708,33 +708,33 @@ export class ReliableScheduler {
     const startTime = Date.now();
     const task = await this.storage.get<Task>(`task:${taskId}`);
     if (!task) {
-      console.log(`[processTask] Task ${taskId} not found, skipping`);
-      return;
-    }
+    await Effect.runPromise(Effect.log(`[processTask] Task ${taskId} not found, skipping`));
+    return;
+  }
 
-    console.log(`[processTask] Processing task ${taskId} (${task.taskName}), status=${task.status}, scheduled=${task.scheduledAt}`);
+  await Effect.runPromise(Effect.log(`[processTask] Processing task ${taskId} (${task.taskName}), status=${task.status}, scheduled=${task.scheduledAt}`));
 
-    if (task.status === "paused") {
-      console.log(`[processTask] Task ${taskId} is paused, skipping`);
-      return;
-    }
+  if (task.status === "paused") {
+    await Effect.runPromise(Effect.log(`[processTask] Task ${taskId} is paused, skipping`));
+    return;
+  }
 
-    if (task.progress.completed) {
-      console.log(`[processTask] Task ${taskId} is completed, marking as completed`);
-      await this._updateTaskSync(taskId, (t) => {
-        t.status = "completed";
-        return true;
-      });
-      return;
-    }
+  if (task.progress.completed) {
+    await Effect.runPromise(Effect.log(`[processTask] Task ${taskId} is completed, marking as completed`));
+    await this._updateTaskSync(taskId, (t) => {
+      t.status = "completed";
+      return true;
+    });
+    return;
+  }
 
-    const handler = this.handlers.get(task.taskName);
-    if (!handler) {
-      console.error(`[processTask] No handler for taskName "${task.taskName}"`);
-      return;
-    }
+  const handler = this.handlers.get(task.taskName);
+  if (!handler) {
+    await Effect.runPromise(Effect.logError(`[processTask] No handler for taskName "${task.taskName}"`));
+    return;
+  }
 
-    console.log(`[processTask] Running handler for task ${taskId} (${task.taskName})`);
+  await Effect.runPromise(Effect.log(`[processTask] Running handler for task ${taskId} (${task.taskName})`));
 
     // Mark task as running if not already
     const updated = await this._updateTaskSync(taskId, (t) => {

@@ -28,7 +28,7 @@
 | 004 | Convert APIs to Effect types | completed | test/effect-api.test.ts |
 | 005 | Use Schedule.exponential for retry | completed | test/retry.test.ts |
 | 006 | Use Effect.forEach for concurrency | completed | test/concurrency.test.ts |
-| 007 | Use Effect.log for observability | pending | test/logging.test.ts |
+| 007 | Use Effect.log for observability | completed | test/logging.test.ts |
 
 ---
 
@@ -97,3 +97,11 @@ await scheduler.schedule(at, id, name, params).pipe(runPromise);
 - Created _processTaskEffect wrapper to convert async task processing to Effect
 - Alarm processing now uses Effect.forEach for fiber-based concurrency
 - Removed manual batching logic in favor of Effect's built-in concurrency control
+
+## Learnings from Story 007
+
+- Replaced console.log/error/warn with Effect.log/logError/logWarning
+- Used yield* Effect.log in Effect contexts
+- Used Effect.runPromise(Effect.log(...)) in async contexts
+- Structured logging with appropriate levels (log, logError, logWarning)
+- Effect logging integrates with runtime for console output
