@@ -112,8 +112,9 @@ export class TaskSchedulerDO extends DurableObject {
     // Register mine-asteroid task handler - simple mining game
     this.scheduler.register(
       "mine-asteroid",
-      (sched: ReliableScheduler, taskId: string, params: unknown) =>
+      (taskId: string, params: unknown) =>
         Effect.gen(function* () {
+          const svc = yield* SchedulerService;
           const p = params as Record<string, any>;
           const asteroidId = (p.asteroidId || "asteroid-1") as string;
           const capacity = (p.capacity || 10) as number; // How much this miner can carry
@@ -126,56 +127,49 @@ export class TaskSchedulerDO extends DurableObject {
           }
           const stepDuration = Math.floor(durationMs / capacity);
 
-          yield* Effect.promise(() =>
-            sched.runSteps(taskId, steps, {
-              stepDuration,
-              autoComplete: false,
-              onStep: async (stepName, stepIndex) => {
-                // Update progress
-                await sched.checkpoint(taskId, "progress", {
-                  step: stepIndex + 1,
-                  total: capacity,
-                  asteroidId,
-                });
-              },
-            })
-          );
+          yield* svc.runSteps(taskId, steps, {
+            stepDuration,
+            autoComplete: false,
+            onStep: async (stepName, stepIndex) => {
+              // Update progress
+              await Effect.runPromise(svc.checkpoint(taskId, "progress", {
+                step: stepIndex + 1,
+                total: capacity,
+                asteroidId,
+              }));
+            },
+          });
 
           // Mining complete - add resources to global state
           const globalTaskId = "global-state";
-          let globalTask = yield* Effect.promise(() => sched.getTask(globalTaskId));
+          let globalTask = yield* svc.getTask(globalTaskId);
           if (!globalTask) {
-            yield* Effect.promise(() => sched.runNow(globalTaskId, "global-state", {}, { maxRetries: Infinity }));
+            yield* svc.runNow(globalTaskId, "global-state", {}, { maxRetries: Infinity });
             // Wait a bit for it to initialize
             // Removed setTimeout to allow DO hibernation
-            globalTask = yield* Effect.promise(() => sched.getTask(globalTaskId));
+            globalTask = yield* svc.getTask(globalTaskId);
           }
 
           // Add resources
-          const currentResources = ((yield* Effect.promise(() =>
-            sched.getCheckpoint(globalTaskId, "resources")
-          )) || 0) as number;
+          const currentResources = ((yield* svc.getCheckpoint(globalTaskId, "resources")) || 0) as number;
 
           const newTotal = currentResources + capacity;
-          yield* Effect.promise(() =>
-            sched.checkpoint(globalTaskId, "resources", newTotal)
-          );
+          yield* svc.checkpoint(globalTaskId, "resources", newTotal);
 
           // Update progress so frontend can see it
-          yield* Effect.promise(() =>
-            sched.checkpoint(globalTaskId, "lastUpdate", Date.now())
-          );
+          yield* svc.checkpoint(globalTaskId, "lastUpdate", Date.now());
 
           // Mark task complete
-          yield* Effect.promise(() => sched.completeTask(taskId));
+          yield* svc.completeTask(taskId);
         })
     );
 
     // Register craft-item task handler
     this.scheduler.register(
       "craft-item",
-      (sched: ReliableScheduler, taskId: string, params: unknown) =>
+      (taskId: string, params: unknown) =>
         Effect.gen(function* () {
+          const svc = yield* SchedulerService;
           const p = params as Record<string, any>;
           const itemType = (p.itemType || "laser_drill") as string;
           const requiredOre = p.requiredOre || 50;
@@ -184,56 +178,54 @@ export class TaskSchedulerDO extends DurableObject {
           const steps = ["check_inventory", "gather_materials", "refine", "assemble"];
           const stepDuration = 2000; // 2s per step
 
-          yield* Effect.promise(() =>
-            sched.runSteps(taskId, steps, {
-              stepDuration,
-              autoComplete: false,
-              onStep: async (stepName, stepIndex) => {
-                if (stepName === "check_inventory") {
-                  // Check if we have enough resources
-                  const inventory = ((await sched.getCheckpoint("global-state", "inventory")) ||
-                    { ore: 0, energy: 0 }) as Record<string, number>;
+          yield* svc.runSteps(taskId, steps, {
+            stepDuration,
+            autoComplete: false,
+            onStep: async (stepName, stepIndex) => {
+              if (stepName === "check_inventory") {
+                // Check if we have enough resources
+                const inventory = ((await Effect.runPromise(svc.getCheckpoint("global-state", "inventory"))) ||
+                  { ore: 0, energy: 0 }) as Record<string, number>;
 
-                  if ((inventory.ore || 0) < requiredOre || (inventory.energy || 0) < requiredEnergy) {
-                    // Not enough resources - pause and wait
-                    await sched.pauseTask(taskId);
-                     // Poll until resources are available
-                     let attempts = 0;
-                     while (attempts < 100) {
-                       // Removed setTimeout to allow DO hibernation - poll immediately
-                       const updatedInventory = ((await sched.getCheckpoint("global-state", "inventory")) ||
-                         { ore: 0, energy: 0 }) as Record<string, number>;
-                       if (
-                         (updatedInventory.ore || 0) >= requiredOre &&
-                         (updatedInventory.energy || 0) >= requiredEnergy
-                       ) {
-                         await sched.resumeTask(taskId);
-                         break;
-                       }
-                       attempts++;
+                if ((inventory.ore || 0) < requiredOre || (inventory.energy || 0) < requiredEnergy) {
+                  // Not enough resources - pause and wait
+                  await Effect.runPromise(svc.pauseTask(taskId));
+                   // Poll until resources are available
+                   let attempts = 0;
+                   while (attempts < 100) {
+                     // Removed setTimeout to allow DO hibernation - poll immediately
+                     const updatedInventory = ((await Effect.runPromise(svc.getCheckpoint("global-state", "inventory"))) ||
+                       { ore: 0, energy: 0 }) as Record<string, number>;
+                     if (
+                       (updatedInventory.ore || 0) >= requiredOre &&
+                       (updatedInventory.energy || 0) >= requiredEnergy
+                     ) {
+                       await Effect.runPromise(svc.resumeTask(taskId));
+                       break;
                      }
-                  }
-                } else if (stepName === "gather_materials") {
-                  // Consume resources
-                  const inventory = ((await sched.getCheckpoint("global-state", "inventory")) ||
-                    { ore: 0, energy: 0 }) as Record<string, number>;
-                  inventory.ore = Math.max(0, (inventory.ore || 0) - requiredOre);
-                  inventory.energy = Math.max(0, (inventory.energy || 0) - requiredEnergy);
-                  await sched.checkpoint("global-state", "inventory", inventory);
-                } else if (stepName === "assemble") {
-                  // Add item to inventory
-                  const inventory = ((await sched.getCheckpoint("global-state", "inventory")) ||
-                    { ore: 0, energy: 0, items: [] }) as Record<string, any>;
-                  if (!inventory.items) inventory.items = [];
-                  inventory.items.push({ type: itemType, quality: "rare" });
-                  await sched.checkpoint("global-state", "inventory", inventory);
-                  await sched.checkpoint(taskId, "item", { type: itemType, quality: "rare" });
+                     attempts++;
+                   }
                 }
-              },
-            })
-          );
+              } else if (stepName === "gather_materials") {
+                // Consume resources
+                const inventory = ((await Effect.runPromise(svc.getCheckpoint("global-state", "inventory"))) ||
+                  { ore: 0, energy: 0 }) as Record<string, number>;
+                inventory.ore = Math.max(0, (inventory.ore || 0) - requiredOre);
+                inventory.energy = Math.max(0, (inventory.energy || 0) - requiredEnergy);
+                await Effect.runPromise(svc.checkpoint("global-state", "inventory", inventory));
+              } else if (stepName === "assemble") {
+                // Add item to inventory
+                const inventory = ((await Effect.runPromise(svc.getCheckpoint("global-state", "inventory"))) ||
+                  { ore: 0, energy: 0, items: [] }) as Record<string, any>;
+                if (!inventory.items) inventory.items = [];
+                inventory.items.push({ type: itemType, quality: "rare" });
+                await Effect.runPromise(svc.checkpoint("global-state", "inventory", inventory));
+                await Effect.runPromise(svc.checkpoint(taskId, "item", { type: itemType, quality: "rare" }));
+              }
+            },
+          });
 
-          yield* Effect.promise(() => sched.completeTask(taskId));
+          yield* svc.completeTask(taskId);
         })
     );
 
@@ -733,7 +725,7 @@ export class TaskSchedulerDO extends DurableObject {
         const globalTaskId = namespace ? `${namespace}-global-state` : "global-state";
         // Ensure global state is healthy before checking resources
         await this.ensureGlobalStateHealthy(namespace || "mission4");
-        const globalTask = await this.scheduler.getTask(globalTaskId);
+        const globalTask = await Effect.runPromise(this.scheduler.getTask(globalTaskId));
 
         if (globalTask) {
           // Use transaction to prevent race conditions (double-spending)
@@ -764,7 +756,7 @@ export class TaskSchedulerDO extends DurableObject {
           });
 
           if (!updated) {
-            const currentResources = ((await this.scheduler.getCheckpoint(globalTaskId, "resources")) || {}) as Record<string, number>;
+            const currentResources = ((await Effect.runPromise(this.scheduler.getCheckpoint(globalTaskId, "resources"))) || {}) as Record<string, number>;
             const currentCopper = currentResources.copper || 0;
             return c.json({ error: `Insufficient resources. Need ${params.cost} Copper, have ${currentCopper}` }, 400);
           }
@@ -776,12 +768,12 @@ export class TaskSchedulerDO extends DurableObject {
 
       // Infinite loop tasks get unlimited retries
       const isInfiniteLoop = params.taskName === "mine-resource-loop";
-      await this.scheduler.runNow(
-        taskId,
-        params.taskName || "agent-loop",
-        params,
-        isInfiniteLoop ? { maxRetries: Infinity } : undefined
-      );
+       await Effect.runPromise(this.scheduler.runNow(
+         taskId,
+         params.taskName || "agent-loop",
+         params,
+         isInfiniteLoop ? { maxRetries: Infinity } : undefined
+       ));
 
       // Broadcast update
       const tasks = await this.scheduler.getTasks();
