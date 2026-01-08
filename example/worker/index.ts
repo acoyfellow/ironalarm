@@ -272,15 +272,16 @@ export class TaskSchedulerDO extends DurableObject {
     // Register mine-resource-loop task handler - alarm-based mining loop
     this.scheduler.register(
       "mine-resource-loop",
-      (sched: ReliableScheduler, taskId: string, params: unknown) => {
+      (taskId: string, params: unknown) => {
         const p = params as Record<string, any>;
         const nodeId = (p.nodeId || "copper") as string;
         const baseYield = (p.yield || 1) as number;
         const timeMs = (p.timeMs || 4000) as number;
 
         const miningLoop = Effect.gen(function* () {
+          const svc = yield* SchedulerService;
           // Check if task is paused or cancelled before processing
-          const task = yield* Effect.promise(() => sched.getTask(taskId));
+          const task = yield* svc.getTask(taskId);
           if (!task || task.status === "paused") {
             return false; // Don't reschedule if cancelled/paused
           }
@@ -292,7 +293,7 @@ export class TaskSchedulerDO extends DurableObject {
           }
 
           // Get or initialize cycle counter
-          let cycle = ((yield* Effect.promise(() => sched.getCheckpoint(taskId, "cycle"))) || 0) as number;
+          let cycle = ((yield* svc.getCheckpoint(taskId, "cycle")) || 0) as number;
 
           // Calculate logarithmic yield multiplier based on cycles
           // Formula: baseYield * (1 + log10(cycle + 1))
@@ -300,10 +301,10 @@ export class TaskSchedulerDO extends DurableObject {
           const yieldMultiplier = 1 + Math.log10(cycle + 1);
           const actualYield = Math.floor(baseYield * yieldMultiplier);
 
-          // Deposit resources to global state - ensure it's healthy first
-          const globalTaskId = `mission4-global-state`;
-          yield* Effect.promise(() => doInstance.ensureGlobalStateHealthy("mission4"));
-          let globalTask = yield* Effect.promise(() => sched.getTask(globalTaskId));
+           // Deposit resources to global state - ensure it's healthy first
+           const globalTaskId = `mission4-global-state`;
+           yield* Effect.promise(() => doInstance.ensureGlobalStateHealthy("mission4"));
+           let globalTask = yield* svc.getTask(globalTaskId);
 
           if (globalTask) {
             // Use transaction to prevent race conditions when multiple miners update simultaneously
@@ -340,12 +341,10 @@ export class TaskSchedulerDO extends DurableObject {
 
           // Increment cycle and batch checkpoint updates (step and cycle) into single write
           cycle++;
-          yield* Effect.promise(() =>
-            sched.checkpointMultiple(taskId, {
-              step: `mining-${nodeId}`,
-              cycle: cycle
-            })
-          );
+          yield* svc.checkpointMultiple(taskId, {
+            step: `mining-${nodeId}`,
+            cycle: cycle
+          });
 
           // Trigger broadcast to update cycle counter
           yield* Effect.promise(() => doInstance.triggerBroadcast());
@@ -372,13 +371,13 @@ export class TaskSchedulerDO extends DurableObject {
           if (shouldReschedule) {
             const nextCycleTime = Date.now() + timeMs;
             yield* Effect.catchAll(
-              Effect.promise(() => sched.schedule(nextCycleTime, taskId, "mine-resource-loop", params)),
+              svc.schedule(nextCycleTime, taskId, "mine-resource-loop", params),
               (error) => {
                 console.error(`[mine-resource-loop] Failed to reschedule task ${taskId}:`, error);
                 // Retry once with delay
                 return Effect.gen(function* () {
-                  yield* Effect.promise(() => new Promise<void>((r) => setTimeout(r, 100)));
-                  yield* Effect.promise(() => sched.schedule(nextCycleTime, taskId, "mine-resource-loop", params));
+                  yield* Effect.sleep("100ms");
+                  yield* svc.schedule(nextCycleTime, taskId, "mine-resource-loop", params);
                 });
               }
             );
@@ -390,8 +389,9 @@ export class TaskSchedulerDO extends DurableObject {
     // Register sell-miner task handler - sells a miner and adds copper
     this.scheduler.register(
       "sell-miner",
-      (sched: ReliableScheduler, taskId: string, params: unknown) =>
+      (taskId: string, params: unknown) =>
         Effect.gen(function* () {
+          const svc = yield* SchedulerService;
           const p = params as Record<string, any>;
           const taskIdToCancel = p.taskIdToCancel as string;
           const copperToAdd = (p.copperToAdd || 0) as number;
@@ -482,17 +482,16 @@ export class TaskSchedulerDO extends DurableObject {
           // Schedule next wake in 30 seconds using alarm-based scheduling
           // This allows the DO to hibernate between checks
           const nextWakeTime = Date.now() + 30000;
-          yield* Effect.promise(() =>
-            sched.schedule(nextWakeTime, taskId, "global-state", params)
-          );
+          yield* svc.schedule(nextWakeTime, taskId, "global-state", params);
         })
     );
 
     // Register speed-upgrade task handler - one-shot task to upgrade speed
     this.scheduler.register(
       "speed-upgrade",
-      (sched: ReliableScheduler, taskId: string, params: unknown) =>
+      (taskId: string, params: unknown) =>
         Effect.gen(function* () {
+          const svc = yield* SchedulerService;
           const p = params as Record<string, any>;
           const cost = (p.cost || 0) as number;
           const globalTaskId = "mission4-global-state";
@@ -501,9 +500,9 @@ export class TaskSchedulerDO extends DurableObject {
           yield* Effect.promise(() => doInstance.ensureGlobalStateHealthy("mission4"));
 
           // Get global state
-          const globalTask = yield* Effect.promise(() => sched.getTask(globalTaskId));
+          const globalTask = yield* svc.getTask(globalTaskId);
           if (!globalTask) {
-            yield* Effect.promise(() => sched.completeTask(taskId));
+            yield* svc.completeTask(taskId);
             return;
           }
 
