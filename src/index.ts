@@ -263,7 +263,7 @@ export class ReliableScheduler {
         // Failed tasks can be checkpointed to allow recovery (especially for global-state)
         // Pending tasks can be checkpointed for initialization (e.g., global-state setup)
         if (task.status !== "pending" && task.status !== "running" && task.status !== "completed" && task.status !== "failed") {
-          yield* Effect.logError(`[checkpoint] Task ${taskId} status is ${task.status}, cannot checkpoint`);
+          console.error(`[checkpoint] Task ${taskId} status is ${task.status}, cannot checkpoint`);
           return false;
         }
         // If task is pending, mark it as running (initialization checkpoint)
