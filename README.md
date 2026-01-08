@@ -2,14 +2,34 @@
 
 [![npm version](https://img.shields.io/npm/v/ironalarm.svg)](https://www.npmjs.com/package/ironalarm)
 
-Reliable task scheduling for Cloudflare Durable Objects, implementing the "reliable runNow" pattern for resilient long-running tasks.
+Reliable task scheduling for Cloudflare Durable Objects, implementing the "reliable runNow" pattern with Effect-TS for resilient long-running tasks.
+
+## Breaking Changes (v0.2.0)
+
+**⚠️ All public APIs now return `Effect<T, E, SchedulerService>` instead of `Promise<T>`**
+
+```typescript
+// Before (v0.1.0)
+await scheduler.runNow(taskId, 'my-task', params);
+
+// After (v0.2.0)
+await Effect.runPromise(scheduler.runNow(taskId, 'my-task', params));
+
+// Or in Effect context:
+const program = Effect.gen(function* () {
+  yield* scheduler.runNow(taskId, 'my-task', params);
+});
+await Effect.runPromise(program);
+```
 
 ## Problem
 
-Cloudflare Durable Objects can evict your code after ~144 seconds of inactivity. For long-running operations (like AI agent loops), a single eviction mid-task breaks your workflow. `ironalarm` solves this with a lightweight, userspace implementation that persists task state and uses a 30-second safety alarm net—if evicted, the task automatically retries and resumes from checkpoints.
+Cloudflare Durable Objects can evict your code after ~144 seconds of inactivity. For long-running operations (like AI agent loops), a single eviction mid-task breaks your workflow. `ironalarm` solves this with a lightweight, checkpointed implementation powered by Effect-TS that persists task state and uses a 30-second safety alarm net—if evicted, the task automatically retries and resumes from checkpoints.
 
 ## Features
 
+- **Effect-TS powered**: All APIs return composable `Effect<T, E, SchedulerService>` types
+- **Dependency injection**: `SchedulerService` Context.Tag enables testable services
 - **Reliable execution**: `runNow()` starts immediately + 30s safety alarm for eviction recovery
 - **Future scheduling**: `schedule()` for delayed/recurring tasks
 - **Priority queues**: High/medium/low priority for execution order when multiple tasks are due
@@ -28,7 +48,7 @@ bun add ironalarm
 ## Quick Start
 
 ```typescript
-import { ReliableScheduler } from 'ironalarm';
+import { ReliableScheduler, SchedulerService } from 'ironalarm';
 import { Effect } from 'effect';
 
 export class MyDO {
@@ -37,26 +57,71 @@ export class MyDO {
   constructor(state: DurableObjectState, env: any) {
     this.scheduler = new ReliableScheduler(state.storage);
 
-    this.scheduler.register('my-task', (sched, taskId, params) => {
+    // TaskHandler signature: (taskId, params) => Effect.Effect<void, never, SchedulerService>
+    this.scheduler.register('my-task', (taskId, params) => {
       return Effect.gen(function* () {
-        const started = yield* Effect.promise(() => sched.getCheckpoint(taskId, 'started'));
+        const svc = yield* SchedulerService;
+        const started = yield* svc.getCheckpoint(taskId, 'started');
         if (!started) {
           yield* Effect.promise(() => doWork(params));
-          yield* Effect.promise(() => sched.checkpoint(taskId, 'started', true));
+          yield* svc.checkpoint(taskId, 'started', true);
         }
         yield* Effect.promise(() => expensiveOperation());
-        yield* Effect.promise(() => sched.completeTask(taskId));
+        yield* svc.completeTask(taskId);
       });
     });
   }
 
   async alarm() {
-    await this.scheduler.alarm();
+    await Effect.runPromise(this.scheduler.alarm());
   }
 
   async startTask(params: any) {
     const taskId = crypto.randomUUID();
-    await this.scheduler.runNow(taskId, 'my-task', params);
+    await Effect.runPromise(this.scheduler.runNow(taskId, 'my-task', params));
+  }
+}
+```
+
+## Effect Context Usage
+
+For larger workflows, use `Effect.gen` to compose operations:
+
+```typescript
+export class MyDO {
+  private scheduler: ReliableScheduler;
+
+  constructor(state: DurableObjectState, env: any) {
+    this.scheduler = new ReliableScheduler(state.storage);
+    this.scheduler.register('complex-task', (taskId, params) => {
+      return Effect.gen(function* () {
+        const svc = yield* SchedulerService;
+
+        // Check existing state
+        const started = yield* svc.getCheckpoint(taskId, 'started');
+        if (!started) {
+          yield* svc.checkpoint(taskId, 'started', true);
+          yield* Effect.log('Task initialized');
+        }
+
+        // Do work
+        yield* Effect.promise(() => processItem(params));
+
+        // Update progress
+        yield* svc.checkpoint(taskId, 'progress', { items: 1 });
+
+        // Complete
+        yield* svc.completeTask(taskId);
+        yield* Effect.log('Task completed');
+      });
+    });
+  }
+
+  async handleRequest(taskId: string, params: any) {
+    // Provide scheduler context to Effect
+    await Effect.runPromise(
+      this.scheduler.runNow(taskId, 'complex-task', params)
+    );
   }
 }
 ```
@@ -67,10 +132,12 @@ For tasks that run forever (like game loops, background processors), use `maxRet
 
 ```typescript
 // Register an infinite loop handler that reschedules itself
-this.scheduler.register('mining-loop', (sched, taskId, params) => {
+this.scheduler.register('mining-loop', (taskId, params) => {
   return Effect.gen(function* () {
+    const svc = yield* SchedulerService;
+
     // Check if cancelled/paused
-    const task = yield* Effect.promise(() => sched.getTask(taskId));
+    const task = yield* svc.getTask(taskId);
     if (!task || task.status === 'paused' || task.status === 'failed') return false;
 
     // Do work
@@ -78,19 +145,21 @@ this.scheduler.register('mining-loop', (sched, taskId, params) => {
 
     // Reschedule for next cycle (critical for loops!)
     const nextTime = Date.now() + 5000;
-    yield* Effect.promise(() => sched.schedule(nextTime, taskId, 'mining-loop', params));
+    yield* svc.schedule(nextTime, taskId, 'mining-loop', params);
     return true; // Indicates we should continue
   });
 });
 
 // Start with infinite retries so it survives DO restarts
-await this.scheduler.runNow(taskId, 'mining-loop', params, { maxRetries: Infinity });
+await Effect.runPromise(
+  this.scheduler.runNow(taskId, 'mining-loop', params, { maxRetries: Infinity })
+);
 ```
 
 **Critical: Hibernation Recovery**
 
 Durable Objects hibernate after ~30 seconds of inactivity. When a DO hibernates for hours/days:
-- Tasks with `scheduledAt` times in the past become "stuck"
+- Tasks with `scheduledAt` times in past become "stuck"
 - The alarm processes them, but they may not reschedule correctly
 - **You MUST check and recover stuck tasks on every DO wake-up**
 
@@ -104,37 +173,37 @@ export class MyDO extends DurableObject {
     super(ctx, env);
     this.scheduler = new ReliableScheduler(this.ctx.storage);
     // ... register handlers ...
-    
+
     // Resume tasks after DO restart
     this.resumeRunningTasks();
   }
 
   private async resumeRunningTasks() {
     const LOOP_TASKS = ['mining-loop', 'game-state'];
-    const tasks = await this.scheduler.getTasks();
+    const tasks = await Effect.runPromise(this.scheduler.getTasks());
     const now = Date.now();
-    
+
     for (const task of tasks) {
-      if (LOOP_TASKS.includes(task.taskName) && 
+      if (LOOP_TASKS.includes(task.taskName) &&
           (task.status === 'running' || task.status === 'failed' || task.status === 'completed')) {
-        
+
         // Recover failed/completed tasks
         if (task.status === 'failed' || task.status === 'completed') {
-          await this.scheduler.checkpoint(task.taskId, '_recovered', true);
+          await Effect.runPromise(this.scheduler.checkpoint(task.taskId, '_recovered', true));
         }
-        
-        // If scheduled time is way in the past (or never scheduled), reschedule immediately
+
+        // If scheduled time is way in past (or never scheduled), reschedule immediately
         const scheduledAt = task.scheduledAt || 0;
         if (scheduledAt === 0 || (scheduledAt > 0 && now > scheduledAt + 5000)) {
           const params = task.params;
-          await this.scheduler.schedule(now + 100, task.taskId, task.taskName, params);
+          await Effect.runPromise(this.scheduler.schedule(now + 100, task.taskId, task.taskName, params));
           continue;
         }
-        
+
         // Otherwise resume normally
         const handler = this.scheduler.getHandler(task.taskName);
         if (handler) {
-          Effect.runPromise(handler(this.scheduler, task.taskId, task.params));
+          await Effect.runPromise(handler(task.taskId, task.params));
         }
       }
     }
@@ -147,30 +216,30 @@ export class MyDO extends DurableObject {
   }
 
   async alarm() {
-    await this.scheduler.alarm();
+    await Effect.runPromise(this.scheduler.alarm());
     // CRITICAL: Check again after alarm processing
     await this.recoverStuckTasks();
   }
 
   private async recoverStuckTasks() {
     const LOOP_TASKS = ['mining-loop', 'game-state'];
-    const tasks = await this.scheduler.getTasks();
+    const tasks = await Effect.runPromise(this.scheduler.getTasks());
     const now = Date.now();
-    
+
     for (const task of tasks) {
       if (!LOOP_TASKS.includes(task.taskName)) continue;
-      
+
       // Recover failed/completed
       if (task.status === 'failed' || task.status === 'completed') {
-        await this.scheduler.checkpoint(task.taskId, '_recovered', true);
+        await Effect.runPromise(this.scheduler.checkpoint(task.taskId, '_recovered', true));
       }
-      
+
       // Reschedule if stuck (scheduled >5 seconds ago OR never scheduled)
       const scheduledAt = task.scheduledAt || 0;
-      if ((task.status === 'running' || task.status === 'pending') && 
+      if ((task.status === 'running' || task.status === 'pending') &&
           (scheduledAt === 0 || (scheduledAt > 0 && now > scheduledAt + 5000))) {
         const params = task.params;
-        await this.scheduler.schedule(now + 100, task.taskId, task.taskName, params);
+        await Effect.runPromise(this.scheduler.schedule(now + 100, task.taskId, task.taskName, params));
       }
     }
   }
@@ -204,33 +273,152 @@ const scheduler = new ReliableScheduler(storage, { maxConcurrentTasks: 20 });
 ## API
 
 ### Constructor
-`new ReliableScheduler(storage: DurableObjectStorage, options?)`
-
+```typescript
+new ReliableScheduler(storage: DurableObjectStorage, options?)
+```
 - `storage` - Durable Object storage instance
-- `options` - Optional configuration
-  - `options.maxConcurrentTasks` - Maximum number of tasks to process concurrently (default: 10)
+- `options.maxConcurrentTasks` - Maximum number of tasks to process concurrently (default: 10)
 
-### Methods
+### Task Handlers
 
-- `register(taskName, handler)` — Register a named task handler
-- `runNow(taskId, taskName, params?, options?)` — Start immediately with eviction safety
-  - `options.maxRetries` — Override retry limit (default: 3, use `Infinity` for loop tasks)
-  - `options.priority` — Task priority: 0=high, 1=medium, 2=low (default: 1)
-- `schedule(at, taskId, taskName, params?, options?)` — Schedule for future time
-  - `options.priority` — Task priority: 0=high, 1=medium, 2=low (default: 1)
-- `checkpoint(taskId, key, value)` — Save progress
-- `getCheckpoint(taskId, key)` — Retrieve progress
-- `completeTask(taskId)` — Mark as done
-- `getTask(taskId)` — Get single task by ID
-- `getTasks(status?)` — List all tasks (optionally filter by status)
-- `cancelTask(taskId)` — Cancel/delete a task
-- `pauseTask(taskId)` — Pause a task (removes from queue)
-- `resumeTask(taskId)` — Resume a paused task (re-adds to queue)
-- `clearCompleted()` — Delete all completed tasks, returns count
-- `clearAll()` — Delete all tasks, returns count
-- `getHandler(taskName)` — Get registered handler by name (for manual re-execution)
-- `alarm()` — Call from DO's alarm handler
-- `recoverStuckTasks(taskNames?)` — Recover overdue tasks after hibernation (call in `fetch()` and `alarm()`)
+```typescript
+type TaskHandler = (taskId: string, params: unknown) => Effect.Effect<void, never, SchedulerService>;
+
+scheduler.register(taskName: string, handler: TaskHandler): void
+```
+
+Handlers receive `SchedulerService` from Effect context:
+```typescript
+scheduler.register('my-task', (taskId, params) => {
+  return Effect.gen(function* () {
+    const svc = yield* SchedulerService;
+    yield* svc.checkpoint(taskId, 'progress', { step: 1 });
+    // ... do work ...
+    yield* svc.completeTask(taskId);
+  });
+});
+```
+
+### Public Methods
+
+All methods return `Effect<T, E, SchedulerService>`. Wrap with `Effect.runPromise()` for async use:
+
+#### Core Operations
+
+```typescript
+// Start task immediately (returns Effect<void, HandlerMissing, SchedulerService>)
+scheduler.runNow(taskId, taskName, params?, options?)
+  .pipe(Effect.runPromise)
+
+// Schedule for future time (returns Effect<void, HandlerMissing, SchedulerService>)
+scheduler.schedule(at: Date | number, taskId, taskName, params?, options?)
+  .pipe(Effect.runPromise)
+```
+
+Options:
+- `options.maxRetries` — Override retry limit (default: 3, use `Infinity` for loop tasks)
+- `options.priority` — Task priority: 0=high, 1=medium, 2=low (default: 1)
+
+#### Checkpoints
+
+```typescript
+// Save progress (returns Effect<void, never, SchedulerService>)
+scheduler.checkpoint(taskId, key, value)
+  .pipe(Effect.runPromise)
+
+// Retrieve progress (returns Effect<unknown, never, SchedulerService>)
+scheduler.getCheckpoint(taskId, key)
+  .pipe(Effect.runPromise)
+
+// Batch save (returns Effect<void, never, SchedulerService>)
+scheduler.checkpointMultiple(taskId, updates: Record<string, unknown>)
+  .pipe(Effect.runPromise)
+```
+
+#### Task Management
+
+```typescript
+// Mark complete (returns Effect<void, never, SchedulerService>)
+scheduler.completeTask(taskId)
+  .pipe(Effect.runPromise)
+
+// Get single task (returns Effect<Task | undefined, never, SchedulerService>)
+scheduler.getTask(taskId)
+  .pipe(Effect.runPromise)
+
+// List tasks (returns Effect<Task[], never, SchedulerService>)
+scheduler.getTasks(status?: TaskStatus)
+  .pipe(Effect.runPromise)
+
+// Cancel task (returns Effect<boolean, never, SchedulerService>)
+scheduler.cancelTask(taskId)
+  .pipe(Effect.runPromise)
+
+// Pause task (returns Effect<boolean, never, SchedulerService>)
+scheduler.pauseTask(taskId)
+  .pipe(Effect.runPromise)
+
+// Resume task (returns Effect<boolean, never, SchedulerService>)
+scheduler.resumeTask(taskId)
+  .pipe(Effect.runPromise)
+
+// Delete completed (returns Effect<number, never, SchedulerService>)
+scheduler.clearCompleted()
+  .pipe(Effect.runPromise)
+
+// Delete all (returns Effect<number, never, SchedulerService>)
+scheduler.clearAll()
+  .pipe(Effect.runPromise)
+```
+
+#### System Operations
+
+```typescript
+// Process due tasks (call from DO alarm)
+scheduler.alarm()
+  .pipe(Effect.runPromise)
+
+// Recover stuck tasks after hibernation
+scheduler.recoverStuckTasks(taskNames?: string[])
+  .pipe(Effect.runPromise)
+
+// Get registered handler
+scheduler.getHandler(taskName): TaskHandler | undefined
+```
+
+## Error Types
+
+All errors are tagged and raised in the error channel:
+
+```typescript
+class HandlerMissing extends Data.TaggedError("HandlerMissing")<{
+  taskName: string
+}> {}
+
+class TaskNotFound extends Data.TaggedError("TaskNotFound")<{
+  taskId: string
+}> {}
+
+class TaskConflict extends Data.TaggedError("TaskConflict")<{
+  taskId: string
+  currentStatus: string
+  operation: string
+}> {}
+```
+
+Example error handling:
+```typescript
+const result = await Effect.runPromise(
+  Effect.either(scheduler.runNow(taskId, 'my-task', params))
+);
+
+if (result._tag === 'Left') {
+  const error = result.left;
+  if (error._tag === 'HandlerMissing') {
+    console.error('No handler for task:', error.taskName);
+  }
+}
+```
 
 ## Priority Scheduling
 
@@ -238,16 +426,24 @@ When multiple tasks are due at the same time, priority determines execution orde
 
 ```typescript
 // High priority - executes first (0 = highest)
-await scheduler.runNow('urgent-task', 'process', data, { priority: 0 });
+await Effect.runPromise(
+  scheduler.runNow('urgent-task', 'process', data, { priority: 0 })
+);
 
 // Medium priority - default behavior
-await scheduler.runNow('normal-task', 'process', data); // priority: 1
+await Effect.runPromise(
+  scheduler.runNow('normal-task', 'process', data)
+);
 
 // Low priority - executes last
-await scheduler.runNow('background-task', 'cleanup', {}, { priority: 2 });
+await Effect.runPromise(
+  scheduler.runNow('background-task', 'cleanup', {}, { priority: 2 })
+);
 
 // Also works with schedule()
-await scheduler.schedule(Date.now() + 5000, 'task-id', 'handler', params, { priority: 0 });
+await Effect.runPromise(
+  scheduler.schedule(Date.now() + 5000, 'task-id', 'handler', params, { priority: 0 })
+);
 ```
 
 **Behavior:**
@@ -258,12 +454,14 @@ await scheduler.schedule(Date.now() + 5000, 'task-id', 'handler', params, { prio
 
 ## Design
 
+- **Effect-TS powered**: Composable, testable APIs with dependency injection
 - **Eviction safety**: 30s safety alarm retries if evicted
 - **Checkpoints**: Skip already-done work on resume
-- **Named handlers**: No function serialization
+- **Named handlers**: No function serialization required
 - **Single queue**: One alarm drives all tasks, sorted by time then priority
 - **Retry limits**: Tasks automatically fail after 3 retries (configurable via `maxRetries`)
 - **Pause/resume**: Tasks can be paused and resumed without losing state
+- **Structured errors**: All failures in explicit error channel (no swallowed exceptions)
 
 ## License
 

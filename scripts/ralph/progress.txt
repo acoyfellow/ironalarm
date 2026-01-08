@@ -25,7 +25,7 @@
 | 001 | Design and implement tagged errors | pending | test/errors.test.ts |
 | 002 | Add SchedulerService Context.Tag | pending | test/context.test.ts |
 | 003 | Refactor TaskHandler for DI | pending | test/handler.test.ts |
-| 004 | Convert APIs to Effect types | pending | test/effect-api.test.ts |
+| 004 | Convert APIs to Effect types | completed | test/effect-api.test.ts |
 | 005 | Use Schedule.exponential for retry | pending | test/retry.test.ts |
 | 006 | Use Effect.forEach for concurrency | pending | test/concurrency.test.ts |
 | 007 | Use Effect.log for observability | pending | test/logging.test.ts |

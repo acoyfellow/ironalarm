@@ -22,30 +22,39 @@ interface Task {
 }
 
 type TaskHandler = (
-  scheduler: ReliableScheduler,
   taskId: string,
   params: unknown
-) => Effect.Effect<void>;
+) => Effect.Effect<void, never, never>;
 
 
-
-
-class SchedulerService extends Context.Tag("SchedulerService")<SchedulerService, {
-  readonly schedule: (at: Date | number, taskId: string, taskName: string, params?: unknown) => Effect.Effect<void, HandlerMissing>;
-  readonly runNow: (taskId: string, taskName: string, params?: unknown) => Effect.Effect<void, HandlerMissing>;
-  readonly checkpoint: (taskId: string, key: string, value: unknown) => Effect.Effect<void>;
-  readonly checkpointMultiple: (taskId: string, updates: Record<string, unknown>) => Effect.Effect<void>;
-  readonly completeTask: (taskId: string) => Effect.Effect<void>;
-  readonly getTask: (taskId: string) => Effect.Effect<Task | undefined>;
-  readonly getTasks: (status?: TaskStatus) => Effect.Effect<Task[]>;
-  readonly cancelTask: (taskId: string) => Effect.Effect<boolean>;
-  readonly pauseTask: (taskId: string) => Effect.Effect<boolean>;
-  readonly resumeTask: (taskId: string) => Effect.Effect<boolean>;
-}>() {}
 
 class HandlerMissing extends Data.TaggedError("HandlerMissing")<{ taskName: string }> { }
 class TaskNotFound extends Data.TaggedError("TaskNotFound")<{ taskId: string }> { }
 class TaskConflict extends Data.TaggedError("TaskConflict")<{ taskId: string; currentStatus: string; operation: string }> { }
+
+// Re-export errors for public use
+export { HandlerMissing, TaskNotFound, TaskConflict };
+
+// SchedulerService for dependency injection - allows handlers to access scheduler methods via Context
+const SchedulerService = Context.GenericTag<{
+  checkpoint: (taskId: string, key: string, value: unknown) => Effect.Effect<void, never, never>;
+  completeTask: (taskId: string) => Effect.Effect<void, never, never>;
+  schedule: (at: Date | number, taskId: string, taskName: string, params: unknown, options?: { priority?: number }) => Effect.Effect<void, HandlerMissing, never>;
+  runNow: (taskId: string, taskName: string, params?: unknown, options?: { maxRetries?: number; priority?: number }) => Effect.Effect<void, HandlerMissing, never>;
+  getTask: (taskId: string) => Effect.Effect<Task | undefined, never, never>;
+  getTasks: (status?: TaskStatus) => Effect.Effect<Task[], never, never>;
+  getCheckpoint: (taskId: string, key: string) => Effect.Effect<unknown, never, never>;
+  checkpointMultiple: (taskId: string, updates: Record<string, unknown>) => Effect.Effect<void, never, never>;
+  pauseTask: (taskId: string) => Effect.Effect<boolean, never, never>;
+  resumeTask: (taskId: string) => Effect.Effect<boolean, never, never>;
+  cancelTask: (taskId: string) => Effect.Effect<boolean, never, never>;
+  clearCompleted: () => Effect.Effect<number, never, never>;
+  clearAll: () => Effect.Effect<number, never, never>;
+  getCachedTasks: (status?: TaskStatus) => Task[];
+  formatTaskForUI: (task: Task) => any;
+}>("SchedulerService");
+
+export { SchedulerService };
 
 
 export class ReliableScheduler {
@@ -67,7 +76,36 @@ export class ReliableScheduler {
   }
 
   /**
-   * Register a named task handler. The handler receives the scheduler, taskId, and params.
+   * Creates a Layer that provides SchedulerService with this scheduler instance.
+   * Used to provide the service context when running task handlers.
+   */
+  _createServiceLayer(): Layer.Layer<never, never, typeof SchedulerService> {
+    return Layer.succeed(SchedulerService, {
+      checkpoint: (taskId: string, key: string, value: unknown) =>
+        this._checkpoint(taskId, key, value),
+      completeTask: (taskId: string) => this._completeTask(taskId),
+      schedule: (at: Date | number, taskId: string, taskName: string, params: unknown, options?: { priority?: number }) =>
+        this._schedule(at, taskId, taskName, params, options),
+      runNow: (taskId: string, taskName: string, params?: unknown, options?: { maxRetries?: number; priority?: number }) =>
+        this._runNow(taskId, taskName, params, options),
+      getTask: (taskId: string) => this._getTask(taskId),
+      getTasks: (status?: TaskStatus) => this._getTasks(status),
+      getCheckpoint: (taskId: string, key: string) => this._getCheckpoint(taskId, key),
+      checkpointMultiple: (taskId: string, updates: Record<string, unknown>) =>
+        this._checkpointMultiple(taskId, updates),
+      pauseTask: (taskId: string) => this._pauseTask(taskId),
+      resumeTask: (taskId: string) => this._resumeTask(taskId),
+      cancelTask: (taskId: string) => this._cancelTask(taskId),
+      clearCompleted: () => this._clearCompleted(),
+      clearAll: () => this._clearAll(),
+      getCachedTasks: (status?: TaskStatus) => this.getCachedTasks(status),
+      formatTaskForUI: (task: Task) => this.formatTaskForUI(task),
+    });
+  }
+
+  /**
+   * Register a named task handler. The handler receives taskId and params,
+   * and can access SchedulerService via yield* SchedulerService in Effect context.
    */
   register(taskName: string, handler: TaskHandler): void {
     this.handlers.set(taskName, handler);
@@ -81,16 +119,16 @@ export class ReliableScheduler {
   }
 
   /**
-   * Schedule a task to run at a future time (Unix timestamp or Date).
-   * @param options.priority - Task priority: 0=high, 1=medium, 2=low (default: 1)
-   */
+     * Schedule a task to run at a future time (Unix timestamp or Date).
+     * @param options.priority - Task priority: 0=high, 1=medium, 2=low (default: 1)
+     */
   schedule(
     at: Date | number,
     taskId: string,
     taskName: string,
     params: unknown = {},
     options?: { priority?: number }
-  ): Effect.Effect<void, HandlerMissing, SchedulerService> {
+  ): Effect.Effect<void, HandlerMissing, never> {
     return this._schedule(at, taskId, taskName, params, options);
   }
 
@@ -167,7 +205,7 @@ export class ReliableScheduler {
     taskName: string,
     params: unknown = {},
     options?: { maxRetries?: number; priority?: number }
-  ): Effect.Effect<void, HandlerMissing, SchedulerService> {
+  ): Effect.Effect<void, HandlerMissing, never> {
     return this._runNow(taskId, taskName, params, options);
   }
 
@@ -211,7 +249,11 @@ export class ReliableScheduler {
   /**
    * Save progress for a task. Use this to mark completion of expensive operations.
    */
-  checkpoint(taskId: string, key: string, value: unknown): Effect.Effect<void, never, SchedulerService> {
+  checkpoint(
+    taskId: string,
+    key: string,
+    value: unknown
+  ): Effect.Effect<void, never, never> {
     return this._checkpoint(taskId, key, value);
   }
 
@@ -251,7 +293,7 @@ export class ReliableScheduler {
   /**
    * Retrieve saved progress for a task. Returns undefined if not found.
    */
-  getCheckpoint(taskId: string, key: string): Effect.Effect<unknown, never, SchedulerService> {
+  getCheckpoint(taskId: string, key: string): Effect.Effect<unknown, never, never> {
     return this._getCheckpoint(taskId, key);
   }
 
@@ -259,7 +301,7 @@ export class ReliableScheduler {
    * Batch multiple checkpoint updates into a single write operation.
    * Accepts an object of key-value pairs to update.
    */
-  checkpointMultiple(taskId: string, updates: Record<string, unknown>): Effect.Effect<void, never, SchedulerService> {
+  checkpointMultiple(taskId: string, updates: Record<string, unknown>): Effect.Effect<void, never, never> {
     return this._checkpointMultiple(taskId, updates);
   }
 
@@ -305,9 +347,9 @@ export class ReliableScheduler {
   }
 
   /**
-   * Mark a task as completed and stop processing.
+   * Mark a task as complete and clean up its state.
    */
-  completeTask(taskId: string): Effect.Effect<void, never, SchedulerService> {
+  completeTask(taskId: string): Effect.Effect<void, never, never> {
     return this._completeTask(taskId);
   }
 
@@ -327,7 +369,7 @@ export class ReliableScheduler {
   /**
    * Get a single task by ID. Returns undefined if not found.
    */
-  getTask(taskId: string): Effect.Effect<Task | undefined, never, SchedulerService> {
+  getTask(taskId: string): Effect.Effect<Task | undefined, never, never> {
     return this._getTask(taskId);
   }
 
@@ -338,7 +380,7 @@ export class ReliableScheduler {
   /**
    * Get all tasks, optionally filtered by status.
    */
-  getTasks(status?: TaskStatus): Effect.Effect<Task[], never, SchedulerService> {
+  getTasks(status?: TaskStatus): Effect.Effect<Task[], never, never> {
     return this._getTasks(status);
   }
 
@@ -349,7 +391,7 @@ export class ReliableScheduler {
    * @param taskNames - Optional array of task names to check. If not provided, checks all running tasks.
    * @returns Number of tasks recovered
    */
-  recoverStuckTasks(taskNames?: string[]): Effect.Effect<number, never, SchedulerService> {
+  recoverStuckTasks(taskNames?: string[]): Effect.Effect<number, never, never> {
     return this._recoverStuckTasks(taskNames);
   }
 
@@ -450,9 +492,9 @@ export class ReliableScheduler {
   }
 
   /**
-   * Cancel a task. Returns true if canceled, false if not found.
+   * Cancel and delete a task. Returns true if successful, false if task not found.
    */
-  cancelTask(taskId: string): Effect.Effect<boolean, never, SchedulerService> {
+  cancelTask(taskId: string): Effect.Effect<boolean, never, never> {
     return this._cancelTask(taskId);
   }
 
@@ -478,9 +520,9 @@ export class ReliableScheduler {
   }
 
   /**
-   * Pause a running task. Returns true if paused, false if not found or not running.
+   * Pause a running task. Returns true if successful, false if task not found or cannot be paused.
    */
-  pauseTask(taskId: string): Effect.Effect<boolean, never, SchedulerService> {
+  pauseTask(taskId: string): Effect.Effect<boolean, never, never> {
     return this._pauseTask(taskId);
   }
 
@@ -513,9 +555,9 @@ export class ReliableScheduler {
   }
 
   /**
-   * Resume a paused task. Returns true if resumed, false if not found or not paused.
+   * Resume a paused task. Returns true if successful, false if task not found or not paused.
    */
-  resumeTask(taskId: string): Effect.Effect<boolean, never, SchedulerService> {
+  resumeTask(taskId: string): Effect.Effect<boolean, never, never> {
     return this._resumeTask(taskId);
   }
 
@@ -554,9 +596,9 @@ export class ReliableScheduler {
   }
 
   /**
-   * Remove all completed tasks. Returns count removed.
+   * Delete all completed tasks. Returns the count of deleted tasks.
    */
-  clearCompleted(): Effect.Effect<number, never, SchedulerService> {
+  clearCompleted(): Effect.Effect<number, never, never> {
     return this._clearCompleted();
   }
 
@@ -583,9 +625,9 @@ export class ReliableScheduler {
   }
 
   /**
-   * Remove all tasks. Returns count removed.
+   * Delete all tasks regardless of status. Returns the count of deleted tasks.
    */
-  clearAll(): Effect.Effect<number, never, SchedulerService> {
+  clearAll(): Effect.Effect<number, never, never> {
     return this._clearAll();
   }
 
@@ -612,9 +654,9 @@ export class ReliableScheduler {
   }
 
   /**
-   * Process all due tasks. Call this in your DO's alarm() or fetch().
+   * Call this from your Durable Object's alarm handler to process scheduled tasks.
    */
-  alarm(): Effect.Effect<void, never, SchedulerService> {
+  alarm(): Effect.Effect<void, never, never> {
     return this._alarm();
   }
 
@@ -754,7 +796,10 @@ export class ReliableScheduler {
     }
 
     try {
-      await Effect.runPromise(handler(this, taskId, task.params));
+      // Create service layer and provide it to the handler effect
+      const layer = this._createServiceLayer();
+      const effect = handler(taskId, task.params);
+      await Effect.runPromise(Effect.provide(effect, layer) as Effect.Effect<void, never, never>);
     } catch (err) {
       console.error(`Task ${taskId} (${task.taskName}) threw:`, err);
       const errorMessage = err instanceof Error ? err.message : String(err);
@@ -974,7 +1019,7 @@ export class ReliableScheduler {
   /**
    * Execute a multi-step task with automatic progress tracking, pause/resume support, checkpointing, and optional auto-completion.
    */
-  async runSteps(
+  runSteps(
     taskId: string,
     steps: string[],
     options: {
@@ -986,14 +1031,14 @@ export class ReliableScheduler {
       result?: string; // Optional result message
       autoComplete?: boolean; // Auto-complete task when done (default: true)
     } = {}
-  ): Promise<void> {
-    return Effect.runPromise(this._runSteps(taskId, steps, options));
+  ): Effect.Effect<void, never, never> {
+    return this._runSteps(taskId, steps, options);
   }
 
   /**
    * Helper for sub-step execution within a step. Handles pause checks and progress tracking automatically.
    */
-  async runSubSteps(
+  runSubSteps(
     taskId: string,
     stepName: string,
     stepIndex: number,
@@ -1001,17 +1046,15 @@ export class ReliableScheduler {
     subStepCount: number,
     subStepDuration: number,
     onSubStep?: (subStepIndex: number) => Promise<void> | Effect.Effect<void>
-  ): Promise<void> {
-    return Effect.runPromise(
-      this._runSubSteps(
-        taskId,
-        stepName,
-        stepIndex,
-        totalSteps,
-        subStepCount,
-        subStepDuration,
-        onSubStep
-      )
+  ): Effect.Effect<void, never, never> {
+    return this._runSubSteps(
+      taskId,
+      stepName,
+      stepIndex,
+      totalSteps,
+      subStepCount,
+      subStepDuration,
+      onSubStep
     );
   }
 

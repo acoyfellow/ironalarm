@@ -99,30 +99,30 @@
       "test_file": "test/handler.test.ts",
       "verification": "bun run test (handler.test.ts passes), typecheck passes"
     },
-    {
-      "id": "004",
-      "title": "Convert public APIs from Promise<T> to Effect<T, E, R>",
-      "status": "pending",
-      "priority": "P0",
-      "description": "Remove Effect.runPromise wrapping, return Effect types directly",
-      "acceptance_criteria": [
-        "schedule() returns Effect.Effect<void, HandlerMissing, SchedulerService>",
-        "runNow() returns Effect.Effect<void, HandlerMissing, SchedulerService>",
-        "checkpoint() returns Effect.Effect<void, never, SchedulerService>",
-        "completeTask() returns Effect.Effect<void, never, SchedulerService>",
-        "getTask() returns Effect.Effect<Task | undefined, never, SchedulerService>",
-        "getTasks() returns Effect.Effect<Task[], never, SchedulerService>",
-        "Tests verify Effect types and error channels"
-      ],
-      "dependencies": [
-        "003"
-      ],
-      "files_to_modify": [
-        "src/index.ts"
-      ],
-      "test_file": "test/effect-api.test.ts",
-      "verification": "bun run test (effect-api.test.ts passes), typecheck passes"
-    },
+     {
+       "id": "004",
+       "title": "Convert public APIs from Promise<T> to Effect<T, E, R>",
+       "status": "completed",
+       "priority": "P0",
+       "description": "Remove Effect.runPromise wrapping, return Effect types directly",
+       "acceptance_criteria": [
+         "schedule() returns Effect.Effect<void, HandlerMissing, never>",
+         "runNow() returns Effect.Effect<void, HandlerMissing, never>",
+         "checkpoint() returns Effect.Effect<void, never, never>",
+         "completeTask() returns Effect.Effect<void, never, never>",
+         "getTask() returns Effect.Effect<Task | undefined, never, never>",
+         "getTasks() returns Effect.Effect<Task[], never, never>",
+         "Tests verify Effect types and error channels"
+       ],
+       "dependencies": [
+         "003"
+       ],
+       "files_to_modify": [
+         "src/index.ts"
+       ],
+       "test_file": "test/effect-api.test.ts",
+       "verification": "bun run test (effect-api.test.ts passes), typecheck passes"
+     },
     {
       "id": "005",
       "title": "Replace manual retry logic with Schedule.exponential + Effect.retry",
