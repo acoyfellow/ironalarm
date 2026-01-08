@@ -84,14 +84,14 @@ export class ReliableScheduler {
    * Schedule a task to run at a future time (Unix timestamp or Date).
    * @param options.priority - Task priority: 0=high, 1=medium, 2=low (default: 1)
    */
-  async schedule(
+  schedule(
     at: Date | number,
     taskId: string,
     taskName: string,
     params: unknown = {},
     options?: { priority?: number }
-  ): Promise<void> {
-    return Effect.runPromise(this._schedule(at, taskId, taskName, params, options));
+  ): Effect.Effect<void, HandlerMissing, SchedulerService> {
+    return this._schedule(at, taskId, taskName, params, options);
   }
 
   private _schedule(
@@ -162,13 +162,13 @@ export class ReliableScheduler {
    * @param options.maxRetries - Override default retry count (default: 3, use Infinity for infinite loop tasks)
    * @param options.priority - Task priority: 0=high, 1=medium, 2=low (default: 1)
    */
-  async runNow(
+  runNow(
     taskId: string,
     taskName: string,
     params: unknown = {},
     options?: { maxRetries?: number; priority?: number }
-  ): Promise<void> {
-    return Effect.runPromise(this._runNow(taskId, taskName, params, options));
+  ): Effect.Effect<void, HandlerMissing, SchedulerService> {
+    return this._runNow(taskId, taskName, params, options);
   }
 
   private _runNow(taskId: string, taskName: string, params: unknown, options?: { maxRetries?: number; priority?: number }) {
@@ -211,12 +211,8 @@ export class ReliableScheduler {
   /**
    * Save progress for a task. Use this to mark completion of expensive operations.
    */
-  async checkpoint(
-    taskId: string,
-    key: string,
-    value: unknown
-  ): Promise<void> {
-    return Effect.runPromise(this._checkpoint(taskId, key, value));
+  checkpoint(taskId: string, key: string, value: unknown): Effect.Effect<void, never, SchedulerService> {
+    return this._checkpoint(taskId, key, value);
   }
 
   private _checkpoint(taskId: string, key: string, value: unknown) {
@@ -255,16 +251,16 @@ export class ReliableScheduler {
   /**
    * Retrieve saved progress for a task. Returns undefined if not found.
    */
-  async getCheckpoint(taskId: string, key: string): Promise<unknown> {
-    return Effect.runPromise(this._getCheckpoint(taskId, key));
+  getCheckpoint(taskId: string, key: string): Effect.Effect<unknown, never, SchedulerService> {
+    return this._getCheckpoint(taskId, key);
   }
 
   /**
    * Batch multiple checkpoint updates into a single write operation.
    * Accepts an object of key-value pairs to update.
    */
-  async checkpointMultiple(taskId: string, updates: Record<string, unknown>): Promise<void> {
-    return Effect.runPromise(this._checkpointMultiple(taskId, updates));
+  checkpointMultiple(taskId: string, updates: Record<string, unknown>): Effect.Effect<void, never, SchedulerService> {
+    return this._checkpointMultiple(taskId, updates);
   }
 
   private _checkpointMultiple(taskId: string, updates: Record<string, unknown>) {
@@ -309,10 +305,10 @@ export class ReliableScheduler {
   }
 
   /**
-   * Mark a task as complete and clean up its state.
+   * Mark a task as completed and stop processing.
    */
-  async completeTask(taskId: string): Promise<void> {
-    return Effect.runPromise(this._completeTask(taskId));
+  completeTask(taskId: string): Effect.Effect<void, never, SchedulerService> {
+    return this._completeTask(taskId);
   }
 
   private _completeTask(taskId: string) {
@@ -331,8 +327,8 @@ export class ReliableScheduler {
   /**
    * Get a single task by ID. Returns undefined if not found.
    */
-  async getTask(taskId: string): Promise<Task | undefined> {
-    return Effect.runPromise(this._getTask(taskId));
+  getTask(taskId: string): Effect.Effect<Task | undefined, never, SchedulerService> {
+    return this._getTask(taskId);
   }
 
   private _getTask(taskId: string) {
@@ -342,8 +338,8 @@ export class ReliableScheduler {
   /**
    * Get all tasks, optionally filtered by status.
    */
-  async getTasks(status?: TaskStatus): Promise<Task[]> {
-    return Effect.runPromise(this._getTasks(status));
+  getTasks(status?: TaskStatus): Effect.Effect<Task[], never, SchedulerService> {
+    return this._getTasks(status);
   }
 
   /**
@@ -353,8 +349,8 @@ export class ReliableScheduler {
    * @param taskNames - Optional array of task names to check. If not provided, checks all running tasks.
    * @returns Number of tasks recovered
    */
-  async recoverStuckTasks(taskNames?: string[]): Promise<number> {
-    return Effect.runPromise(this._recoverStuckTasks(taskNames));
+  recoverStuckTasks(taskNames?: string[]): Effect.Effect<number, never, SchedulerService> {
+    return this._recoverStuckTasks(taskNames);
   }
 
   private _recoverStuckTasks(taskNames?: string[]): Effect.Effect<number, never, never> {
@@ -454,10 +450,10 @@ export class ReliableScheduler {
   }
 
   /**
-   * Cancel and delete a task. Returns true if successful, false if task not found.
+   * Cancel a task. Returns true if canceled, false if not found.
    */
-  async cancelTask(taskId: string): Promise<boolean> {
-    return Effect.runPromise(this._cancelTask(taskId));
+  cancelTask(taskId: string): Effect.Effect<boolean, never, SchedulerService> {
+    return this._cancelTask(taskId);
   }
 
   private _cancelTask(taskId: string) {
@@ -482,10 +478,10 @@ export class ReliableScheduler {
   }
 
   /**
-   * Pause a running task. Returns true if successful, false if task not found or cannot be paused.
+   * Pause a running task. Returns true if paused, false if not found or not running.
    */
-  async pauseTask(taskId: string): Promise<boolean> {
-    return Effect.runPromise(this._pauseTask(taskId));
+  pauseTask(taskId: string): Effect.Effect<boolean, never, SchedulerService> {
+    return this._pauseTask(taskId);
   }
 
   private _pauseTask(taskId: string) {
@@ -517,10 +513,10 @@ export class ReliableScheduler {
   }
 
   /**
-   * Resume a paused task. Returns true if successful, false if task not found or not paused.
+   * Resume a paused task. Returns true if resumed, false if not found or not paused.
    */
-  async resumeTask(taskId: string): Promise<boolean> {
-    return Effect.runPromise(this._resumeTask(taskId));
+  resumeTask(taskId: string): Effect.Effect<boolean, never, SchedulerService> {
+    return this._resumeTask(taskId);
   }
 
   private _resumeTask(taskId: string) {
@@ -558,10 +554,10 @@ export class ReliableScheduler {
   }
 
   /**
-   * Delete all completed tasks. Returns the count of deleted tasks.
+   * Remove all completed tasks. Returns count removed.
    */
-  async clearCompleted(): Promise<number> {
-    return Effect.runPromise(this._clearCompleted());
+  clearCompleted(): Effect.Effect<number, never, SchedulerService> {
+    return this._clearCompleted();
   }
 
   private _clearCompleted() {
@@ -587,10 +583,10 @@ export class ReliableScheduler {
   }
 
   /**
-   * Delete all tasks regardless of status. Returns the count of deleted tasks.
+   * Remove all tasks. Returns count removed.
    */
-  async clearAll(): Promise<number> {
-    return Effect.runPromise(this._clearAll());
+  clearAll(): Effect.Effect<number, never, SchedulerService> {
+    return this._clearAll();
   }
 
   private _clearAll() {
@@ -616,10 +612,10 @@ export class ReliableScheduler {
   }
 
   /**
-   * Call this from your Durable Object's alarm handler to process scheduled tasks.
+   * Process all due tasks. Call this in your DO's alarm() or fetch().
    */
-  async alarm(): Promise<void> {
-    return Effect.runPromise(this._alarm());
+  alarm(): Effect.Effect<void, never, SchedulerService> {
+    return this._alarm();
   }
 
   private _alarm() {

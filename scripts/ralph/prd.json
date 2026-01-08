@@ -60,7 +60,7 @@
     {
       "id": "002",
       "title": "Add SchedulerService Context.Tag for dependency injection",
-      "status": "pending",
+      "status": "completed",
       "priority": "P0",
       "description": "Add Context.Tag<SchedulerService> to enable testable services and DI",
       "acceptance_criteria": [

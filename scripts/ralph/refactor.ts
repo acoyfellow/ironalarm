@@ -108,8 +108,8 @@ function phase3() {
   );
   
   c = c.replace(
-    "await Effect.runPromise(handler(this, taskId, task.params));",
-    "const taskEffect = Effect.service(SchedulerService).pipe(Effect.flatMap(svc => handler(taskId, task.params)));\n      await Effect.runPromise(taskEffect);"
+    "      await Effect.runPromise(handler(this, taskId, task.params));",
+    "      await Effect.runPromise(handler(taskId, task.params).pipe(Effect.provide(Layer.succeed(SchedulerService, this)));"
   );
   
   writeContent(c);
@@ -124,24 +124,24 @@ function phase4() {
   let c = readContent();
   
   const convs: [string, string][] = [
-    ["async schedule(", "schedule("],
-    [": Promise<void> {\n    return Effect.runPromise(this._schedule(", ": Effect.Effect<void, HandlerMissing, SchedulerService> {\n    return this._schedule("],
-    ["async runNow(", "runNow("],
-    [": Promise<void> {\n    return Effect.runPromise(this._runNow(", ": Effect.Effect<void, HandlerMissing, SchedulerService> {\n    return this._runNow("],
-    ["async checkpoint(", "checkpoint("],
-    [": Promise<void> {\n    return Effect.runPromise(this._checkpoint(", ": Effect.Effect<void, never, SchedulerService> {\n    return this._checkpoint("],
-    ["async checkpointMultiple(taskId: string, updates: Record<string, unknown>): Promise<void> {\n    return Effect.runPromise(this._checkpointMultiple(taskId, updates));", "checkpointMultiple(taskId: string, updates: Record<string, unknown>): Effect.Effect<void, never, SchedulerService> {\n    return this._checkpointMultiple(taskId, updates);"],
-    ["async completeTask(taskId: string): Promise<void> {\n    return Effect.runPromise(this._completeTask(taskId));", "completeTask(taskId: string): Effect.Effect<void, never, SchedulerService> {\n    return this._completeTask(taskId);"],
-    ["async getTask(taskId: string): Promise<Task | undefined> {\n    return Effect.runPromise(this._getTask(taskId));", "getTask(taskId: string): Effect.Effect<Task | undefined, never, SchedulerService> {\n    return this._getTask(taskId);"],
-    ["async getTasks(status?: TaskStatus): Promise<Task[]> {\n    return Effect.runPromise(this._getTasks(status));", "getTasks(status?: TaskStatus): Effect.Effect<Task[], never, SchedulerService> {\n    return this._getTasks(status);"],
-    ["async cancelTask(taskId: string): Promise<boolean> {\n    return Effect.runPromise(this._cancelTask(taskId));", "cancelTask(taskId: string): Effect.Effect<boolean, never, SchedulerService> {\n    return this._cancelTask(taskId);"],
-    ["async pauseTask(taskId: string): Promise<boolean> {\n    return Effect.runPromise(this._pauseTask(taskId));", "pauseTask(taskId: string): Effect.Effect<boolean, never, SchedulerService> {\n    return this._pauseTask(taskId);"],
-    ["async resumeTask(taskId: string): Promise<boolean> {\n    return Effect.runPromise(this._resumeTask(taskId));", "resumeTask(taskId: string): Effect.Effect<boolean, never, SchedulerService> {\n    return this._resumeTask(taskId);"],
-    ["async clearCompleted(): Promise<number> {\n    return Effect.runPromise(this._clearCompleted());", "clearCompleted(): Effect.Effect<number, never, SchedulerService> {\n    return this._clearCompleted();"],
-    ["async clearAll(): Promise<number> {\n    return Effect.runPromise(this._clearAll());", "clearAll(): Effect.Effect<number, never, SchedulerService> {\n    return this._clearAll();"],
-    ["async alarm(): Promise<void> {\n    return Effect.runPromise(this._alarm());", "alarm(): Effect.Effect<void, never, SchedulerService> {\n    return this._alarm();"],
-    ["async getCheckpoint(taskId: string, key: string): Promise<unknown> {\n    return Effect.runPromise(this._getCheckpoint(taskId, key));", "getCheckpoint(taskId: string, key: string): Effect.Effect<unknown, never, SchedulerService> {\n    return this._getCheckpoint(taskId, key);"],
-    ["async recoverStuckTasks(taskNames?: string[]): Promise<number> {\n    return Effect.runPromise(this._recoverStuckTasks(taskNames));", "recoverStuckTasks(taskNames?: string[]): Effect.Effect<number, never, SchedulerService> {\n    return this._recoverStuckTasks(taskNames);"],
+    ["  schedule(", "  schedule("],
+    ["): Promise<void> {\n    return Effect.runPromise(this._schedule(", "): Effect.Effect<void, HandlerMissing, SchedulerService> {\n    return this._schedule("],
+    ["  runNow(", "  runNow("],
+    ["): Promise<void> {\n    return Effect.runPromise(this._runNow(", "): Effect.Effect<void, HandlerMissing, SchedulerService> {\n    return this._runNow("],
+    ["  checkpoint(", "  checkpoint("],
+    ["): Promise<void> {\n    return Effect.runPromise(this._checkpoint(", "): Effect.Effect<void, never, SchedulerService> {\n    return this._checkpoint("],
+    ["  checkpointMultiple(taskId: string, updates: Record<string, unknown>): Promise<void> {\n    return Effect.runPromise(this._checkpointMultiple(taskId, updates));", "  checkpointMultiple(taskId: string, updates: Record<string, unknown>): Effect.Effect<void, never, SchedulerService> {\n    return this._checkpointMultiple(taskId, updates);"],
+    ["  completeTask(taskId: string): Promise<void> {\n    return Effect.runPromise(this._completeTask(taskId));", "  completeTask(taskId: string): Effect.Effect<void, never, SchedulerService> {\n    return this._completeTask(taskId);"],
+    ["  getTask(taskId: string): Promise<Task | undefined> {\n    return Effect.runPromise(this._getTask(taskId));", "  getTask(taskId: string): Effect.Effect<Task | undefined, never, SchedulerService> {\n    return this._getTask(taskId);"],
+    ["  getTasks(status?: TaskStatus): Promise<Task[]> {\n    return Effect.runPromise(this._getTasks(status));", "  getTasks(status?: TaskStatus): Effect.Effect<Task[], never, SchedulerService> {\n    return this._getTasks(status);"],
+    ["  cancelTask(taskId: string): Promise<boolean> {\n    return Effect.runPromise(this._cancelTask(taskId));", "  cancelTask(taskId: string): Effect.Effect<boolean, never, SchedulerService> {\n    return this._cancelTask(taskId);"],
+    ["  pauseTask(taskId: string): Promise<boolean> {\n    return Effect.runPromise(this._pauseTask(taskId));", "  pauseTask(taskId: string): Effect.Effect<boolean, never, SchedulerService> {\n    return this._pauseTask(taskId);"],
+    ["  resumeTask(taskId: string): Promise<boolean> {\n    return Effect.runPromise(this._resumeTask(taskId));", "  resumeTask(taskId: string): Effect.Effect<boolean, never, SchedulerService> {\n    return this._resumeTask(taskId);"],
+    ["  clearCompleted(): Promise<number> {\n    return Effect.runPromise(this._clearCompleted());", "  clearCompleted(): Effect.Effect<number, never, SchedulerService> {\n    return this._clearCompleted();"],
+    ["  clearAll(): Promise<number> {\n    return Effect.runPromise(this._clearAll());", "  clearAll(): Effect.Effect<number, never, SchedulerService> {\n    return this._clearAll();"],
+    ["  alarm(): Promise<void> {\n    return Effect.runPromise(this._alarm());", "  alarm(): Effect.Effect<void, never, SchedulerService> {\n    return this._alarm();"],
+    ["  getCheckpoint(taskId: string, key: string): Promise<unknown> {\n    return Effect.runPromise(this._getCheckpoint(taskId, key));", "  getCheckpoint(taskId: string, key: string): Effect.Effect<unknown, never, SchedulerService> {\n    return this._getCheckpoint(taskId, key);"],
+    ["  recoverStuckTasks(taskNames?: string[]): Promise<number> {\n    return Effect.runPromise(this._recoverStuckTasks(taskNames));", "  recoverStuckTasks(taskNames?: string[]): Effect.Effect<number, never, SchedulerService> {\n    return this._recoverStuckTasks(taskNames);"],
   ];
   
   for (const [f, t] of convs) { c = c.replace(f, t); }
