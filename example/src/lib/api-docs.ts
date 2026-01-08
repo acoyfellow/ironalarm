@@ -128,7 +128,7 @@ export const API_METHODS = [
   {
     name: "runNow",
     signature: "async runNow((): Promise<void>",
-    description: "Start a task immediately with eviction safety. Sets a 30s safety alarm for automatic retry. @param options.maxRetries - Override default retry count (default: 3, use Infinity for infinite loop tasks)",
+    description: "Start a task immediately with eviction safety. Sets a 30s safety alarm for automatic retry. @param options.maxRetries - Override default retry count (default: 3, use Infinity for infinite loop tasks) @param options.priority - Task priority: 0=high, 1=medium, 2=low (default: 1)",
     type: "method" as const,
   },
   {
@@ -146,7 +146,7 @@ export const API_METHODS = [
   {
     name: "schedule",
     signature: "async schedule((): Promise<void>",
-    description: "Schedule a task to run at a future time (Unix timestamp or Date).",
+    description: "Schedule a task to run at a future time (Unix timestamp or Date). @param options.priority - Task priority: 0=high, 1=medium, 2=low (default: 1)",
     type: "method" as const,
   }
 ] as const;

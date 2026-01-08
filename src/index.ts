@@ -1023,10 +1023,13 @@ export class ReliableScheduler {
         // Execute sub-step callback or wait
         if (onSubStep) {
           const subStepResult = onSubStep(j);
-          if (subStepResult instanceof Promise) {
-            yield* Effect.promise(() => subStepResult);
+          // Handle both Promise and Effect return types
+          if (subStepResult && typeof (subStepResult as any).then === 'function') {
+            // It's a Promise
+            yield* Effect.promise(() => subStepResult as Promise<void>);
           } else {
-            yield* subStepResult;
+            // It's an Effect
+            yield* (subStepResult as Effect.Effect<void>);
           }
         } else {
           yield* Effect.promise(

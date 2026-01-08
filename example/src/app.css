@@ -118,10 +118,12 @@
   html {
     scroll-behavior: smooth;
     overflow-x: hidden;
+    scrollbar-gutter: stable;
   }
   body {
     @apply bg-zinc-950 text-zinc-100;
     overflow-x: hidden;
+    overscroll-behavior: none;
   }
   button{
     @apply cursor-pointer;

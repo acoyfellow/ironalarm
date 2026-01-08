@@ -478,7 +478,9 @@
 >
   <Dialog.Content>
     <Dialog.Header>
-      <Dialog.Title>{modals.confirm.title || "Confirm"}</Dialog.Title>
+      <Dialog.Title class="text-foreground"
+        >{modals.confirm.title || "Confirm"}</Dialog.Title
+      >
     </Dialog.Header>
     <p class="text-muted-foreground">{modals.confirm.message}</p>
     {#if modals.confirm.password}
@@ -496,7 +498,11 @@
       </div>
     {/if}
     <Dialog.Footer>
-      <Button variant="outline" onclick={() => handleConfirm(false)}>
+      <Button
+        variant="outline"
+        class="text-foreground"
+        onclick={() => handleConfirm(false)}
+      >
         {modals.confirm.options.cancelText || "Cancel"}
       </Button>
       <Button onclick={() => handleConfirm(true)}>
@@ -543,7 +549,7 @@
 >
   <Dialog.Content>
     <Dialog.Header>
-      <Dialog.Title>
+      <Dialog.Title class="text-foreground">
         {modals.prompt.isMulti
           ? `Question ${modals.prompt.currentIndex + 1} of ${(modals.prompt.question as string[]).length}`
           : modals.prompt.title || "Input Required"}
@@ -604,6 +610,7 @@
           {#if modals.prompt.isMulti && modals.prompt.currentIndex > 0}
             <Button
               variant="outline"
+              class="text-foreground"
               onclick={() => {
                 modals.prompt.answers[modals.prompt.currentIndex] =
                   modals.prompt.answer;
@@ -617,7 +624,11 @@
           {/if}
         </div>
         <div class="flex gap-2">
-          <Button variant="outline" onclick={() => handlePrompt(false)}>
+          <Button
+            variant="outline"
+            class="text-foreground"
+            onclick={() => handlePrompt(false)}
+          >
             {(modals.prompt.options as { cancel?: string }).cancel || "Cancel"}
           </Button>
           <Button onclick={() => handlePrompt(true)}>
@@ -642,7 +653,7 @@
     class={modals.form.options.width === "lg" ? "sm:max-w-2xl" : ""}
   >
     <Dialog.Header>
-      <Dialog.Title
+      <Dialog.Title class="text-foreground"
         >{(modals.form.options as { title?: string }).title ||
           "Form"}</Dialog.Title
       >
@@ -714,7 +725,11 @@
     </form>
 
     <Dialog.Footer>
-      <Button variant="outline" onclick={() => closeModal("form", null)}>
+      <Button
+        variant="outline"
+        class="text-foreground"
+        onclick={() => closeModal("form", null)}
+      >
         {(modals.form.options as { cancelText?: string }).cancelText ||
           "Cancel"}
       </Button>
@@ -733,7 +748,7 @@
 >
   <Dialog.Content>
     <Dialog.Header>
-      <Dialog.Title
+      <Dialog.Title class="text-foreground"
         >{(modals.select.config.title as string) ||
           "Select Option"}</Dialog.Title
       >
@@ -800,8 +815,10 @@
     </div>
 
     <Dialog.Footer>
-      <Button variant="outline" onclick={() => closeModal("select", null)}
-        >Cancel</Button
+      <Button
+        variant="outline"
+        class="text-foreground"
+        onclick={() => closeModal("select", null)}>Cancel</Button
       >
       <Button
         onclick={() =>
@@ -825,7 +842,9 @@
 >
   <Dialog.Content>
     <Dialog.Header>
-      <Dialog.Title>{modals.file.title || "Upload Files"}</Dialog.Title>
+      <Dialog.Title class="text-foreground"
+        >{modals.file.title || "Upload Files"}</Dialog.Title
+      >
     </Dialog.Header>
 
     <div
@@ -887,8 +906,10 @@
     {/if}
 
     <Dialog.Footer>
-      <Button variant="outline" onclick={() => closeModal("file", null)}
-        >Cancel</Button
+      <Button
+        variant="outline"
+        class="text-foreground"
+        onclick={() => closeModal("file", null)}>Cancel</Button
       >
       <Button
         onclick={() => closeModal("file", [...modals.file.selected])}
@@ -907,7 +928,9 @@
 >
   <Dialog.Content class="sm:max-w-sm">
     <Dialog.Header>
-      <Dialog.Title>{modals.color.title || "Pick a Color"}</Dialog.Title>
+      <Dialog.Title class="text-foreground"
+        >{modals.color.title || "Pick a Color"}</Dialog.Title
+      >
     </Dialog.Header>
 
     <div class="space-y-4">
@@ -937,8 +960,10 @@
     </div>
 
     <Dialog.Footer>
-      <Button variant="outline" onclick={() => closeModal("color", null)}
-        >Cancel</Button
+      <Button
+        variant="outline"
+        class="text-foreground"
+        onclick={() => closeModal("color", null)}>Cancel</Button
       >
       <Button onclick={() => closeModal("color", modals.color.value)}
         >Select</Button
@@ -954,14 +979,18 @@
 >
   <Dialog.Content class="sm:max-w-sm">
     <Dialog.Header>
-      <Dialog.Title>{modals.date.title || "Select Date"}</Dialog.Title>
+      <Dialog.Title class="text-foreground"
+        >{modals.date.title || "Select Date"}</Dialog.Title
+      >
     </Dialog.Header>
 
     <Input type="date" bind:value={modals.date.value} />
 
     <Dialog.Footer>
-      <Button variant="outline" onclick={() => closeModal("date", null)}
-        >Cancel</Button
+      <Button
+        variant="outline"
+        class="text-foreground"
+        onclick={() => closeModal("date", null)}>Cancel</Button
       >
       <Button onclick={() => closeModal("date", modals.date.value)}
         >Select</Button
