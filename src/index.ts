@@ -1,7 +1,7 @@
 // ironalarm: Effect-powered Reliable task scheduling for Cloudflare Durable Objects
 // Implements Kenton Varda's "reliable runNow" pattern with Effect-TS internals
 
-import { Effect, Data, Context, Layer } from "effect";
+import { Effect, Data, Context, Layer, Schedule, Duration } from "effect";
 
 type TaskStatus = "pending" | "running" | "completed" | "failed" | "paused";
 
@@ -14,7 +14,6 @@ interface Task {
   status: TaskStatus;
   safetyAlarmAt?: number;
   progress: Record<string, unknown>;
-  retryCount?: number;
   maxRetries?: number;
   pausedAt?: number;
   totalPausedMs?: number;
@@ -24,7 +23,7 @@ interface Task {
 type TaskHandler = (
   taskId: string,
   params: unknown
-) => Effect.Effect<void, never, never>;
+) => Effect.Effect<void, unknown, typeof SchedulerService>;
 
 
 
@@ -274,7 +273,6 @@ export class ReliableScheduler {
         // If task is failed, mark it as running again to allow recovery
         if (task.status === "failed") {
           task.status = "running";
-          task.retryCount = 0; // Reset retry count on recovery
           if (task.progress.error) {
             delete task.progress.error;
           }
@@ -320,7 +318,6 @@ export class ReliableScheduler {
         // If task is failed, mark it as running again to allow recovery
         if (task.status === "failed") {
           task.status = "running";
-          task.retryCount = 0;
           if (task.progress.error) {
             delete task.progress.error;
           }
@@ -762,51 +759,27 @@ export class ReliableScheduler {
 
     console.log(`[processTask] Running handler for task ${taskId} (${task.taskName})`);
 
-    const isRetry =
-      task.safetyAlarmAt && task.status === "running";
-    const maxRetries = task.maxRetries ?? 3;
-    const retryCount = task.retryCount ?? 0;
-
-    if (isRetry && retryCount >= maxRetries) {
-      const errorMessage = `Task exceeded max retries (${maxRetries})`;
-      await this._updateTaskSync(taskId, (t) => {
-        t.status = "failed";
-        t.progress.error = errorMessage;
-        return true;
-      });
-      console.error(
-        `Task ${taskId} (${task.taskName}) exceeded max retries (${maxRetries})`
-      );
-      return;
-    }
-
-    let updated = false;
-    if (task.status !== "running") {
-      updated = await this._updateTaskSync(taskId, (t) => {
+    // Mark task as running if not already
+    const updated = await this._updateTaskSync(taskId, (t) => {
+      if (t.status !== "running") {
         t.status = "running";
-        return true;
-      });
-      if (!updated) return;
-    } else if (isRetry) {
-      updated = await this._updateTaskSync(taskId, (t) => {
-        t.retryCount = (t.retryCount ?? 0) + 1;
-        return true;
-      });
-      if (!updated) return;
-    }
+      }
+      return true;
+    });
+    if (!updated) return;
 
     try {
       // Create service layer and provide it to the handler effect
       const layer = this._createServiceLayer();
-      const effect = handler(taskId, task.params);
-      await Effect.runPromise(Effect.provide(effect, layer) as Effect.Effect<void, never, never>);
+      const maxRetries = task.maxRetries ?? 3;
+      const schedule = Schedule.exponential(Duration.millis(100));
+      const result = await Effect.runPromise((Effect.provide(Effect.retry(handler(taskId, task.params), schedule), layer) as unknown) as Effect.Effect<void, unknown, never>);
     } catch (err) {
       console.error(`Task ${taskId} (${task.taskName}) threw:`, err);
       const errorMessage = err instanceof Error ? err.message : String(err);
       await this._updateTaskSync(taskId, (t) => {
-        if (t.status === "running") {
-          t.progress.lastError = errorMessage;
-        }
+        t.status = "failed";
+        t.progress.error = errorMessage;
         return true;
       });
     } finally {

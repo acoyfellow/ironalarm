@@ -26,7 +26,7 @@
 | 002 | Add SchedulerService Context.Tag | pending | test/context.test.ts |
 | 003 | Refactor TaskHandler for DI | pending | test/handler.test.ts |
 | 004 | Convert APIs to Effect types | completed | test/effect-api.test.ts |
-| 005 | Use Schedule.exponential for retry | pending | test/retry.test.ts |
+| 005 | Use Schedule.exponential for retry | completed | test/retry.test.ts |
 | 006 | Use Effect.forEach for concurrency | pending | test/concurrency.test.ts |
 | 007 | Use Effect.log for observability | pending | test/logging.test.ts |
 
@@ -73,3 +73,19 @@ await scheduler.schedule(at, id, name, params);
 type TaskHandler = (taskId: string, params: unknown) => Effect.Effect<void, never, SchedulerService>;
 await scheduler.schedule(at, id, name, params).pipe(runPromise);
 ```
+
+## Learnings from Story 004
+
+- Public APIs now return Effect<T, E, never> instead of Promise<T>
+- Users must call Effect.runPromise() to execute the effects
+- SchedulerService interface uses R = never for all methods since they don't require external services
+- TaskHandler signature changed to R = typeof SchedulerService to allow service access
+- Breaking change: all public method calls need wrapping with Effect.runPromise
+
+## Learnings from Story 005
+
+- Replaced manual retry logic with Effect.retry and Schedule.exponential
+- Task execution now uses Effect.retry(handler, Schedule.exponential(Duration.millis(100)))
+- retryCount removed from Task interface (kept for compatibility)
+- Handlers can now fail and be retried automatically with exponential backoff
+- Effect.provide used to provide SchedulerService context to handlers

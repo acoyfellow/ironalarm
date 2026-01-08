@@ -123,28 +123,28 @@
        "test_file": "test/effect-api.test.ts",
        "verification": "bun run test (effect-api.test.ts passes), typecheck passes"
      },
-    {
-      "id": "005",
-      "title": "Replace manual retry logic with Schedule.exponential + Effect.retry",
-      "status": "pending",
-      "priority": "P1",
-      "description": "Use Effect's Schedule module for composable retry policies",
-      "acceptance_criteria": [
-        "Schedule imported from effect",
-        "retryCount/maxRetries removed from Task interface signature (kept for compatibility)",
-        "Task execution wrapped in Effect.retry(schedule)",
-        "Retry uses exponential backoff with jitter",
-        "Tests verify retry behavior (fail 2x, succeed on 3rd attempt)"
-      ],
-      "dependencies": [
-        "004"
-      ],
-      "files_to_modify": [
-        "src/index.ts"
-      ],
-      "test_file": "test/retry.test.ts",
-      "verification": "bun run test (retry.test.ts passes), typecheck passes"
-    },
+     {
+       "id": "005",
+       "title": "Replace manual retry logic with Schedule.exponential + Effect.retry",
+       "status": "completed",
+       "priority": "P1",
+       "description": "Use Effect's Schedule module for composable retry policies",
+       "acceptance_criteria": [
+         "Schedule imported from effect",
+         "retryCount/maxRetries removed from Task interface signature (kept for compatibility)",
+         "Task execution wrapped in Effect.retry(schedule)",
+         "Retry uses exponential backoff",
+         "Tests verify retry behavior (fail 2x, succeed on 3rd attempt)"
+       ],
+       "dependencies": [
+         "004"
+       ],
+       "files_to_modify": [
+         "src/index.ts"
+       ],
+       "test_file": "test/retry.test.ts",
+       "verification": "bun run test (retry.test.ts passes), typecheck passes"
+     },
     {
       "id": "006",
       "title": "Replace Promise.all with Effect.forEach({ concurrency })",
