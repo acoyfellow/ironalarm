@@ -1,0 +1,167 @@
+{
+  "name": "ironalarm-effect-refactor",
+  "version": "0.2.0",
+  "north_star": "Proper Effect-TS library with dependency injection, testable APIs, and composable patterns",
+  "goal": "Transform ironalarm from Promise-wrapped Effect to proper Effect-TS patterns: Context/Service, Schedule for retry, Fiber concurrency, structured logging",
+  "error_design": {
+    "principle": "All failures are explicit in the error channel. No swallowed exceptions.",
+    "errors": [
+      {
+        "tag": "HandlerMissing",
+        "message": "No handler registered for task name",
+        "fields": { "taskName": "string" },
+        "when": "schedule() or runNow() called with unregistered taskName",
+        "user_action": "Register handler via scheduler.register(name, handler) before scheduling"
+      },
+      {
+        "tag": "TaskNotFound",
+        "message": "Task does not exist",
+        "fields": { "taskId": "string" },
+        "when": "Operation on non-existent task",
+        "user_action": "Verify taskId exists before operation"
+      },
+      {
+        "tag": "TaskConflict",
+        "message": "Task operation conflicts with current state",
+        "fields": { "taskId": "string", "currentStatus": "string", "attemptedOperation": "string" },
+        "when": "Pausing running task, resuming non-paused task, etc.",
+        "user_action": "Check task status before operation"
+      }
+    ]
+  },
+  "stories": [
+    {
+      "id": "001",
+      "title": "Design and implement tagged errors",
+      "status": "pending",
+      "priority": "P0",
+      "description": "Define all error types as tagged errors. All errors must be raiseable via yield* in Effect context.",
+      "acceptance_criteria": [
+        "HandlerMissing, TaskNotFound, TaskConflict defined as Data.TaggedError",
+        "Each error has _tag, message, and relevant fields",
+        "Errors are raised via yield* new Error({...}) in Effect.gen",
+        "Tests verify error types and messages"
+      ],
+      "dependencies": [],
+      "files_to_modify": ["src/index.ts"],
+      "test_file": "test/errors.test.ts",
+      "verification": "bun run test (errors.test.ts passes), typecheck passes"
+    },
+    {
+      "id": "002",
+      "title": "Add SchedulerService Context.Tag for dependency injection",
+      "status": "pending",
+      "priority": "P0",
+      "description": "Add Context.Tag<SchedulerService> to enable testable services and DI",
+      "acceptance_criteria": [
+        "SchedulerService Tag defined with checkpoint, completeTask, schedule methods",
+        "Context imported from effect",
+        "Tests can mock SchedulerService via Layer.succeed",
+        "Live implementation uses actual scheduler"
+      ],
+      "dependencies": ["001"],
+      "files_to_modify": ["src/index.ts"],
+      "test_file": "test/context.test.ts",
+      "verification": "bun run test (context.test.ts passes), typecheck passes"
+    },
+    {
+      "id": "003",
+      "title": "Refactor TaskHandler to use SchedulerService instead of concrete ReliableScheduler",
+      "status": "pending",
+      "priority": "P0",
+      "description": "Change TaskHandler signature to receive SchedulerService from Context",
+      "acceptance_criteria": [
+        "TaskHandler type: (taskId: string, params: unknown) => Effect.Effect<void, never, SchedulerService>",
+        "Handlers no longer receive ReliableScheduler instance directly",
+        "Handler can access service via Effect.service(SchedulerService)",
+        "Tests mock handler and verify service access"
+      ],
+      "dependencies": ["002"],
+      "files_to_modify": ["src/index.ts"],
+      "test_file": "test/handler.test.ts",
+      "verification": "bun run test (handler.test.ts passes), typecheck passes"
+    },
+    {
+      "id": "004",
+      "title": "Convert public APIs from Promise<T> to Effect<T, E, R>",
+      "status": "pending",
+      "priority": "P0",
+      "description": "Remove Effect.runPromise wrapping, return Effect types directly",
+      "acceptance_criteria": [
+        "schedule() returns Effect.Effect<void, HandlerMissing, SchedulerService>",
+        "runNow() returns Effect.Effect<void, HandlerMissing, SchedulerService>",
+        "checkpoint() returns Effect.Effect<void, never, SchedulerService>",
+        "completeTask() returns Effect.Effect<void, never, SchedulerService>",
+        "getTask() returns Effect.Effect<Task | undefined, never, SchedulerService>",
+        "getTasks() returns Effect.Effect<Task[], never, SchedulerService>",
+        "Tests verify Effect types and error channels"
+      ],
+      "dependencies": ["003"],
+      "files_to_modify": ["src/index.ts"],
+      "test_file": "test/effect-api.test.ts",
+      "verification": "bun run test (effect-api.test.ts passes), typecheck passes"
+    },
+    {
+      "id": "005",
+      "title": "Replace manual retry logic with Schedule.exponential + Effect.retry",
+      "status": "pending",
+      "priority": "P1",
+      "description": "Use Effect's Schedule module for composable retry policies",
+      "acceptance_criteria": [
+        "Schedule imported from effect",
+        "retryCount/maxRetries removed from Task interface signature (kept for compatibility)",
+        "Task execution wrapped in Effect.retry(schedule)",
+        "Retry uses exponential backoff with jitter",
+        "Tests verify retry behavior (fail 2x, succeed on 3rd attempt)"
+      ],
+      "dependencies": ["004"],
+      "files_to_modify": ["src/index.ts"],
+      "test_file": "test/retry.test.ts",
+      "verification": "bun run test (retry.test.ts passes), typecheck passes"
+    },
+    {
+      "id": "006",
+      "title": "Replace Promise.all with Effect.forEach({ concurrency })",
+      "status": "pending",
+      "priority": "P1",
+      "description": "Use Effect's Fiber concurrency instead of Promise.all",
+      "acceptance_criteria": [
+        "Promise.all replaced with Effect.forEach",
+        "Concurrency limit parameter respected",
+        "Fibers interrupt properly on error",
+        "maxConcurrentTasks option still works",
+        "Tests verify concurrent execution and interrupt handling"
+      ],
+      "dependencies": ["004"],
+      "files_to_modify": ["src/index.ts"],
+      "test_file": "test/concurrency.test.ts",
+      "verification": "bun run test (concurrency.test.ts passes), typecheck passes"
+    },
+    {
+      "id": "007",
+      "title": "Replace console.error with Effect.log* for structured logging",
+      "status": "pending",
+      "priority": "P2",
+      "description": "Use Effect's logging module for observability",
+      "acceptance_criteria": [
+        "console.error calls replaced with Effect.logError",
+        "console.log calls replaced with Effect.log",
+        "Log levels appropriate (debug, info, error)",
+        "Logging still outputs to console via runtime",
+        "Tests verify log output structure"
+      ],
+      "dependencies": ["004"],
+      "files_to_modify": ["src/index.ts"],
+      "test_file": "test/logging.test.ts",
+      "verification": "bun run test (logging.test.ts passes), typecheck passes"
+    }
+  ],
+  "completed": [],
+  "next_story_id": "001",
+  "rules": {
+    "error_handling": "All failures must be in the error channel (E in Effect<A, E, R>). No try/catch that swallows errors.",
+    "tests_first": "Write tests BEFORE implementing. All tests must pass before moving to next story.",
+    "git_checkpoints": "Commit after each story with message: 'feat: [ID] - [Title]'",
+    "verification": "Every story requires: typecheck passes AND bun test passes"
+  }
+}

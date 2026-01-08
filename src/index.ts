@@ -28,9 +28,11 @@ type TaskHandler = (
 ) => Effect.Effect<void>;
 
 
-class HandlerMissing extends Data.TaggedError("HandlerMissing")<{
-  taskName: string;
-}> { }
+
+class HandlerMissing extends Data.TaggedError("HandlerMissing")<{ taskName: string }> { }
+class TaskNotFound extends Data.TaggedError("TaskNotFound")<{ taskId: string }> { }
+class TaskConflict extends Data.TaggedError("TaskConflict")<{ taskId: string; currentStatus: string; operation: string }> { }
+
 
 export class ReliableScheduler {
   private storage: DurableObjectStorage;

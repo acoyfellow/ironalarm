@@ -1,6 +1,6 @@
 {
   "name": "ironalarm",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Reliable task scheduling for Cloudflare Durable Objects - implements resilient long-running task patterns with eviction safety",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

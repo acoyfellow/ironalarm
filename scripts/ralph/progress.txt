@@ -1,0 +1,75 @@
+# ironalarm 0.2.0 - Effect-TS Refactor Progress
+
+## Rules
+1. **Error design first** - All failures explicit in error channel (E in Effect<A, E, R>)
+2. **Tests first** - Write tests BEFORE implementing. All pass before next story.
+3. **Git checkpoints** - Commit after each story with `feat: [ID] - [Title]`
+4. **Verify** - Every story: typecheck passes AND bun test passes
+
+---
+
+## Error Design (from prd.json)
+
+| Tag | Message | Fields | When |
+|-----|---------|--------|------|
+| HandlerMissing | No handler registered for task name | taskName: string | schedule()/runNow() with unregistered task |
+| TaskNotFound | Task does not exist | taskId: string | Operation on non-existent task |
+| TaskConflict | Operation conflicts with current state | taskId, currentStatus, operation | Pausing running, resuming non-paused, etc. |
+
+---
+
+## Story Queue
+
+| ID | Title | Status | Test File |
+|----|-------|--------|-----------|
+| 001 | Design and implement tagged errors | pending | test/errors.test.ts |
+| 002 | Add SchedulerService Context.Tag | pending | test/context.test.ts |
+| 003 | Refactor TaskHandler for DI | pending | test/handler.test.ts |
+| 004 | Convert APIs to Effect types | pending | test/effect-api.test.ts |
+| 005 | Use Schedule.exponential for retry | pending | test/retry.test.ts |
+| 006 | Use Effect.forEach for concurrency | pending | test/concurrency.test.ts |
+| 007 | Use Effect.log for observability | pending | test/logging.test.ts |
+
+---
+
+## How It Works
+
+```bash
+# Run a single phase
+bun scripts/ralph/refactor.ts 1
+
+# Run all phases
+bun scripts/ralph/refactor.ts all
+
+# After each phase:
+# 1. TypeScript compiles? (bun run typecheck)
+# 2. Tests pass? (bun run test)
+# 3. If either fails -> git checkout to revert
+# 4. If both pass -> git commit
+```
+
+---
+
+## Anti-Patterns Being Fixed
+
+| Before | After |
+|--------|-------|
+| `async schedule(): Promise<void>` | `schedule(): Effect.Effect<void, HandlerMissing, SchedulerService>` |
+| `console.error(...)` | `Effect.logError(...)` |
+| `Promise.all([...])` | `Effect.forEach(tasks, { concurrency })` |
+| Manual retryCount | `Effect.retry(task, Schedule.exponential("1s"))` |
+| `scheduler.checkpoint()` injected | `Effect.service(SchedulerService)` from context |
+
+---
+
+## Breaking Changes (0.1.0 → 0.2.0)
+
+```typescript
+// Before
+type TaskHandler = (scheduler: ReliableScheduler, taskId: string, params: unknown) => Effect.Effect<void>;
+await scheduler.schedule(at, id, name, params);
+
+// After
+type TaskHandler = (taskId: string, params: unknown) => Effect.Effect<void, never, SchedulerService>;
+await scheduler.schedule(at, id, name, params).pipe(runPromise);
+```
