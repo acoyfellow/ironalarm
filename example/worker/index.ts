@@ -147,7 +147,7 @@ export class TaskSchedulerDO extends DurableObject {
           if (!globalTask) {
             yield* Effect.promise(() => sched.runNow(globalTaskId, "global-state", {}, { maxRetries: Infinity }));
             // Wait a bit for it to initialize
-            yield* Effect.promise(() => new Promise(resolve => setTimeout(resolve, 100)));
+            // Removed setTimeout to allow DO hibernation
             globalTask = yield* Effect.promise(() => sched.getTask(globalTaskId));
           }
 
@@ -197,21 +197,21 @@ export class TaskSchedulerDO extends DurableObject {
                   if ((inventory.ore || 0) < requiredOre || (inventory.energy || 0) < requiredEnergy) {
                     // Not enough resources - pause and wait
                     await sched.pauseTask(taskId);
-                    // Poll until resources are available
-                    let attempts = 0;
-                    while (attempts < 100) {
-                      await new Promise((r) => setTimeout(r, 500));
-                      const updatedInventory = ((await sched.getCheckpoint("global-state", "inventory")) ||
-                        { ore: 0, energy: 0 }) as Record<string, number>;
-                      if (
-                        (updatedInventory.ore || 0) >= requiredOre &&
-                        (updatedInventory.energy || 0) >= requiredEnergy
-                      ) {
-                        await sched.resumeTask(taskId);
-                        break;
-                      }
-                      attempts++;
-                    }
+                     // Poll until resources are available
+                     let attempts = 0;
+                     while (attempts < 100) {
+                       // Removed setTimeout to allow DO hibernation - poll immediately
+                       const updatedInventory = ((await sched.getCheckpoint("global-state", "inventory")) ||
+                         { ore: 0, energy: 0 }) as Record<string, number>;
+                       if (
+                         (updatedInventory.ore || 0) >= requiredOre &&
+                         (updatedInventory.energy || 0) >= requiredEnergy
+                       ) {
+                         await sched.resumeTask(taskId);
+                         break;
+                       }
+                       attempts++;
+                     }
                   }
                 } else if (stepName === "gather_materials") {
                   // Consume resources
@@ -614,10 +614,8 @@ export class TaskSchedulerDO extends DurableObject {
       const savedResources = globalTask?.progress?.resources;
       if (globalTask) {
         await this.scheduler.cancelTask(globalTaskId);
-        await new Promise((r) => setTimeout(r, 100));
       }
       await this.scheduler.runNow(globalTaskId, "global-state", { namespace }, { maxRetries: Infinity });
-      await new Promise((r) => setTimeout(r, 200));
       globalTask = await this.scheduler.getTask(globalTaskId);
 
       // Restore resources if they existed
