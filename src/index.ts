@@ -1,7 +1,7 @@
 // ironalarm: Effect-powered Reliable task scheduling for Cloudflare Durable Objects
 // Implements Kenton Varda's "reliable runNow" pattern with Effect-TS internals
 
-import { Effect, Data } from "effect";
+import { Effect, Data, Context, Layer } from "effect";
 
 type TaskStatus = "pending" | "running" | "completed" | "failed" | "paused";
 
@@ -28,6 +28,20 @@ type TaskHandler = (
 ) => Effect.Effect<void>;
 
 
+
+
+class SchedulerService extends Context.Tag("SchedulerService")<SchedulerService, {
+  readonly schedule: (at: Date | number, taskId: string, taskName: string, params?: unknown) => Effect.Effect<void, HandlerMissing>;
+  readonly runNow: (taskId: string, taskName: string, params?: unknown) => Effect.Effect<void, HandlerMissing>;
+  readonly checkpoint: (taskId: string, key: string, value: unknown) => Effect.Effect<void>;
+  readonly checkpointMultiple: (taskId: string, updates: Record<string, unknown>) => Effect.Effect<void>;
+  readonly completeTask: (taskId: string) => Effect.Effect<void>;
+  readonly getTask: (taskId: string) => Effect.Effect<Task | undefined>;
+  readonly getTasks: (status?: TaskStatus) => Effect.Effect<Task[]>;
+  readonly cancelTask: (taskId: string) => Effect.Effect<boolean>;
+  readonly pauseTask: (taskId: string) => Effect.Effect<boolean>;
+  readonly resumeTask: (taskId: string) => Effect.Effect<boolean>;
+}>() {}
 
 class HandlerMissing extends Data.TaggedError("HandlerMissing")<{ taskName: string }> { }
 class TaskNotFound extends Data.TaggedError("TaskNotFound")<{ taskId: string }> { }

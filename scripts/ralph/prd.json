@@ -81,7 +81,7 @@
     {
       "id": "003",
       "title": "Refactor TaskHandler to use SchedulerService instead of concrete ReliableScheduler",
-      "status": "pending",
+      "status": "completed",
       "priority": "P0",
       "description": "Change TaskHandler signature to receive SchedulerService from Context",
       "acceptance_criteria": [

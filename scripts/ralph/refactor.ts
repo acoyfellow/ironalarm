@@ -11,9 +11,13 @@ function commit(msg: string) { git("add -A"); git(`commit -m "${msg}"`); }
 function typecheck() { try { execSync("npx tsc --noEmit --project tsconfig.build.json", { stdio: "inherit" }); return true; } catch { return false; } }
 function test() { try { execSync("bun vitest run 2>&1", { stdio: "pipe", encoding: "utf-8" }); return true; } catch (e: any) {
     const output = e.stdout || e.message || "";
-    const testsPassed = output.includes("69 passed") || output.includes("73 passed");
-    const testsFailed = output.includes("failed |");
-    const errors = parseInt(output.match(/Errors\s+(\d+)/)?.[1] || "0");
+    // Strip ANSI codes
+    const cleanOutput = output.replace(/\x1b\[[0-9;]*m/g, "");
+    const testsPassed = /Tests\s+\d+ passed/.test(cleanOutput);
+    const testsFailed = /Tests\s+\d+ failed/.test(cleanOutput) || cleanOutput.includes("failed |");
+    const errors = parseInt(cleanOutput.match(/Errors\s+(\d+)/)?.[1] || "0");
+    log(`Test output (last 500 chars): ${cleanOutput.substring(cleanOutput.length - 500)}`);
+    log(`testsPassed: ${testsPassed}, testsFailed: ${testsFailed}, errors: ${errors}`);
     if (testsPassed && !testsFailed && errors > 0) {
       log("Note: Infrastructure errors but all tests passed. Proceeding.");
       return true;
@@ -72,18 +76,18 @@ function phase2() {
   c = c.replace('import { Effect, Data } from "effect";', 'import { Effect, Data, Context, Layer } from "effect";');
   
   const svc = `
-const SchedulerService = Context.Tag<SchedulerService>("scheduler");
-interface SchedulerService {
+class SchedulerService extends Context.Tag("SchedulerService")<SchedulerService, {
   readonly schedule: (at: Date | number, taskId: string, taskName: string, params?: unknown) => Effect.Effect<void, HandlerMissing>;
   readonly runNow: (taskId: string, taskName: string, params?: unknown) => Effect.Effect<void, HandlerMissing>;
   readonly checkpoint: (taskId: string, key: string, value: unknown) => Effect.Effect<void>;
+  readonly checkpointMultiple: (taskId: string, updates: Record<string, unknown>) => Effect.Effect<void>;
   readonly completeTask: (taskId: string) => Effect.Effect<void>;
   readonly getTask: (taskId: string) => Effect.Effect<Task | undefined>;
   readonly getTasks: (status?: TaskStatus) => Effect.Effect<Task[]>;
   readonly cancelTask: (taskId: string) => Effect.Effect<boolean>;
   readonly pauseTask: (taskId: string) => Effect.Effect<boolean>;
   readonly resumeTask: (taskId: string) => Effect.Effect<boolean>;
-}
+}>() {}
 `;
   c = c.replace("class HandlerMissing", svc + "\nclass HandlerMissing");
   
