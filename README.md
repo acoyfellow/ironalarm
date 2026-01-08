@@ -6,7 +6,7 @@ Reliable task scheduling for Cloudflare Durable Objects, implementing the "relia
 
 ## Breaking Changes (v0.2.0)
 
-**⚠️ All public APIs now return `Effect<T, E, SchedulerService>` instead of `Promise<T>`**
+**⚠️ All public APIs now return `Effect<T, E, never>` instead of `Promise<T>`**
 
 ```typescript
 // Before (v0.1.0)
@@ -22,13 +22,22 @@ const program = Effect.gen(function* () {
 await Effect.runPromise(program);
 ```
 
+**Task Handler Signature Change:**
+```typescript
+// Before
+type TaskHandler = (scheduler: ReliableScheduler, taskId: string, params: unknown) => Effect.Effect<void>;
+
+// After
+type TaskHandler = (taskId: string, params: unknown) => Effect.Effect<void, unknown, typeof SchedulerService>;
+```
+
 ## Problem
 
 Cloudflare Durable Objects can evict your code after ~144 seconds of inactivity. For long-running operations (like AI agent loops), a single eviction mid-task breaks your workflow. `ironalarm` solves this with a lightweight, checkpointed implementation powered by Effect-TS that persists task state and uses a 30-second safety alarm net—if evicted, the task automatically retries and resumes from checkpoints.
 
 ## Features
 
-- **Effect-TS powered**: All APIs return composable `Effect<T, E, SchedulerService>` types
+- **Effect-TS powered**: Public APIs return `Effect<T, E, never>`, handlers use `Effect<T, E, SchedulerService>` for DI
 - **Dependency injection**: `SchedulerService` Context.Tag enables testable services
 - **Reliable execution**: `runNow()` starts immediately + 30s safety alarm for eviction recovery
 - **Future scheduling**: `schedule()` for delayed/recurring tasks
