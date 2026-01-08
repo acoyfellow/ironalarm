@@ -18,6 +18,7 @@ interface Task {
   maxRetries?: number;
   pausedAt?: number;
   totalPausedMs?: number;
+  priority?: number; // 0=high, 1=medium, 2=low (default: 1)
 }
 
 type TaskHandler = (
@@ -36,12 +37,17 @@ export class ReliableScheduler {
   private handlers: Map<string, TaskHandler> = new Map();
   private taskCache: Map<string, Task> | null = null;
   private cacheValid = false;
+  private maxConcurrentTasks: number;
 
   /**
    * Creates a new scheduler instance with the provided Durable Object storage.
+   * @param storage - Durable Object storage instance
+   * @param options - Optional configuration
+   * @param options.maxConcurrentTasks - Maximum number of tasks to process concurrently (default: 10)
    */
-  constructor(storage: DurableObjectStorage) {
+  constructor(storage: DurableObjectStorage, options?: { maxConcurrentTasks?: number }) {
     this.storage = storage;
+    this.maxConcurrentTasks = options?.maxConcurrentTasks ?? 10;
   }
 
   /**
@@ -60,21 +66,24 @@ export class ReliableScheduler {
 
   /**
    * Schedule a task to run at a future time (Unix timestamp or Date).
+   * @param options.priority - Task priority: 0=high, 1=medium, 2=low (default: 1)
    */
   async schedule(
     at: Date | number,
     taskId: string,
     taskName: string,
-    params: unknown = {}
+    params: unknown = {},
+    options?: { priority?: number }
   ): Promise<void> {
-    return Effect.runPromise(this._schedule(at, taskId, taskName, params));
+    return Effect.runPromise(this._schedule(at, taskId, taskName, params, options));
   }
 
   private _schedule(
     at: Date | number,
     taskId: string,
     taskName: string,
-    params: unknown
+    params: unknown,
+    options?: { priority?: number }
   ) {
     return Effect.gen(this, function* () {
       if (!this.handlers.has(taskName)) {
@@ -100,6 +109,8 @@ export class ReliableScheduler {
           // Preserve status if running, otherwise set to pending
           status: existingTask.status === "running" ? "running" : "pending",
           // Preserve progress/checkpoints
+          // Update priority if provided, otherwise preserve existing
+          priority: options?.priority ?? existingTask.priority ?? 1,
         }
         : {
           // New task
@@ -110,6 +121,7 @@ export class ReliableScheduler {
           startedAt: now,
           status: "pending",
           progress: {},
+          priority: options?.priority ?? 1,
         };
 
       // Invalidate cache BEFORE transaction so queue rebuild uses fresh data
@@ -132,17 +144,18 @@ export class ReliableScheduler {
   /**
    * Start a task immediately with eviction safety. Sets a 30s safety alarm for automatic retry.
    * @param options.maxRetries - Override default retry count (default: 3, use Infinity for infinite loop tasks)
+   * @param options.priority - Task priority: 0=high, 1=medium, 2=low (default: 1)
    */
   async runNow(
     taskId: string,
     taskName: string,
     params: unknown = {},
-    options?: { maxRetries?: number }
+    options?: { maxRetries?: number; priority?: number }
   ): Promise<void> {
     return Effect.runPromise(this._runNow(taskId, taskName, params, options));
   }
 
-  private _runNow(taskId: string, taskName: string, params: unknown, options?: { maxRetries?: number }) {
+  private _runNow(taskId: string, taskName: string, params: unknown, options?: { maxRetries?: number; priority?: number }) {
     return Effect.gen(this, function* () {
       if (!this.handlers.has(taskName)) {
         yield* new HandlerMissing({ taskName });
@@ -162,6 +175,7 @@ export class ReliableScheduler {
         safetyAlarmAt: safetyAt,
         progress: {},
         maxRetries: options?.maxRetries,
+        priority: options?.priority ?? 1,
       };
 
       yield* Effect.promise(() =>
@@ -336,7 +350,7 @@ export class ReliableScheduler {
       for (const task of tasks) {
         // Only check specified task names, or all running tasks
         if (taskNames && !taskNames.includes(task.taskName)) continue;
-        if (task.status !== "running" && task.status !== "failed" && task.status !== "completed") continue;
+        if (task.status !== "running" && task.status !== "failed" && task.status !== "completed" && task.status !== "pending") continue;
 
         // Recover failed/completed tasks
         if (task.status === "failed" || task.status === "completed") {
@@ -345,25 +359,33 @@ export class ReliableScheduler {
           continue;
         }
 
-        // Reschedule if stuck (scheduled >1min ago)
-        if (task.status === "running" && task.scheduledAt > 0 && now > task.scheduledAt + 60000) {
-          // Reschedule for immediate execution - use _schedule directly to avoid handler check
-          const scheduledAt = now + 100;
-          const existingTask = yield* Effect.promise(() =>
-            this.storage.get<Task>(`task:${task.taskId}`)
-          );
-          if (existingTask) {
-            existingTask.scheduledAt = scheduledAt;
-            existingTask.status = "pending";
-            yield* Effect.promise(() => this.storage.put(`task:${task.taskId}`, existingTask));
-            this.invalidateCache();
-            yield* Effect.promise(() =>
-              this.storage.transaction(async (txn: any) => {
-                await this._rebuildQueueSync(txn);
-                await this._updateAlarmSync(txn);
-              })
+        // Reschedule if stuck (scheduled >5 seconds ago OR never scheduled)
+        if (task.status === "running" || task.status === "pending") {
+          const scheduledAt = task.scheduledAt || 0;
+          const isStuck = scheduledAt === 0 || (scheduledAt > 0 && now > scheduledAt + 5000);
+
+          if (isStuck) {
+            // Reschedule for immediate execution - use _schedule directly to avoid handler check
+            // Set to now - 1ms so it's immediately due (not now + 100 which delays it)
+            const newScheduledAt = now - 1;
+            const existingTask = yield* Effect.promise(() =>
+              this.storage.get<Task>(`task:${task.taskId}`)
             );
-            recovered++;
+            if (existingTask) {
+              const reason = scheduledAt === 0 ? "never scheduled" : `${Math.round((now - scheduledAt) / 1000)}s overdue`;
+              console.log(`[recoverStuckTasks] Recovering task ${task.taskId} (${task.taskName}): ${reason}, rescheduling for immediate execution`);
+              existingTask.scheduledAt = newScheduledAt;
+              existingTask.status = "pending";
+              yield* Effect.promise(() => this.storage.put(`task:${task.taskId}`, existingTask));
+              this.invalidateCache();
+              yield* Effect.promise(() =>
+                this.storage.transaction(async (txn: any) => {
+                  await this._rebuildQueueSync(txn);
+                  await this._updateAlarmSync(txn);
+                })
+              );
+              recovered++;
+            }
           }
         }
       }
@@ -589,9 +611,37 @@ export class ReliableScheduler {
       const now = Date.now();
       const dueTaskIds = yield* this._getDueTaskIds(now);
 
+      console.log(`[_alarm] Found ${dueTaskIds.length} due tasks at ${now}`);
+
+      // Separate recovery tasks (stuck) from normal tasks
+      const recoveryTasks: string[] = [];
+      const normalTasks: string[] = [];
+
       for (const taskId of dueTaskIds) {
-        void this.processTask(taskId);
+        const task = yield* Effect.promise(() => this.storage.get<Task>(`task:${taskId}`));
+        if (task) {
+          const scheduledAt = task.scheduledAt || 0;
+          const isStuck = scheduledAt === 0 || (scheduledAt > 0 && now > scheduledAt + 5000);
+          if (isStuck) {
+            recoveryTasks.push(taskId);
+            console.log(`[_alarm] Recovery task: ${taskId} (${task.taskName}), scheduled=${scheduledAt}, overdue=${scheduledAt > 0 ? Math.round((now - scheduledAt) / 1000) : 'never'}s`);
+          } else {
+            normalTasks.push(taskId);
+            console.log(`[_alarm] Normal task: ${taskId} (${task.taskName}), scheduled=${scheduledAt}`);
+          }
+        } else {
+          // If task not found, treat as normal (will be skipped in processTask)
+          normalTasks.push(taskId);
+        }
       }
+
+      console.log(`[_alarm] Processing ${recoveryTasks.length} recovery tasks, ${normalTasks.length} normal tasks`);
+
+      // Process recovery tasks first (they're more critical)
+      yield* Effect.promise(() => this._processTasksWithConcurrencyLimit(recoveryTasks));
+
+      // Then process normal tasks
+      yield* Effect.promise(() => this._processTasksWithConcurrencyLimit(normalTasks));
 
       yield* Effect.promise(() =>
         this.storage.transaction(async (txn: any) => {
@@ -602,13 +652,47 @@ export class ReliableScheduler {
     });
   }
 
-  private async processTask(taskId: string): Promise<void> {
-    const task = await this.storage.get<Task>(`task:${taskId}`);
-    if (!task) return;
+  // Process tasks with concurrency limit to prevent CPU exhaustion
+  private async _processTasksWithConcurrencyLimit(taskIds: string[]): Promise<void> {
+    if (taskIds.length === 0) return;
 
-    if (task.status === "paused") return;
+    console.log(`[_processTasksWithConcurrencyLimit] Processing ${taskIds.length} tasks in batches of ${this.maxConcurrentTasks}`);
+
+    // Process tasks in batches to respect concurrency limit
+    for (let i = 0; i < taskIds.length; i += this.maxConcurrentTasks) {
+      const batch = taskIds.slice(i, i + this.maxConcurrentTasks);
+      console.log(`[_processTasksWithConcurrencyLimit] Processing batch ${Math.floor(i / this.maxConcurrentTasks) + 1}: ${batch.length} tasks`);
+
+      const batchPromises = batch.map(taskId =>
+        this.processTask(taskId).catch((error) => {
+          console.error(`[scheduler] Failed to process task ${taskId}:`, error);
+          // Task will be marked for recovery on next check if it fails
+        })
+      );
+
+      // Wait for entire batch to complete before starting next batch
+      await Promise.all(batchPromises);
+      console.log(`[_processTasksWithConcurrencyLimit] Batch ${Math.floor(i / this.maxConcurrentTasks) + 1} completed`);
+    }
+  }
+
+  private async processTask(taskId: string): Promise<void> {
+    const startTime = Date.now();
+    const task = await this.storage.get<Task>(`task:${taskId}`);
+    if (!task) {
+      console.log(`[processTask] Task ${taskId} not found, skipping`);
+      return;
+    }
+
+    console.log(`[processTask] Processing task ${taskId} (${task.taskName}), status=${task.status}, scheduled=${task.scheduledAt}`);
+
+    if (task.status === "paused") {
+      console.log(`[processTask] Task ${taskId} is paused, skipping`);
+      return;
+    }
 
     if (task.progress.completed) {
+      console.log(`[processTask] Task ${taskId} is completed, marking as completed`);
       await this._updateTaskSync(taskId, (t) => {
         t.status = "completed";
         return true;
@@ -618,9 +702,11 @@ export class ReliableScheduler {
 
     const handler = this.handlers.get(task.taskName);
     if (!handler) {
-      console.error(`No handler for taskName "${task.taskName}"`);
+      console.error(`[processTask] No handler for taskName "${task.taskName}"`);
       return;
     }
+
+    console.log(`[processTask] Running handler for task ${taskId} (${task.taskName})`);
 
     const isRetry =
       task.safetyAlarmAt && task.status === "running";
@@ -666,6 +752,12 @@ export class ReliableScheduler {
         }
         return true;
       });
+    } finally {
+      // Track execution time per task
+      const duration = Date.now() - startTime;
+      if (duration > 1000) {
+        console.warn(`[processTask] Task ${taskId} (${task.taskName}) took ${duration}ms`);
+      }
     }
   }
 
@@ -734,19 +826,24 @@ export class ReliableScheduler {
       }
     }
 
-    const tasksWithTime: Array<{ id: string; time: number }> = [];
+    const tasksWithTime: Array<{ id: string; time: number; priority: number }> = [];
     for (const id of activeTaskIds) {
       const t = this.taskCache.get(id);
       if (t) {
         // Use scheduledAt for queue ordering (it's updated when rescheduling)
         // safetyAlarmAt is only for eviction recovery, not scheduling
         const time = t.scheduledAt;
-        tasksWithTime.push({ id, time });
+        const priority = t.priority ?? 1;
+        tasksWithTime.push({ id, time, priority });
       }
     }
 
+    // Sort by scheduledAt first, then by priority (0=high first) for tasks due at same time
     const sorted = tasksWithTime
-      .sort((a, b) => a.time - b.time)
+      .sort((a, b) => {
+        if (a.time !== b.time) return a.time - b.time;
+        return a.priority - b.priority;
+      })
       .map((o) => o.id);
     await storage.put("queue", sorted);
   }
@@ -785,11 +882,24 @@ export class ReliableScheduler {
         // Use scheduledAt for determining if task is due (it's updated when rescheduling)
         // safetyAlarmAt is only for eviction recovery, not scheduling
         const dueTime = task.scheduledAt;
-        if (dueTime <= now && !task.progress.completed) {
+        const isDue = dueTime <= now && !task.progress.completed;
+        if (isDue) {
           due.push(taskId);
         } else {
+          // Queue is sorted by scheduledAt, so if this one isn't due, none after are
+          if (dueTime > now) {
+            const waitTime = Math.round((dueTime - now) / 1000);
+            if (due.length === 0 && waitTime < 60) {
+              // Only log if no tasks are due and wait is short (to avoid spam)
+              console.log(`[_getDueTaskIds] Next task ${taskId} due in ${waitTime}s (scheduled=${dueTime}, now=${now})`);
+            }
+          }
           break;
         }
+      }
+
+      if (due.length > 0) {
+        console.log(`[_getDueTaskIds] Found ${due.length} due tasks: ${due.join(', ')}`);
       }
       return due;
     });
@@ -819,8 +929,12 @@ export class ReliableScheduler {
     // Use scheduledAt for alarm timing (it's updated when rescheduling)
     // safetyAlarmAt is only for eviction recovery, not scheduling
     const nextTime = nextTask.scheduledAt;
-    if (nextTime > Date.now()) {
+    const now = Date.now();
+    if (nextTime > now) {
       await storage.setAlarm(nextTime);
+    } else {
+      // Task is due NOW or overdue - set alarm for immediate execution
+      await storage.setAlarm(now + 1);
     }
   }
 

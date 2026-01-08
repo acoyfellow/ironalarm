@@ -12,9 +12,10 @@ Cloudflare Durable Objects can evict your code after ~144 seconds of inactivity.
 
 - **Reliable execution**: `runNow()` starts immediately + 30s safety alarm for eviction recovery
 - **Future scheduling**: `schedule()` for delayed/recurring tasks
+- **Priority queues**: High/medium/low priority for execution order when multiple tasks are due
 - **Checkpoints**: User-managed progress tracking for resumable work
 - **Named handlers**: Register task handlers by name (no function serialization)
-- **Fully serializable**: Tasks are just `{ taskName, params, progress }`
+- **Fully serializable**: Tasks are just `{ taskName, params, progress, priority }`
 
 ## Installation
 
@@ -122,8 +123,9 @@ export class MyDO extends DurableObject {
           await this.scheduler.checkpoint(task.taskId, '_recovered', true);
         }
         
-        // If scheduled time is way in the past, reschedule immediately
-        if (task.scheduledAt > 0 && now > task.scheduledAt + 60000) {
+        // If scheduled time is way in the past (or never scheduled), reschedule immediately
+        const scheduledAt = task.scheduledAt || 0;
+        if (scheduledAt === 0 || (scheduledAt > 0 && now > scheduledAt + 5000)) {
           const params = task.params;
           await this.scheduler.schedule(now + 100, task.taskId, task.taskName, params);
           continue;
@@ -163,8 +165,10 @@ export class MyDO extends DurableObject {
         await this.scheduler.checkpoint(task.taskId, '_recovered', true);
       }
       
-      // Reschedule if stuck (scheduled >1min ago)
-      if (task.status === 'running' && task.scheduledAt > 0 && now > task.scheduledAt + 60000) {
+      // Reschedule if stuck (scheduled >5 seconds ago OR never scheduled)
+      const scheduledAt = task.scheduledAt || 0;
+      if ((task.status === 'running' || task.status === 'pending') && 
+          (scheduledAt === 0 || (scheduledAt > 0 && now > scheduledAt + 5000))) {
         const params = task.params;
         await this.scheduler.schedule(now + 100, task.taskId, task.taskName, params);
       }
@@ -175,17 +179,45 @@ export class MyDO extends DurableObject {
 
 **Why This Matters**: Without recovery checks, tasks scheduled for "5 seconds from now" will be stuck if the DO hibernates for hours. The alarm processes overdue tasks, but they may not reschedule correctly. Recovery checks ensure they resume properly.
 
+**Recovery Threshold**: The `recoverStuckTasks()` method uses a 5-second threshold (not 60 seconds) to catch stuck tasks quickly. It also handles:
+- Tasks with `scheduledAt === 0` (never scheduled)
+- Tasks in "pending" status that should be running
+- Tasks that are overdue by more than 5 seconds
+
+**Troubleshooting Stuck Tasks**: If tasks stop counting after hibernation:
+1. Check logs for `[recoverStuckTasks]` messages - these show what's being recovered
+2. Check logs for `[fetch]` and `[alarm]` messages - these show task states on wake-up
+3. Verify `recoverStuckTasks()` is being called in both `fetch()` and `alarm()` methods
+4. Ensure tasks are rescheduling themselves correctly in their handlers
+
+**CPU Limit Management**: Durable Objects get their CPU time limit "topped up" on each request (including `fetch()` and `alarm()` calls). However, if many tasks recover simultaneously, they can exhaust CPU before completing. The scheduler includes:
+- **Concurrency limits**: Processes tasks in batches (default: 10 concurrent) to prevent CPU exhaustion
+- **Task prioritization**: Recovery tasks (stuck >5s) process before normally scheduled tasks
+- **Execution time monitoring**: Logs warnings if alarm processing takes >5s, errors if >10s
+- **Per-task timing**: Logs warnings for individual tasks taking >1s
+
+To adjust concurrency for high-throughput scenarios:
+```typescript
+const scheduler = new ReliableScheduler(storage, { maxConcurrentTasks: 20 });
+```
+
 ## API
 
 ### Constructor
-`new ReliableScheduler(storage: DurableObjectStorage)`
+`new ReliableScheduler(storage: DurableObjectStorage, options?)`
+
+- `storage` - Durable Object storage instance
+- `options` - Optional configuration
+  - `options.maxConcurrentTasks` - Maximum number of tasks to process concurrently (default: 10)
 
 ### Methods
 
 - `register(taskName, handler)` — Register a named task handler
 - `runNow(taskId, taskName, params?, options?)` — Start immediately with eviction safety
   - `options.maxRetries` — Override retry limit (default: 3, use `Infinity` for loop tasks)
-- `schedule(at, taskId, taskName, params?)` — Schedule for future time
+  - `options.priority` — Task priority: 0=high, 1=medium, 2=low (default: 1)
+- `schedule(at, taskId, taskName, params?, options?)` — Schedule for future time
+  - `options.priority` — Task priority: 0=high, 1=medium, 2=low (default: 1)
 - `checkpoint(taskId, key, value)` — Save progress
 - `getCheckpoint(taskId, key)` — Retrieve progress
 - `completeTask(taskId)` — Mark as done
@@ -200,12 +232,36 @@ export class MyDO extends DurableObject {
 - `alarm()` — Call from DO's alarm handler
 - `recoverStuckTasks(taskNames?)` — Recover overdue tasks after hibernation (call in `fetch()` and `alarm()`)
 
+## Priority Scheduling
+
+When multiple tasks are due at the same time, priority determines execution order:
+
+```typescript
+// High priority - executes first (0 = highest)
+await scheduler.runNow('urgent-task', 'process', data, { priority: 0 });
+
+// Medium priority - default behavior
+await scheduler.runNow('normal-task', 'process', data); // priority: 1
+
+// Low priority - executes last
+await scheduler.runNow('background-task', 'cleanup', {}, { priority: 2 });
+
+// Also works with schedule()
+await scheduler.schedule(Date.now() + 5000, 'task-id', 'handler', params, { priority: 0 });
+```
+
+**Behavior:**
+- Tasks due at same time → higher priority (lower number) runs first
+- Different `scheduledAt` → earlier time runs first (priority is secondary sort)
+- Default priority = 1 (medium)
+- Backward compatible (existing tasks default to priority 1)
+
 ## Design
 
 - **Eviction safety**: 30s safety alarm retries if evicted
 - **Checkpoints**: Skip already-done work on resume
 - **Named handlers**: No function serialization
-- **Single queue**: One alarm drives all tasks
+- **Single queue**: One alarm drives all tasks, sorted by time then priority
 - **Retry limits**: Tasks automatically fail after 3 retries (configurable via `maxRetries`)
 - **Pause/resume**: Tasks can be paused and resumed without losing state
 

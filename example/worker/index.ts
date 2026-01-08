@@ -16,7 +16,9 @@ export class TaskSchedulerDO extends DurableObject {
 
   constructor(ctx: any, env: Env) {
     super(ctx, env);
-    this.scheduler = new ReliableScheduler(this.ctx.storage);
+    // Configure scheduler with concurrency limit to prevent CPU exhaustion
+    // Default is 10 concurrent tasks, which is safe for most use cases
+    this.scheduler = new ReliableScheduler(this.ctx.storage, { maxConcurrentTasks: 10 });
     this.app = new Hono();
 
     // Resume any "running" tasks that lost their Effect due to DO restart
@@ -573,20 +575,18 @@ export class TaskSchedulerDO extends DurableObject {
           await this.scheduler.checkpoint(task.taskId, "_recovered", true);
         }
 
-        // For miners: if scheduled time is way in the past, reschedule for immediate execution
+        // For miners: if scheduled time is way in the past or never scheduled, reschedule for immediate execution
         if (task.taskName === "mine-resource-loop") {
           const scheduledAt = task.scheduledAt || 0;
-          if (scheduledAt > 0 && now > scheduledAt + 60000) {
-            // Task is way overdue - reschedule for immediate execution
+          const isStuck = scheduledAt === 0 || (scheduledAt > 0 && now > scheduledAt + 5000);
+
+          if (isStuck) {
+            const reason = scheduledAt === 0 ? "never scheduled" : `${Math.round((now - scheduledAt) / 1000)}s overdue`;
+            console.log(`[resumeRunningTasks] Resuming stuck miner ${task.taskId}: ${reason}, rescheduling for immediate execution`);
             const params = task.params as Record<string, any>;
-            await this.scheduler.schedule(now + 100, task.taskId, "mine-resource-loop", params);
+            // Schedule for immediate execution (now - 1ms so it's due immediately)
+            await this.scheduler.schedule(now - 1, task.taskId, "mine-resource-loop", params);
             continue; // Don't run handler directly, let alarm process it
-          } else if (scheduledAt === 0) {
-            // No scheduled time - reschedule it
-            const params = task.params as Record<string, any>;
-            const timeMs = (params.timeMs || 4000) as number;
-            await this.scheduler.schedule(now + 100, task.taskId, "mine-resource-loop", params);
-            continue;
           }
         }
 
@@ -966,10 +966,24 @@ export class TaskSchedulerDO extends DurableObject {
     // CRITICAL: Recover stuck tasks on every wake-up (handles hibernation recovery)
     // This ensures miners resume even if DO hibernated for hours/days
     try {
+      // Diagnostic logging: check task states on wake-up
+      const tasks = await this.scheduler.getTasks();
+      const miners = tasks.filter(t => t.taskName === "mine-resource-loop" && t.taskId.startsWith("mission4-"));
+      console.log(`[fetch] DO woke up: ${miners.length} miners found`);
+
+      // Log each miner's state for diagnosis
+      for (const miner of miners) {
+        const scheduledAt = miner.scheduledAt || 0;
+        const age = scheduledAt > 0 ? Date.now() - scheduledAt : -1;
+        console.log(`[fetch] Miner ${miner.taskId}: status=${miner.status}, scheduled=${scheduledAt}, age=${age > 0 ? Math.round(age / 1000) + 's' : 'never'}`);
+      }
+
       await this.ensureGlobalStateHealthy("mission4");
       const recovered = await this.scheduler.recoverStuckTasks(["mine-resource-loop", "global-state"]);
       if (recovered > 0) {
-        console.log(`[fetch] Recovered ${recovered} stuck task(s) after hibernation`);
+        console.log(`[fetch] Recovered ${recovered} stuck task(s) after hibernation, triggering alarm to process them`);
+        // Trigger alarm immediately to process recovered tasks
+        await this.scheduler.alarm();
       }
     } catch (error) {
       console.error("[fetch] Failed recovery:", error);
@@ -994,8 +1008,14 @@ export class TaskSchedulerDO extends DurableObject {
   }
 
   async alarm() {
+    const startTime = Date.now();
+
     // CRITICAL: Recover stuck tasks before alarm processing
     try {
+      const tasksBefore = await this.scheduler.getTasks();
+      const minersBefore = tasksBefore.filter(t => t.taskName === "mine-resource-loop" && t.taskId.startsWith("mission4-"));
+      console.log(`[alarm] Processing alarm: ${minersBefore.length} miners before recovery`);
+
       const recovered = await this.scheduler.recoverStuckTasks(["mine-resource-loop", "global-state"]);
       if (recovered > 0) {
         console.log(`[alarm] Recovered ${recovered} stuck task(s) before processing`);
@@ -1015,7 +1035,10 @@ export class TaskSchedulerDO extends DurableObject {
 
     // Recover again after alarm (in case alarm processing created new stuck tasks)
     try {
-      await this.scheduler.recoverStuckTasks(["mine-resource-loop", "global-state"]);
+      const recoveredAfter = await this.scheduler.recoverStuckTasks(["mine-resource-loop", "global-state"]);
+      if (recoveredAfter > 0) {
+        console.log(`[alarm] Recovered ${recoveredAfter} stuck task(s) after processing`);
+      }
     } catch (error) {
       console.error("[alarm] Failed recovery (post-alarm):", error);
     }
@@ -1027,6 +1050,16 @@ export class TaskSchedulerDO extends DurableObject {
       type: "tasks",
       data: tasks.map((t) => this.formatTaskForUI(t)),
     });
+
+    // Execution time monitoring
+    const duration = Date.now() - startTime;
+    if (duration > 10000) {
+      console.error(`[alarm] CRITICAL: Took ${duration}ms - likely approaching CPU limit`);
+    } else if (duration > 5000) {
+      console.warn(`[alarm] WARNING: Took ${duration}ms - monitor CPU usage`);
+    } else {
+      console.log(`[alarm] Completed in ${duration}ms`);
+    }
   }
 
   // Health check: ensure all miners are running/rescheduled
@@ -1057,13 +1090,13 @@ export class TaskSchedulerDO extends DurableObject {
         // If scheduled time is more than 1 minute in the past, it's stuck - reschedule immediately
         if (scheduledAt > 0 && now > scheduledAt + 60000) {
           console.log(`[healthCheck] Rescheduling stuck miner ${miner.taskId} (scheduled ${Math.round((now - scheduledAt) / 1000)}s ago)`);
-          // Reschedule for NOW (or very soon) so it runs immediately
-          await this.scheduler.schedule(now + 100, miner.taskId, "mine-resource-loop", params);
+          // Reschedule for immediate execution (now - 1ms so it's due immediately)
+          await this.scheduler.schedule(now - 1, miner.taskId, "mine-resource-loop", params);
         }
         // If miner has no scheduled time but should be running, reschedule it
         else if (scheduledAt === 0 && miner.status === "running") {
-          console.log(`[healthCheck] Miner ${miner.taskId} has no scheduled time, rescheduling`);
-          await this.scheduler.schedule(now + 100, miner.taskId, "mine-resource-loop", params);
+          console.log(`[healthCheck] Miner ${miner.taskId} has no scheduled time, rescheduling for immediate execution`);
+          await this.scheduler.schedule(now - 1, miner.taskId, "mine-resource-loop", params);
         }
       }
     }

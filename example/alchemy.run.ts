@@ -53,7 +53,10 @@ export const APP = await SvelteKit(`${projectName}-app`, {
   env: {
     BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET || "85000968f86b5d30510b5b73186b914c430f8e1573614a6d75ed4cc53383517a",
     BETTER_AUTH_URL: process.env.BETTER_AUTH_URL || "http://localhost:5173",
-  }
+  },
+  dev: `vite dev --port 5173`
 });
 
 await project.finalize();
+
+console.log(`🚀 Application is running at ${APP.url}`);

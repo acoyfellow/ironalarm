@@ -56,7 +56,7 @@
     />
   </svg>
   <span
-    class="text-xs font-mono"
+    class="text-xs font-mono tabular-nums"
     style="color: {velocityColor};"
   >
     {$displayedVelocity.toFixed(1)}/s

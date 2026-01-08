@@ -5,6 +5,7 @@
   import { page } from "$app/state";
   import { browser } from "$app/environment";
   import Alert from "$lib/components/Alert.svelte";
+  import * as Tooltip from "$lib/components/ui/tooltip";
 
   let { data, children } = $props();
 
@@ -13,8 +14,10 @@
   });
 </script>
 
-<div class="min-h-screen bg-zinc-950 text-zinc-100">
-  <Nav />
-  {@render children()}
-  <Alert />
-</div>
+<Tooltip.Provider>
+  <div class="min-h-screen bg-zinc-950 text-zinc-100">
+    <Nav />
+    {@render children()}
+    <Alert />
+  </div>
+</Tooltip.Provider>

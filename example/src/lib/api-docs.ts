@@ -7,8 +7,8 @@ import type { ReliableScheduler } from "../../src/index";
 export const API_METHODS = [
   {
     name: "constructor",
-    signature: "new ReliableScheduler(storage: DurableObjectStorage)",
-    description: "Creates a new scheduler instance with the provided Durable Object storage.",
+    signature: "new ReliableScheduler(()",
+    description: "Creates a new scheduler instance with the provided Durable Object storage. @param storage - Durable Object storage instance @param options - Optional configuration @param options.maxConcurrentTasks - Maximum number of tasks to process concurrently (default: 10)",
     type: "constructor" as const,
   },
   {

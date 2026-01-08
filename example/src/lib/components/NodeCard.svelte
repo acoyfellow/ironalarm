@@ -1,6 +1,7 @@
 <script lang="ts">
   import { Button } from "$lib/components/ui/button";
   import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
+  import * as Tooltip from "$lib/components/ui/tooltip";
   import MoreVertical from "@lucide/svelte/icons/more-vertical";
   import MiningAura from "$lib/components/MiningAura.svelte";
   import ResourceWave from "$lib/components/ResourceWave.svelte";
@@ -82,14 +83,22 @@
     ? `0 0 8px ${node.color}15, inset 0 0 15px ${efficiencyColor}08`
     : 'none'};"
 >
-  <!-- Efficiency Badge -->
+  <!-- Efficiency Badge with Tooltip -->
   {#if minersOnNode > 0}
-    <div
-      class="absolute top-3 left-3 px-2.5 py-1.5 rounded-md text-xs font-semibold tracking-wide z-10"
-      style="background: {efficiencyColor}20; color: {efficiencyColor}; border: 1px solid {efficiencyColor}50;"
-    >
-      ROI: {efficiency.toFixed(1)}
-    </div>
+    <Tooltip.Root>
+      <Tooltip.Trigger>
+        <div
+          class="absolute top-3 left-3 px-2.5 py-1.5 rounded-md text-xs font-semibold tracking-wide z-10 cursor-help"
+          style="background: {efficiencyColor}20; color: {efficiencyColor}; border: 1px solid {efficiencyColor}50;"
+        >
+          ROI: {efficiency.toFixed(1)}
+        </div>
+      </Tooltip.Trigger>
+      <Tooltip.Content class="max-w-[200px] text-xs">
+        <p class="font-semibold mb-1">Return on Investment</p>
+        <p class="text-gray-300">Higher = better profit per miner. Gold+ rocks give 2-8x more ROI than copper.</p>
+      </Tooltip.Content>
+    </Tooltip.Root>
   {/if}
 
   <!-- Mining Aura -->

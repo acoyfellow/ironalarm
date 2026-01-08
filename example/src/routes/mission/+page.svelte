@@ -1,21 +1,14 @@
 <script lang="ts">
   import { onMount, untrack } from "svelte";
   import { afterNavigate } from "$app/navigation";
-  import { page } from "$app/stores";
-  import { tweened, spring } from "svelte/motion";
   import { cubicOut } from "svelte/easing";
   import { startTask, getTasks, cancelTask } from "$routes/data.remote";
   import { createWebSocket } from "$lib/websocket-service";
   import { Button } from "$lib/components/ui/button";
   import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
-  import DollarSign from "@lucide/svelte/icons/dollar-sign";
   import MoreVertical from "@lucide/svelte/icons/more-vertical";
-  import FloatingNumber from "$lib/components/FloatingNumber.svelte";
-  import CriticalHit from "$lib/components/CriticalHit.svelte";
-  import MiningAura from "$lib/components/MiningAura.svelte";
   import ResourceVelocity from "$lib/components/ResourceVelocity.svelte";
   import Particle from "$lib/components/Particle.svelte";
-  import ResourceWave from "$lib/components/ResourceWave.svelte";
   import NodeCard from "$lib/components/NodeCard.svelte";
 
   // Resource node configuration
@@ -204,10 +197,14 @@
     if (Math.random() > 0.05) return;
 
     const multipliers = [2, 3, 5];
-    const multiplier = multipliers[Math.floor(Math.random() * multipliers.length)];
+    const multiplier =
+      multipliers[Math.floor(Math.random() * multipliers.length)];
 
     const id = crypto.randomUUID();
-    criticalHits = [...criticalHits, { id, multiplier, x, y, timestamp: Date.now() }];
+    criticalHits = [
+      ...criticalHits,
+      { id, multiplier, x, y, timestamp: Date.now() },
+    ];
 
     // Remove after animation
     setTimeout(() => {
@@ -228,7 +225,10 @@
     }
 
     const id = crypto.randomUUID();
-    floatingNumbers = [...floatingNumbers, { id, value, x, y, color, multiplier }];
+    floatingNumbers = [
+      ...floatingNumbers,
+      { id, value, x, y, color, multiplier },
+    ];
 
     // Auto-remove after animation
     setTimeout(() => {
@@ -544,7 +544,7 @@
         ([id, m]) => id !== "mission4-global-state" && m.nodeId === nodeId
       )
       .map(([id]) => id);
-    
+
     let totalValue = 0;
     for (const taskId of minerTaskIds) {
       totalValue += getSellValue(taskId);
@@ -568,11 +568,11 @@
     // Base ROI increases with tier: tier 0 = 1.0, tier 7 = 8.0
     // This makes higher tiers have better ROI
     const baseROI = 1.0 + tierIndex * 1.0;
-    
+
     // Scale by yield per second to account for actual production
     const yieldPerSecond = (node.yield / node.timeMs) * 1000 * speedMultiplier;
     const yieldMultiplier = yieldPerSecond / 0.25; // Normalize to copper's base yield
-    
+
     // Final ROI = base tier ROI * yield multiplier
     // Higher tiers get both a base bonus and yield bonus
     return baseROI * yieldMultiplier * 10; // Scale for display
@@ -588,7 +588,10 @@
   }
 
   // Projected earnings calculation
-  function getProjectedEarnings(nodeId: string, timeSeconds: number = 60): number {
+  function getProjectedEarnings(
+    nodeId: string,
+    timeSeconds: number = 60
+  ): number {
     const node = RESOURCE_NODES.find((n) => n.id === nodeId);
     if (!node) return 0;
     const minersOnNode = getMinersOnNode(nodeId);
@@ -843,28 +846,8 @@
   <title>Mining Game - ironalarm</title>
 </svelte:head>
 
-<!-- Floating Numbers Overlay -->
-<div class="fixed inset-0 pointer-events-none z-[9998]">
-  {#each floatingNumbers as num}
-    <FloatingNumber
-      value={num.value}
-      x={num.x}
-      y={num.y}
-      color={num.color}
-      multiplier={num.multiplier}
-    />
-  {/each}
-</div>
-
-<!-- Critical Hits Overlay -->
-<div class="fixed inset-0 pointer-events-none z-[9999]">
-  {#each criticalHits as hit}
-    <CriticalHit multiplier={hit.multiplier} x={hit.x} y={hit.y} />
-  {/each}
-</div>
-
 <!-- Particles Overlay -->
-<div class="fixed inset-0 pointer-events-none z-[9997]">
+<div class="fixed inset-0 pointer-events-none z-9997 overflow-hidden">
   {#each particles as particle}
     <Particle
       color={particle.color}
@@ -876,67 +859,164 @@
   {/each}
 </div>
 
-<div class="min-h-screen bg-black text-white p-3 sm:p-6 space-y-4 sm:space-y-6">
-  <!-- Game HUD -->
+<div
+  class="min-h-screen bg-black text-white p-2 sm:p-6 space-y-3 sm:space-y-6 overflow-x-hidden"
+>
+  <!-- Game HUD - Mobile optimized -->
   <div class="max-w-5xl mx-auto">
     <div class="bg-gray-950 border border-gray-800 rounded-xl shadow-2xl">
-      <div class="flex flex-col sm:flex-row items-stretch">
-        <!-- Resource Section -->
+      <!-- Mobile: Compact 2-row layout -->
+      <div class="sm:hidden">
+        <!-- Row 1: Resources + Stats -->
         <div
-          class="flex-1 px-4 sm:px-6 py-3 sm:py-4 border-b sm:border-b-0 sm:border-r border-gray-800/50"
+          class="flex items-center justify-between px-3 py-2.5 border-b border-gray-800/50"
         >
-          <div class="flex items-baseline gap-3 sm:gap-4">
-            <div class="flex items-center gap-2 sm:gap-2.5">
+          <!-- Copper -->
+          <div class="flex items-center gap-2">
+            <div
+              class="w-2.5 h-2.5 rounded-sm shrink-0"
+              style="background: #cd7f32; box-shadow: 0 0 6px #cd7f32;"
+            ></div>
+            <span class="text-xl font-bold tabular-nums text-white"
+              >{(resources.copper || 0).toLocaleString()}</span
+            >
+            {#if copperPerSecond > 0}
+              <span class="text-xs text-emerald-400 font-semibold"
+                >+{copperPerSecond.toFixed(1)}/s</span
+              >
+            {/if}
+          </div>
+          <!-- Speed + Miners compact -->
+          <div class="flex items-center gap-3">
+            <div class="text-center">
+              <div class="text-lg font-bold text-amber-400">
+                {speedMultiplier}x
+              </div>
+            </div>
+            <div class="text-center">
+              <div class="text-lg font-bold text-cyan-400">{miners.size}</div>
+            </div>
+            <div
+              class="w-2 h-2 rounded-full shrink-0 {wsConnected
+                ? 'bg-emerald-500 shadow-lg shadow-emerald-500/50'
+                : 'bg-red-500'}"
+              title={wsConnected ? "Connected" : "Disconnected"}
+            ></div>
+          </div>
+        </div>
+        <!-- Row 2: Actions -->
+        <div class="flex items-center gap-2 px-3 py-2">
+          <button
+            onclick={handleSpeedUpgrade}
+            disabled={!canAffordUpgrade}
+            class="flex-1 py-2 px-3 rounded-lg text-center transition-all {canAffordUpgrade
+              ? 'bg-amber-500/10 border border-amber-500/50 active:bg-amber-500/30'
+              : 'bg-gray-800/50 border border-gray-700 opacity-50'}"
+          >
+            <span
+              class="text-xs font-semibold tabular-nums {canAffordUpgrade
+                ? 'text-amber-400'
+                : 'text-gray-500'}"
+            >
+              {speedMultiplier + 1}x for {nextUpgradeCost.toLocaleString()}
+            </span>
+          </button>
+          <DropdownMenu.Root>
+            <DropdownMenu.Trigger>
+              <Button
+                size="icon"
+                variant="ghost"
+                class="h-9 w-9 text-gray-400 hover:text-white hover:bg-gray-800"
+              >
+                <MoreVertical class="w-4 h-4" />
+              </Button>
+            </DropdownMenu.Trigger>
+            <DropdownMenu.Content class="!bg-gray-900 border-gray-700">
+              <DropdownMenu.Label class="text-gray-400"
+                >Actions</DropdownMenu.Label
+              >
+              {#if miners.size > 0}
+                <DropdownMenu.Item
+                  class="text-amber-400 hover:!bg-amber-500/20 cursor-pointer"
+                  onclick={handleSellAllMiners}
+                >
+                  Sell All Miners ({miners.size})
+                </DropdownMenu.Item>
+              {:else}
+                <DropdownMenu.Item class="text-gray-500" disabled>
+                  No miners to sell
+                </DropdownMenu.Item>
+              {/if}
+            </DropdownMenu.Content>
+          </DropdownMenu.Root>
+        </div>
+      </div>
+
+      <!-- Desktop: Original horizontal layout -->
+      <div class="hidden sm:flex flex-row items-stretch">
+        <!-- Resource Section -->
+        <div class="flex-1 px-6 py-4 border-r border-gray-800/50">
+          <div class="flex items-baseline gap-4">
+            <div class="flex items-center gap-2.5">
               <div
-                class="w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-sm"
+                class="w-3.5 h-3.5 rounded-sm"
                 style="background: #cd7f32; box-shadow: 0 0 8px #cd7f32;"
               ></div>
               <span
-                class="text-2xl sm:text-3xl font-bold tabular-nums text-white leading-none"
+                class="text-3xl font-bold tabular-nums text-white leading-none min-w-[4ch]"
                 >{(resources.copper || 0).toLocaleString()}</span
               >
             </div>
             <ResourceVelocity velocity={resourceVelocity} />
             {#if copperPerSecond > 0}
-              <span class="text-sm sm:text-base text-emerald-400 font-semibold"
+              <span
+                class="text-base text-emerald-400 font-semibold tabular-nums"
                 >+{copperPerSecond.toFixed(1)}/s</span
               >
             {/if}
           </div>
-          <div class="text-xs text-gray-500 mt-1.5 uppercase tracking-wider font-medium">
-            Copper
+          <div class="flex items-center gap-3 mt-1.5">
+            <span
+              class="text-xs text-gray-500 uppercase tracking-wider font-medium"
+              >Copper</span
+            >
+            <span class="text-xs text-cyan-400/70 tabular-nums"
+              >{miners.size} active miners</span
+            >
           </div>
         </div>
 
         <!-- Speed Upgrade Section -->
-        <div
-          class="px-4 sm:px-6 py-3 sm:py-4 border-b sm:border-b-0 sm:border-r border-gray-800/50"
-        >
-          <div class="flex items-center gap-3 sm:gap-4">
+        <div class="px-6 py-4 border-r border-gray-800/50">
+          <div class="flex items-center gap-4">
             <div>
-              <div class="text-2xl sm:text-3xl font-bold text-amber-400 leading-none">
+              <div
+                class="text-3xl font-bold text-amber-400 leading-none tabular-nums"
+              >
                 {speedMultiplier}x
               </div>
-              <div class="text-xs text-gray-500 uppercase tracking-wider mt-1.5 font-medium">
+              <div
+                class="text-xs text-gray-500 uppercase tracking-wider mt-1.5 font-medium"
+              >
                 Speed
               </div>
             </div>
             <button
               onclick={handleSpeedUpgrade}
               disabled={!canAffordUpgrade}
-              class="group relative px-3 sm:px-4 py-2 rounded-lg transition-all duration-200 min-h-[44px] sm:min-h-0 {canAffordUpgrade
+              class="group relative px-4 py-2 rounded-lg transition-all duration-200 {canAffordUpgrade
                 ? 'bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/50 hover:border-amber-400'
                 : 'bg-gray-800/50 border border-gray-700 opacity-50 cursor-not-allowed'}"
             >
               <div
-                class="text-xs sm:text-sm font-semibold {canAffordUpgrade
+                class="text-sm font-semibold tabular-nums {canAffordUpgrade
                   ? 'text-amber-400'
                   : 'text-gray-500'}"
               >
                 Upgrade to {speedMultiplier + 1}x
               </div>
               <div
-                class="text-xs {canAffordUpgrade
+                class="text-xs tabular-nums {canAffordUpgrade
                   ? 'text-amber-500/70'
                   : 'text-gray-600'}"
               >
@@ -946,32 +1026,36 @@
           </div>
         </div>
 
-        <!-- Miners Section -->
-        <div
-          class="px-4 sm:px-6 py-3 sm:py-4 border-b sm:border-b-0 sm:border-r border-gray-800/50"
-        >
-          <div>
-            <div class="text-2xl sm:text-3xl font-bold text-cyan-400 leading-none">
-              {miners.size}
-            </div>
-            <div class="text-xs text-gray-500 uppercase tracking-wider mt-1.5 font-medium">
-              Active Miners
-            </div>
-          </div>
-        </div>
-
         <!-- Actions Section -->
-        <div
-          class="px-4 sm:px-6 py-3 sm:py-4 flex items-center gap-3 sm:gap-4"
-        >
-          {#if miners.size > 0}
-            <button
-              onclick={handleSellAllMiners}
-              class="px-4 py-2.5 text-sm font-semibold text-amber-400 hover:text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 hover:border-amber-500/50 rounded-lg transition-all min-h-[44px] sm:min-h-0"
-            >
-              Sell All
-            </button>
-          {/if}
+        <div class="px-6 py-4 flex items-center gap-4">
+          <DropdownMenu.Root>
+            <DropdownMenu.Trigger>
+              <Button
+                size="icon"
+                variant="ghost"
+                class="h-8 w-8 text-gray-400 hover:text-white hover:bg-gray-800"
+              >
+                <MoreVertical class="w-4 h-4" />
+              </Button>
+            </DropdownMenu.Trigger>
+            <DropdownMenu.Content class="!bg-gray-900 border-gray-700">
+              <DropdownMenu.Label class="text-gray-400"
+                >Actions</DropdownMenu.Label
+              >
+              {#if miners.size > 0}
+                <DropdownMenu.Item
+                  class="text-amber-400 hover:!bg-amber-500/20 cursor-pointer"
+                  onclick={handleSellAllMiners}
+                >
+                  Sell All Miners ({miners.size})
+                </DropdownMenu.Item>
+              {:else}
+                <DropdownMenu.Item class="text-gray-500" disabled>
+                  No miners to sell
+                </DropdownMenu.Item>
+              {/if}
+            </DropdownMenu.Content>
+          </DropdownMenu.Root>
           <div
             class="flex items-center gap-1.5"
             title={wsConnected ? "Connected" : "Disconnected"}
@@ -1005,36 +1089,37 @@
           {@const efficiency = getEfficiencyScore(node.id)}
           {@const efficiencyColor = getEfficiencyColor(efficiency)}
           {@const atCapacity = minersOnNode >= MAX_MINERS_PER_NODE}
-          {@const projectedEarnings = minersOnNode > 0 ? getProjectedEarnings(node.id) : 0}
+          {@const projectedEarnings =
+            minersOnNode > 0 ? getProjectedEarnings(node.id) : 0}
           {@const synergy = getSynergyBonus(node.id)}
           {@const totalSellValue = getTotalSellValueForNode(node.id)}
 
           <NodeCard
-            node={node}
-            minersOnNode={minersOnNode}
-            atCapacity={atCapacity}
-            efficiencyColor={efficiencyColor}
-            efficiency={efficiency}
-            projectedEarnings={projectedEarnings}
-            synergy={synergy}
-            totalSellValue={totalSellValue}
-            nodeTasks={nodeTasks}
-            getMinerProgress={getMinerProgress}
-            getSellValue={getSellValue}
-            handleSellMiner={handleSellMiner}
-            handleBuyMaxMiners={handleBuyMaxMiners}
-            handleSellAllMinersOnNode={handleSellAllMinersOnNode}
-            handleDeployMiner={handleDeployMiner}
-            triggerParticleBurst={triggerParticleBurst}
-            resources={resources}
-            MAX_MINERS_PER_NODE={MAX_MINERS_PER_NODE}
+            {node}
+            {minersOnNode}
+            {atCapacity}
+            {efficiencyColor}
+            {efficiency}
+            {projectedEarnings}
+            {synergy}
+            {totalSellValue}
+            {nodeTasks}
+            {getMinerProgress}
+            {getSellValue}
+            {handleSellMiner}
+            {handleBuyMaxMiners}
+            {handleSellAllMinersOnNode}
+            {handleDeployMiner}
+            {triggerParticleBurst}
+            {resources}
+            {MAX_MINERS_PER_NODE}
           />
         {/each}
       </div>
 
       <!-- Instructions -->
       <div
-        class="mt-6 sm:mt-8 text-center text-gray-400 font-mono text-xs sm:text-sm px-2"
+        class="mt-6 sm:mt-8 text-center text-gray-400 font-mono text-xs sm:text-sm px-2 text-balance"
       >
         Click a resource node to deploy a miner. Miners loop continuously until
         cancelled.
@@ -1044,7 +1129,6 @@
 </div>
 
 <style>
-
   /* Improve touch interactions on mobile */
   button {
     touch-action: manipulation;
