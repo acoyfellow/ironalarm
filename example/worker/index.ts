@@ -446,25 +446,26 @@ export class TaskSchedulerDO extends DurableObject {
     // Register global-state task handler - alarm-based state keeper
     this.scheduler.register(
       "global-state",
-      (sched: ReliableScheduler, taskId: string, params: unknown) =>
+      (taskId: string, params: unknown) =>
         Effect.gen(function* () {
+          const svc = yield* SchedulerService;
           // Initialize resources if needed - handle legacy number format
-          const resources = yield* Effect.promise(() => sched.getCheckpoint(taskId, "resources"));
+          const resources = yield* svc.getCheckpoint(taskId, "resources");
           if (resources === undefined || typeof resources === "number") {
             const initialResources = typeof resources === "number"
               ? { copper: resources }
               : { copper: 0 };
-            yield* Effect.promise(() => sched.checkpoint(taskId, "resources", initialResources));
+            yield* svc.checkpoint(taskId, "resources", initialResources);
           }
 
           // Initialize speed multiplier if needed
-          const speed = yield* Effect.promise(() => sched.getCheckpoint(taskId, "speedMultiplier"));
+          const speed = yield* svc.getCheckpoint(taskId, "speedMultiplier");
           if (speed === undefined) {
-            yield* Effect.promise(() => sched.checkpoint(taskId, "speedMultiplier", 1));
+            yield* svc.checkpoint(taskId, "speedMultiplier", 1);
           }
 
           // Check if task is still valid
-          const task = yield* Effect.promise(() => sched.getTask(taskId));
+          const task = yield* svc.getTask(taskId);
           if (!task) return;
 
           // Recover from failed or completed state
@@ -776,7 +777,7 @@ export class TaskSchedulerDO extends DurableObject {
        ));
 
       // Broadcast update
-      const tasks = await this.scheduler.getTasks();
+      const tasks = await Effect.runPromise(this.scheduler.getTasks());
       this.broadcast({
         type: "tasks",
         data: tasks.map((t) => this.formatTaskForUI(t)),
@@ -792,7 +793,7 @@ export class TaskSchedulerDO extends DurableObject {
         return c.json({ error: "Missing taskId" }, 400);
       }
 
-      const task = await this.scheduler.getTask(taskId);
+      const task = await Effect.runPromise(this.scheduler.getTask(taskId));
       if (!task) {
         return c.json({ error: "Task not found" }, 404);
       }
@@ -813,7 +814,7 @@ export class TaskSchedulerDO extends DurableObject {
         }
       }
 
-      const tasks = await this.scheduler.getTasks();
+      const tasks = await Effect.runPromise(this.scheduler.getTasks());
       const filteredTasks = namespace
         ? tasks.filter((t) => t.taskId.startsWith(`${namespace}-`))
         : tasks;
@@ -827,12 +828,12 @@ export class TaskSchedulerDO extends DurableObject {
         return c.json({ error: "Missing taskId" }, 400);
       }
 
-      const paused = await this.scheduler.pauseTask(taskId);
+      const paused = await Effect.runPromise(this.scheduler.pauseTask(taskId));
       if (!paused) {
         return c.json({ error: "Task not found or cannot be paused" }, 404);
       }
 
-      const tasks = await this.scheduler.getTasks();
+      const tasks = await Effect.runPromise(this.scheduler.getTasks());
       this.broadcast({
         type: "tasks",
         data: tasks.map((t) => this.formatTaskForUI(t)),
@@ -848,12 +849,12 @@ export class TaskSchedulerDO extends DurableObject {
         return c.json({ error: "Missing taskId" }, 400);
       }
 
-      const resumed = await this.scheduler.resumeTask(taskId);
+      const resumed = await Effect.runPromise(this.scheduler.resumeTask(taskId));
       if (!resumed) {
         return c.json({ error: "Task not found or not paused" }, 404);
       }
 
-      const tasks = await this.scheduler.getTasks();
+      const tasks = await Effect.runPromise(this.scheduler.getTasks());
       this.broadcast({
         type: "tasks",
         data: tasks.map((t) => this.formatTaskForUI(t)),
@@ -869,12 +870,12 @@ export class TaskSchedulerDO extends DurableObject {
         return c.json({ error: "Missing taskId" }, 400);
       }
 
-      const cancelled = await this.scheduler.cancelTask(taskId);
+      const cancelled = await Effect.runPromise(this.scheduler.cancelTask(taskId));
       if (!cancelled) {
         return c.json({ error: "Task not found" }, 404);
       }
 
-      const tasks = await this.scheduler.getTasks();
+      const tasks = await Effect.runPromise(this.scheduler.getTasks());
       this.broadcast({
         type: "tasks",
         data: tasks.map((t) => this.formatTaskForUI(t)),
@@ -885,9 +886,9 @@ export class TaskSchedulerDO extends DurableObject {
 
     // Clear completed tasks
     this.app.post("/tasks/clear", async (c) => {
-      const count = await this.scheduler.clearCompleted();
+      const count = await Effect.runPromise(this.scheduler.clearCompleted());
 
-      const tasks = await this.scheduler.getTasks();
+      const tasks = await Effect.runPromise(this.scheduler.getTasks());
       this.broadcast({
         type: "tasks",
         data: tasks.map((t) => this.formatTaskForUI(t)),
@@ -916,7 +917,7 @@ export class TaskSchedulerDO extends DurableObject {
         count++;
       }
 
-      const tasks = await this.scheduler.getTasks();
+      const tasks = await Effect.runPromise(this.scheduler.getTasks());
       this.broadcast({
         type: "tasks",
         data: tasks.map((t) => this.formatTaskForUI(t)),
@@ -947,7 +948,7 @@ export class TaskSchedulerDO extends DurableObject {
       }
 
       // Send initial state
-      const tasks = await this.scheduler.getTasks();
+      const tasks = await Effect.runPromise(this.scheduler.getTasks());
       server.send(JSON.stringify({
         type: "tasks",
         data: tasks.map((t) => this.formatTaskForUI(t)),
@@ -965,7 +966,7 @@ export class TaskSchedulerDO extends DurableObject {
     // This ensures miners resume even if DO hibernated for hours/days
     try {
       // Diagnostic logging: check task states on wake-up
-      const tasks = await this.scheduler.getTasks();
+      const tasks = await Effect.runPromise(this.scheduler.getTasks());
       const miners = tasks.filter(t => t.taskName === "mine-resource-loop" && t.taskId.startsWith("mission4-"));
       console.log(`[fetch] DO woke up: ${miners.length} miners found`);
 
@@ -981,7 +982,7 @@ export class TaskSchedulerDO extends DurableObject {
       if (recovered > 0) {
         console.log(`[fetch] Recovered ${recovered} stuck task(s) after hibernation, triggering alarm to process them`);
         // Trigger alarm immediately to process recovered tasks
-        await this.scheduler.alarm();
+        await Effect.runPromise(this.scheduler.alarm());
       }
     } catch (error) {
       console.error("[fetch] Failed recovery:", error);

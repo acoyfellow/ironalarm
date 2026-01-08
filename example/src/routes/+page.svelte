@@ -3,27 +3,38 @@
   import CodeBlock from "$lib/components/CodeBlock.svelte";
   import ApiMethod from "$lib/components/ApiMethod.svelte";
 
-  const quickStartCode = `import { ReliableScheduler } from 'ironalarm';
+  const quickStartCode = `import { ReliableScheduler, SchedulerService } from 'ironalarm';
+import { Effect } from 'effect';
 
 export class MyDO {
   private scheduler: ReliableScheduler;
 
   constructor(state: DurableObjectState, env: any) {
-    // Initialize with DO storage
-    this.scheduler = new ReliableScheduler(state.storage);
+    // Initialize with DO storage + concurrency limits
+    this.scheduler = new ReliableScheduler(state.storage, {
+      maxConcurrentTasks: 10
+    });
 
-    // Register a resumable task handler
-    this.scheduler.register('my-task', async (sched, taskId, params) => {
-      if (!await sched.getCheckpoint(taskId, 'started')) {
-        await doWork(params);
-        await sched.checkpoint(taskId, 'started', true);
-      }
-      await sched.completeTask(taskId);
+    // Register Effect-powered task handler with dependency injection
+    this.scheduler.register('my-task', (taskId, params) => {
+      return Effect.gen(function* () {
+        const svc = yield* SchedulerService;
+
+        const started = yield* svc.getCheckpoint(taskId, 'started');
+        if (!started) {
+          yield* Effect.promise(() => doWork(params));
+          yield* svc.checkpoint(taskId, 'started', true);
+        }
+
+        yield* svc.completeTask(taskId);
+        yield* Effect.log('Task completed successfully');
+      });
     });
   }
 
   async alarm() {
-    await this.scheduler.alarm();
+    // Process due tasks with structured concurrency
+    await Effect.runPromise(this.scheduler.alarm());
   }
 }`;
 </script>
@@ -55,18 +66,19 @@ export class MyDO {
         Now with checkpoint recovery
       </div>
 
-      <h1 class="text-4xl md:text-5xl font-semibold tracking-tight mb-4">
-        Reliable task scheduling for<br />
-        <span
-          class="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-amber-400"
-          >Cloudflare Durable Objects</span
-        >
-      </h1>
+       <h1 class="text-4xl md:text-5xl font-semibold tracking-tight mb-4">
+         Effect-TS powered task scheduling for<br />
+         <span
+           class="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-amber-400"
+           >Cloudflare Durable Objects</span
+         >
+       </h1>
 
-      <p class="text-lg text-zinc-500 max-w-2xl mb-8">
-        The "reliable runNow" pattern for resilient long-running tasks with
-        automatic checkpoint recovery. Never lose progress to eviction again.
-      </p>
+       <p class="text-lg text-zinc-500 max-w-2xl mb-8">
+         Composable, resilient long-running tasks with automatic checkpoint recovery,
+         structured concurrency, and dependency injection. Production-ready for
+         AI agents, workflows, and complex async operations.
+       </p>
 
       <div class="flex items-center gap-4 flex-wrap">
         <div
@@ -124,7 +136,14 @@ export class MyDO {
     <section class="py-16 border-b border-zinc-800/50">
       <h2 class="text-2xl font-semibold mb-8">Features</h2>
       <div class="grid md:grid-cols-2 gap-4">
-        {#each [{ title: "Reliable execution", desc: "runNow() starts immediately with 30s safety alarm for eviction recovery" }, { title: "Checkpoints", desc: "User-managed progress tracking for resumable work after evictions" }, { title: "Named handlers", desc: "Register task handlers by name—no function serialization required" }, { title: "Minimal", desc: "~300 LOC, zero dependencies, fully serializable tasks" }] as f}
+        {#each [
+          { title: "Effect-TS Powered", desc: "Composable effects with dependency injection and structured concurrency" },
+          { title: "Automatic Retries", desc: "Exponential backoff retry with Schedule.exponential for resilient execution" },
+          { title: "Fiber Concurrency", desc: "Non-blocking concurrent task processing with configurable limits" },
+          { title: "DO Sharding Ready", desc: "Hash-based routing for horizontal scaling across multiple DO instances" },
+          { title: "Tagged Error Types", desc: "Type-safe error handling with Data.TaggedError" },
+          { title: "Structured Logging", desc: "Built-in observability with Effect.log* for production monitoring" }
+        ] as f}
           <div class="p-5 bg-zinc-900/30 border border-zinc-800/50 rounded-xl">
             <h3 class="text-sm font-medium text-zinc-200 mb-1">{f.title}</h3>
             <p class="text-sm text-zinc-500">{f.desc}</p>
