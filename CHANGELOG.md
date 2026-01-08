@@ -5,6 +5,43 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2026-01-08
+
+### Breaking Changes
+- **⚠️ Effect-TS Migration**: All public APIs now return `Effect<T, E, never>` instead of `Promise<T>`
+  - `schedule()`, `runNow()`, `checkpoint()`, `completeTask()`, `getTask()`, `getTasks()` all return Effect types
+  - Users must wrap API calls with `Effect.runPromise()` or use in Effect contexts
+  - Task handlers signature changed from `(scheduler, taskId, params) => Effect` to `(taskId, params) => Effect`
+  - Handlers now use `SchedulerService` from Effect context instead of injected scheduler parameter
+
+### Added
+- **Effect-TS Integration**: Complete rewrite using Effect-TS for composable error handling and dependency injection
+- **SchedulerService**: Context.Tag providing type-safe access to scheduler methods within task handlers
+- **Tagged Errors**: `HandlerMissing`, `TaskNotFound`, `TaskConflict` with proper error types
+- **Automatic Retry**: Built-in exponential backoff retry logic with `Effect.retry` + `Schedule.exponential`
+- **Fiber Concurrency**: `Effect.forEach` for structured concurrent task processing
+- **Structured Logging**: `Effect.log*` replacing console methods for observability
+- **DO Sharding**: Hash-based routing for horizontal scaling across multiple DO instances
+- **Hibernation Optimization**: Removed setTimeout calls to enable proper DO hibernation
+- **Broadcast Debouncing**: WebSocket broadcast optimization with configurable intervals
+- **Transaction Safety**: Atomic resource operations to prevent race conditions
+- **Error Recovery**: Auto-recovery mechanisms for failed global state tasks
+- **Cleanup Framework**: Configurable auto-deletion of completed/failed tasks
+
+### Changed
+- **Task Handler API**: Simplified signature using Effect context instead of parameter injection
+- **Concurrency Control**: Fiber-based processing replaces Promise.all batching
+- **Error Handling**: Typed errors with Data.TaggedError throughout
+- **Logging**: Structured logging with appropriate levels (log, logError, logWarning)
+- **Performance**: Optimized for Cloudflare DO hibernation and cost efficiency
+
+### Removed
+- **Promise-based APIs**: All public methods now return Effect types
+- **Injected Scheduler**: Handlers use Context service instead of parameter
+- **Manual Retry Logic**: Replaced with Effect's composable retry policies
+- **setTimeout Hibernation Blocks**: Eliminated for cost optimization
+- **Polling Dependencies**: WebSocket-only real-time updates
+
 ## [0.1.0] - 2026-01-08
 
 ### Added

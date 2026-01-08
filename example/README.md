@@ -3,10 +3,11 @@
 Interactive demo and example implementation of `ironalarm` - reliable task scheduling for Cloudflare Durable Objects.
 
 This example demonstrates:
-- Task scheduling with `ReliableScheduler`
+- Effect-TS powered task scheduling with `ReliableScheduler`
 - Real-time task updates via WebSockets
 - Interactive demos (standard and "Mission Control" game UI)
 - API documentation generation
+- Production-ready patterns: DO sharding, hibernation optimization, race condition prevention
 
 ## Quick Start
 
