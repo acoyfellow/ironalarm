@@ -1,6 +1,6 @@
 import { DurableObject } from "cloudflare:workers";
 import { ReliableScheduler, SchedulerService } from "../../src/index";
-import { Effect } from "effect";
+import { Effect, Duration } from "effect";
 import type { Task } from "../../src/index";
 import { Hono } from "hono";
 
@@ -279,9 +279,11 @@ export class TaskSchedulerDO extends DurableObject {
         const baseYield = (p.yield || 1) as number;
         const timeMs = (p.timeMs || 4000) as number;
 
-        const miningLoop = Effect.gen(function* () {
+        return Effect.gen(function* () {
           const svc = yield* SchedulerService;
-          // Check if task is paused or cancelled before processing
+
+          const miningLoop = Effect.gen(function* () {
+            // Check if task is paused or cancelled before processing
            const task = yield* svc.getTask(taskId);
            if (!task || task.status === "paused") {
              return false; // Don't reschedule if cancelled/paused
@@ -378,8 +380,9 @@ export class TaskSchedulerDO extends DurableObject {
                 console.error(`[mine-resource-loop] Failed to reschedule task ${taskId}:`, error);
                 // Retry once with delay
                 return Effect.gen(function* () {
-                  yield* Effect.sleep("100ms");
-                  yield* svc.schedule(nextCycleTime, taskId, "mine-resource-loop", params);
+                  const retrySvc = yield* SchedulerService;
+                  yield* Effect.sleep(Duration.millis(100));
+                  yield* retrySvc.schedule(nextCycleTime, taskId, "mine-resource-loop", params);
                 });
               }
             );

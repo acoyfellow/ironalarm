@@ -142,7 +142,7 @@ export const getTaskStatus = query(
   }
 );
 
-export const getTasks = command(
+export const getTasks = query(
   "unchecked",
   async (namespace?: string): Promise<any[]> => {
     const platform = getRequestEvent().platform;

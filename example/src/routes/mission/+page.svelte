@@ -121,7 +121,7 @@
   // Accept initial data from server load
   let { data }: { data: { tasks: any[] } } = $props();
 
-  let tasks = $state<any[]>(data?.tasks || []);
+  let tasks = $derived(data?.tasks || []);
   let resources = $state<Record<string, number>>({});
   let speedMultiplier = $state(1);
   let now = $state(Date.now());
@@ -766,7 +766,8 @@
             tasks = message.data.filter(
               (t: any) =>
                 t.taskId.startsWith("mission4-") ||
-                t.taskId === "global-state"
+                t.taskId === "mission4-global-state" ||
+                (t.taskId === "global-state" && t.params?.namespace === "mission4")
             );
           });
         } else if (

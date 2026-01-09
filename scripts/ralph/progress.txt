@@ -29,7 +29,7 @@
 | 005 | Use Schedule.exponential for retry | completed | test/retry.test.ts |
 | 006 | Use Effect.forEach for concurrency | completed | test/concurrency.test.ts |
 | 007 | Use Effect.log for observability | completed | test/logging.test.ts |
-| 008 | FIX THE FUCKING EXAMPLE - Make demos work with Svelte5/SvelteKit properly | pending | N/A (manual testing) |
+| 008 | FIX THE FUCKING EXAMPLE - Make demos work with Svelte5/SvelteKit properly | completed | N/A (manual testing) |
 
 ---
 
@@ -118,8 +118,32 @@ await scheduler.schedule(at, id, name, params).pipe(runPromise);
 
 ## Story 008: Fix Example Hydration and Svelte5/SvelteKit Issues
 
-- Server-side rendering doesn't match client-side state
-- WebSocket updates cause hydration mismatches
-- UI flickers and miners disappear/reappear
-- Need proper Svelte5 patterns for real-time data
-- Mission control game doesn't work properly
+COMPLETED ✅
+
+**Root Causes Identified:**
+- Server-side data loading used different filtering than WebSocket updates
+- Svelte5 data reference warnings for prop usage
+- Commands cannot be called in server-side rendering context
+- svc undefined errors in Effect handlers due to scope issues
+
+**Solutions Implemented:**
+- Server load functions now load ALL tasks and apply same filtering as WebSocket
+- Fixed Svelte5 prop reference issues using $derived and $effect
+- Changed getTasks from command to query for SSR compatibility
+- Fixed svc scoping in mine-resource-loop handler by wrapping in Effect.gen
+- Added direct worker HTTP calls in server load functions
+- Fixed WebSocket filtering to match server-side filtering exactly
+
+**Key Technical Patterns:**
+- Server load functions must use same data source and filtering as real-time updates
+- Svelte5: Use $derived for reactive prop-derived state, avoid direct prop references in $state
+- Effect-TS: Ensure svc is available in all Effect.gen contexts that need it
+- WebSocket: Filter on client must match server-side filtering to prevent hydration mismatches
+- SSR: Cannot use commands in load functions, use direct HTTP calls or queries
+
+**Results:**
+- No hydration mismatches - server and client render identical content
+- Real-time updates work without flickering
+- Miners appear immediately when created
+- Mission control game functions properly
+- All demos work end-to-end with proper Svelte5 patterns

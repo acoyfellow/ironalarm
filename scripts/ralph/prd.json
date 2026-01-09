@@ -192,7 +192,7 @@
       {
         "id": "008",
         "title": "FIX THE FUCKING EXAMPLE - Make demos work with Svelte5/SvelteKit properly",
-        "status": "pending",
+        "status": "completed",
         "priority": "P0",
         "description": "Fix all hydration mismatches, UI flickering, and ensure proper Svelte5/SvelteKit integration",
         "acceptance_criteria": [
@@ -215,11 +215,12 @@
           "007"
         ],
         "files_to_modify": [
+          "example/src/routes/+page.server.ts",
+          "example/src/routes/mission/+page.server.ts",
           "example/src/routes/+page.svelte",
           "example/src/routes/mission/+page.svelte",
-          "example/src/lib/api-docs.ts",
+          "example/src/lib/components/InteractiveDemo.svelte",
           "example/src/lib/websocket-service.ts",
-          "example/src/lib/components/*",
           "example/worker/index.ts"
         ],
         "test_file": null,

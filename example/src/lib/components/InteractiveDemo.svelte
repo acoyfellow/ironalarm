@@ -16,7 +16,7 @@
    let inputValue = $state("AI agents");
    let selectedDuration = $state(60);
    let isStarting = $state(false);
-   let tasks = $state<any[]>(data?.tasks || []);
+    let tasks = $state<any[]>([]);
    let dropdownOpen = $state(false);
    let pollingInterval: ReturnType<typeof setInterval> | null = null;
    let wsClose: (() => void) | null = null;
@@ -135,9 +135,16 @@
     }
   }
 
-   onMount(() => {
-     // Tasks are already loaded from server, start polling as fallback
-     updatePolling();
+  // Initialize tasks from server data
+  $effect(() => {
+    if (data?.tasks) {
+      tasks = data.tasks;
+    }
+  });
+
+  onMount(() => {
+    // Tasks are already loaded from server, just start polling for updates
+    updatePolling();
 
      // WebSocket connection for real-time updates
      const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
@@ -378,7 +385,7 @@
     <h3 class="text-sm font-medium text-zinc-300">Running Tasks</h3>
     <div class="flex items-center gap-3 text-xs text-zinc-600">
       <span class="flex items-center gap-1.5">
-        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
         {tasks.filter((t) => t.status === "completed").length} completed
       </span>
       <span class="flex items-center gap-1.5">
