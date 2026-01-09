@@ -20,26 +20,12 @@ interface Task {
   priority?: number; // 0=high, 1=medium, 2=low (default: 1)
 }
 
-type TaskHandler = (
-  taskId: string,
-  params: unknown
-) => Effect.Effect<void, unknown, typeof SchedulerService>;
-
-
-
-class HandlerMissing extends Data.TaggedError("HandlerMissing")<{ taskName: string }> { }
-class TaskNotFound extends Data.TaggedError("TaskNotFound")<{ taskId: string }> { }
-class TaskConflict extends Data.TaggedError("TaskConflict")<{ taskId: string; currentStatus: string; operation: string }> { }
-
-// Re-export errors for public use
-export { HandlerMissing, TaskNotFound, TaskConflict };
-
-// SchedulerService for dependency injection - allows handlers to access scheduler methods via Context
-const SchedulerService = Context.GenericTag<{
+// Define the service interface type
+export type SchedulerServiceType = {
   checkpoint: (taskId: string, key: string, value: unknown) => Effect.Effect<void, never, never>;
   completeTask: (taskId: string) => Effect.Effect<void, never, never>;
-  schedule: (at: Date | number, taskId: string, taskName: string, params: unknown, options?: { priority?: number }) => Effect.Effect<void, HandlerMissing, never>;
-  runNow: (taskId: string, taskName: string, params?: unknown, options?: { maxRetries?: number; priority?: number }) => Effect.Effect<void, HandlerMissing, never>;
+  schedule: (at: Date | number, taskId: string, taskName: string, params: unknown, options?: { priority?: number }) => Effect.Effect<void, HandlerMissing | ValidationError | TaskLimitExceeded, never>;
+  runNow: (taskId: string, taskName: string, params?: unknown, options?: { maxRetries?: number; priority?: number }) => Effect.Effect<void, HandlerMissing | ValidationError | TaskLimitExceeded, never>;
   getTask: (taskId: string) => Effect.Effect<Task | undefined, never, never>;
   getTasks: (status?: TaskStatus) => Effect.Effect<Task[], never, never>;
   getCheckpoint: (taskId: string, key: string) => Effect.Effect<unknown, never, never>;
@@ -53,7 +39,55 @@ const SchedulerService = Context.GenericTag<{
   runSubSteps: (taskId: string, stepName: string, stepIndex: number, totalSteps: number, subStepCount: number, subStepDuration: number, onSubStep?: (subStepIndex: number) => Promise<void> | Effect.Effect<void>) => Effect.Effect<void, never, never>;
   getCachedTasks: (status?: TaskStatus) => Task[];
   formatTaskForUI: (task: Task) => any;
-}>("SchedulerService");
+};
+
+type TaskHandler = (
+  taskId: string,
+  params: unknown
+) => Effect.Effect<void, unknown, SchedulerServiceType>;
+
+
+
+class HandlerMissing extends Data.TaggedError("HandlerMissing")<{ taskName: string }> { }
+class TaskNotFound extends Data.TaggedError("TaskNotFound")<{ taskId: string }> { }
+class TaskConflict extends Data.TaggedError("TaskConflict")<{ taskId: string; currentStatus: string; operation: string }> { }
+class ValidationError extends Data.TaggedError("ValidationError")<{ field: string; value: string; reason: string }> { }
+class TaskLimitExceeded extends Data.TaggedError("TaskLimitExceeded")<{ maxTotalTasks: number; currentCount: number }> { }
+
+// Re-export errors for public use
+export { HandlerMissing, TaskNotFound, TaskConflict, ValidationError, TaskLimitExceeded };
+
+function validateTaskIdentifier(value: string, fieldName: string): Effect.Effect<void, ValidationError, never> {
+  if (!value || value.trim().length === 0) {
+    return Effect.fail(new ValidationError({
+      field: fieldName,
+      value,
+      reason: `${fieldName} cannot be empty`
+    }));
+  }
+
+  if (value.length > 128) {
+    return Effect.fail(new ValidationError({
+      field: fieldName,
+      value,
+      reason: `${fieldName} cannot be longer than 128 characters`
+    }));
+  }
+
+  const validPattern = /^[a-zA-Z0-9_-]+$/;
+  if (!validPattern.test(value)) {
+    return Effect.fail(new ValidationError({
+      field: fieldName,
+      value,
+      reason: `${fieldName} can only contain alphanumeric characters, hyphens, and underscores`
+    }));
+  }
+
+  return Effect.void;
+}
+
+// SchedulerService for dependency injection - allows handlers to access scheduler methods via Context
+const SchedulerService = Context.GenericTag<SchedulerServiceType>("SchedulerService");
 
 export { SchedulerService };
 
@@ -64,16 +98,19 @@ export class ReliableScheduler {
   private taskCache: Map<string, Task> | null = null;
   private cacheValid = false;
   private maxConcurrentTasks: number;
+  private maxTotalTasks: number;
 
   /**
    * Creates a new scheduler instance with the provided Durable Object storage.
    * @param storage - Durable Object storage instance
    * @param options - Optional configuration
    * @param options.maxConcurrentTasks - Maximum number of tasks to process concurrently (default: 10)
+   * @param options.maxTotalTasks - Maximum total tasks allowed (default: 10000)
    */
-  constructor(storage: DurableObjectStorage, options?: { maxConcurrentTasks?: number }) {
+  constructor(storage: DurableObjectStorage, options?: { maxConcurrentTasks?: number; maxTotalTasks?: number }) {
     this.storage = storage;
     this.maxConcurrentTasks = options?.maxConcurrentTasks ?? 10;
+    this.maxTotalTasks = options?.maxTotalTasks ?? 10000;
   }
 
   /**
@@ -133,7 +170,7 @@ export class ReliableScheduler {
     taskName: string,
     params: unknown = {},
     options?: { priority?: number }
-  ): Effect.Effect<void, HandlerMissing, never> {
+  ): Effect.Effect<void, HandlerMissing | ValidationError | TaskLimitExceeded, never> {
     return this._schedule(at, taskId, taskName, params, options);
   }
 
@@ -145,8 +182,16 @@ export class ReliableScheduler {
     options?: { priority?: number }
   ) {
     return Effect.gen(this, function* () {
+      yield* validateTaskIdentifier(taskId, "taskId");
+      yield* validateTaskIdentifier(taskName, "taskName");
+
       if (!this.handlers.has(taskName)) {
         yield* new HandlerMissing({ taskName });
+      }
+
+      const totalTasks = yield* this._getTotalTaskCount();
+      if (totalTasks >= this.maxTotalTasks) {
+        yield* new TaskLimitExceeded({ maxTotalTasks: this.maxTotalTasks, currentCount: totalTasks });
       }
 
       const scheduledAt = typeof at === "number" ? at : at.getTime();
@@ -210,14 +255,22 @@ export class ReliableScheduler {
     taskName: string,
     params: unknown = {},
     options?: { maxRetries?: number; priority?: number }
-  ): Effect.Effect<void, HandlerMissing, never> {
+  ): Effect.Effect<void, HandlerMissing | ValidationError | TaskLimitExceeded, never> {
     return this._runNow(taskId, taskName, params, options);
   }
 
   private _runNow(taskId: string, taskName: string, params: unknown, options?: { maxRetries?: number; priority?: number }) {
     return Effect.gen(this, function* () {
+      yield* validateTaskIdentifier(taskId, "taskId");
+      yield* validateTaskIdentifier(taskName, "taskName");
+
       if (!this.handlers.has(taskName)) {
         yield* new HandlerMissing({ taskName });
+      }
+
+      const totalTasks = yield* this._getTotalTaskCount();
+      if (totalTasks >= this.maxTotalTasks) {
+        yield* new TaskLimitExceeded({ maxTotalTasks: this.maxTotalTasks, currentCount: totalTasks });
       }
 
       const now = Date.now();
@@ -269,7 +322,7 @@ export class ReliableScheduler {
         // Failed tasks can be checkpointed to allow recovery (especially for global-state)
         // Pending tasks can be checkpointed for initialization (e.g., global-state setup)
         if (task.status !== "pending" && task.status !== "running" && task.status !== "completed" && task.status !== "failed") {
-          console.error(`[checkpoint] Task ${taskId} status is ${task.status}, cannot checkpoint`);
+          // Note: Can't use Effect.log here inside synchronous callback, but this is an edge case
           return false;
         }
         // If task is pending, mark it as running (initialization checkpoint)
@@ -289,7 +342,7 @@ export class ReliableScheduler {
       if (updated) {
         this.invalidateCache();
       } else {
-        console.error(`[checkpoint] Failed to update checkpoint ${key} for task ${taskId}`);
+        yield* Effect.logWarning(`[checkpoint] Failed to update checkpoint ${key} for task ${taskId}`);
       }
     });
   }
@@ -314,7 +367,7 @@ export class ReliableScheduler {
       const updated = yield* this._updateTask(taskId, (task) => {
         // Allow checkpoints on pending (for initialization), running, completed, or failed tasks
         if (task.status !== "pending" && task.status !== "running" && task.status !== "completed" && task.status !== "failed") {
-          console.error(`[checkpointMultiple] Task ${taskId} status is ${task.status}, cannot checkpoint`);
+          // Note: Can't use Effect.log here inside synchronous callback, but this is an edge case
           return false;
         }
         // If task is pending, mark it as running (initialization checkpoint)
@@ -335,7 +388,7 @@ export class ReliableScheduler {
       if (updated) {
         this.invalidateCache();
       } else {
-        console.error(`[checkpointMultiple] Failed to update checkpoints for task ${taskId}`);
+        yield* Effect.logWarning(`[checkpointMultiple] Failed to update checkpoints for task ${taskId}`);
       }
     });
   }
@@ -491,6 +544,25 @@ export class ReliableScheduler {
         }
       }
       return tasks;
+    });
+  }
+
+  private _getTotalTaskCount() {
+    return Effect.gen(this, function* () {
+      // Use cached tasks if available and valid, otherwise load from storage
+      if (!this.cacheValid || !this.taskCache) {
+        const list = yield* Effect.promise(() =>
+          this.storage.list({ prefix: "task:" })
+        );
+        this.taskCache = new Map();
+        for (const [key, value] of list) {
+          const taskId = key.substring(5); // Remove "task:" prefix
+          this.taskCache.set(taskId, value as Task);
+        }
+        this.cacheValid = true;
+      }
+
+      return this.taskCache.size;
     });
   }
 
@@ -668,7 +740,7 @@ export class ReliableScheduler {
       const now = Date.now();
       const dueTaskIds = yield* this._getDueTaskIds(now);
 
-      console.log(`[_alarm] Found ${dueTaskIds.length} due tasks at ${now}`);
+      yield* Effect.logDebug(`[_alarm] Found ${dueTaskIds.length} due tasks at ${now}`);
 
       // Separate recovery tasks (stuck) from normal tasks
       const recoveryTasks: string[] = [];
@@ -681,10 +753,10 @@ export class ReliableScheduler {
           const isStuck = scheduledAt === 0 || (scheduledAt > 0 && now > scheduledAt + 5000);
           if (isStuck) {
             recoveryTasks.push(taskId);
-            console.log(`[_alarm] Recovery task: ${taskId} (${task.taskName}), scheduled=${scheduledAt}, overdue=${scheduledAt > 0 ? Math.round((now - scheduledAt) / 1000) : 'never'}s`);
+            yield* Effect.logDebug(`[_alarm] Recovery task: ${taskId} (${task.taskName}), scheduled=${scheduledAt}, overdue=${scheduledAt > 0 ? Math.round((now - scheduledAt) / 1000) : 'never'}s`);
           } else {
             normalTasks.push(taskId);
-            console.log(`[_alarm] Normal task: ${taskId} (${task.taskName}), scheduled=${scheduledAt}`);
+            yield* Effect.logDebug(`[_alarm] Normal task: ${taskId} (${task.taskName}), scheduled=${scheduledAt}`);
           }
         } else {
           // If task not found, treat as normal (will be skipped in processTask)
@@ -692,7 +764,7 @@ export class ReliableScheduler {
         }
       }
 
-      console.log(`[_alarm] Processing ${recoveryTasks.length} recovery tasks, ${normalTasks.length} normal tasks`);
+      yield* Effect.logDebug(`[_alarm] Processing ${recoveryTasks.length} recovery tasks, ${normalTasks.length} normal tasks`);
 
       // Process recovery tasks first (they're more critical)
       yield* Effect.forEach(recoveryTasks, (taskId) => this._processTaskEffect(taskId), { concurrency: this.maxConcurrentTasks });
@@ -761,8 +833,8 @@ export class ReliableScheduler {
       const schedule = Schedule.exponential(Duration.millis(100));
       const result = await Effect.runPromise(Effect.provide(Effect.retry(handler(taskId, task.params), schedule), layer) as Effect.Effect<void, unknown, never>);
     } catch (err) {
-      console.error(`Task ${taskId} (${task.taskName}) threw:`, err);
       const errorMessage = err instanceof Error ? err.message : String(err);
+      await Effect.runPromise(Effect.logError(`Task ${taskId} (${task.taskName}) threw: ${errorMessage}`));
       await this._updateTaskSync(taskId, (t) => {
         t.status = "failed";
         t.progress.error = errorMessage;
@@ -772,7 +844,7 @@ export class ReliableScheduler {
       // Track execution time per task
       const duration = Date.now() - startTime;
       if (duration > 1000) {
-        console.warn(`[processTask] Task ${taskId} (${task.taskName}) took ${duration}ms`);
+        await Effect.runPromise(Effect.logWarning(`[processTask] Task ${taskId} (${task.taskName}) took ${duration}ms`));
       }
     }
   }
@@ -907,7 +979,7 @@ export class ReliableScheduler {
             const waitTime = Math.round((dueTime - now) / 1000);
             if (due.length === 0 && waitTime < 60) {
               // Only log if no tasks are due and wait is short (to avoid spam)
-              console.log(`[_getDueTaskIds] Next task ${taskId} due in ${waitTime}s (scheduled=${dueTime}, now=${now})`);
+              yield* Effect.logDebug(`[_getDueTaskIds] Next task ${taskId} due in ${waitTime}s (scheduled=${dueTime}, now=${now})`);
             }
           }
           break;
@@ -915,7 +987,7 @@ export class ReliableScheduler {
       }
 
       if (due.length > 0) {
-        console.log(`[_getDueTaskIds] Found ${due.length} due tasks: ${due.join(', ')}`);
+        yield* Effect.logDebug(`[_getDueTaskIds] Found ${due.length} due tasks: ${due.join(', ')}`);
       }
       return due;
     });
@@ -1046,9 +1118,7 @@ export class ReliableScheduler {
             yield* (subStepResult as Effect.Effect<void>);
           }
         } else {
-          yield* Effect.promise(
-            () => new Promise<void>((r) => setTimeout(r, subStepDuration))
-          );
+          yield* Effect.sleep(Duration.millis(subStepDuration));
         }
 
         // Update sub-step progress if multiple sub-steps
@@ -1166,9 +1236,7 @@ export class ReliableScheduler {
             yield* stepResult;
           }
         } else {
-          yield* Effect.promise(
-            () => new Promise<void>((r) => setTimeout(r, stepDuration))
-          );
+          yield* Effect.sleep(Duration.millis(stepDuration));
         }
 
         // Check if paused during step execution

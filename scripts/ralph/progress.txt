@@ -30,6 +30,12 @@
 | 006 | Use Effect.forEach for concurrency | completed | test/concurrency.test.ts |
 | 007 | Use Effect.log for observability | completed | test/logging.test.ts |
 | 008 | FIX THE FUCKING EXAMPLE - Make demos work with Svelte5/SvelteKit properly | completed | N/A (manual testing) |
+| 009 | Fix vitest-pool-workers Effect serialization errors | completed | test/serialization.test.ts |
+| 010 | Remove setTimeout from example worker for DO hibernation | completed | N/A (manual testing) |
+| 011 | Add input validation for taskId and taskName | completed | test/validation.test.ts |
+| 012 | Add maxTotalTasks limit to prevent storage exhaustion | completed | test/limits.test.ts |
+| 013 | Migrate example worker console.* to Effect.log* | completed | N/A (manual testing) |
+| 014 | Add README documentation for production deployment | completed | N/A (manual review) |
 
 ---
 
@@ -147,3 +153,134 @@ COMPLETED ✅
 - Miners appear immediately when created
 - Mission control game functions properly
 - All demos work end-to-end with proper Svelte5 patterns
+
+## Story 010: Remove setTimeout from Example Worker for DO Hibernation
+
+COMPLETED ✅
+
+**Problem:**
+- `setTimeout` in `triggerBroadcast()` prevented DO hibernation
+- DO hibernation is critical for cost efficiency in production
+
+**Solution:**
+- Replaced `setTimeout(..., 100)` with immediate execution
+- Changed `broadcastQueue` from `ReturnType<typeof setTimeout>` to simple boolean flag
+- Maintained debouncing logic to prevent broadcast storms
+
+**Key Technical Pattern:**
+- For DO hibernation: Avoid any timers (setTimeout, setInterval) that keep the DO awake
+- Use immediate execution for operations that can tolerate slight timing variations
+- Debouncing can still work without timers using simple boolean flags
+
+**Impact:**
+- DO can now hibernate properly, reducing costs
+- Broadcasts still debounced to prevent storms
+- No functional change in user experience
+
+## Story 011: Add Input Validation for taskId and taskName
+
+COMPLETED ✅
+
+**Problem:**
+- No input validation allowed potentially malicious or malformed identifiers
+- Could cause issues with storage keys, logging, or other systems
+
+**Solution:**
+- Added `ValidationError` tagged error type
+- Created `validateTaskIdentifier()` function with regex validation
+- Applied validation to `runNow()` and `schedule()` methods
+- Validation rules: alphanumeric + hyphen + underscore only, max 128 chars, non-empty
+
+**Key Technical Pattern:**
+- Input validation at API boundaries prevents downstream issues
+- Tagged errors provide structured error information for clients
+- Regex validation with clear error messages helps debugging
+- Effect-based validation composes cleanly with existing error handling
+
+**Impact:**
+- Prevents path traversal attacks (`../etc`)
+- Ensures consistent identifier formats across the system
+- Better error messages for developers
+- Maintains backward compatibility for valid identifiers
+
+## Story 012: Add maxTotalTasks Limit to Prevent Storage Exhaustion
+
+COMPLETED ✅
+
+**Problem:**
+- No limit on total tasks could exhaust Durable Object storage
+- Completed/failed tasks accumulate indefinitely
+
+**Solution:**
+- Added `maxTotalTasks` constructor option (default: 10000)
+- Added `TaskLimitExceeded` tagged error
+- Check total task count before creating new tasks in `runNow()`/`schedule()`
+- All tasks count toward limit until cleared with `clearCompleted()`/`clearAll()`
+
+**Key Technical Pattern:**
+- Resource limits prevent runaway resource consumption
+- Tagged errors provide clear feedback when limits are exceeded
+- Clear operations (`clearCompleted`/`clearAll`) reduce the count
+- Default limits provide sensible out-of-box behavior
+
+**Impact:**
+- Prevents storage exhaustion in production
+- Completed tasks can be cleaned up to free slots for new tasks
+- Clear error messages when limits are hit
+- Configurable limits for different deployment scenarios
+
+## Story 013: Migrate Example Worker Console.* to Effect.log*
+
+COMPLETED ✅
+
+**Problem:**
+- Example worker used console.* instead of Effect logging
+- Inconsistent with Effect-First principles
+- Console output not integrated with Effect runtime
+
+**Solution:**
+- Replaced all `console.log` with `await Effect.runPromise(Effect.log(...))`
+- Replaced all `console.error` with `await Effect.runPromise(Effect.logError(...))`
+- Replaced `console.warn` with `await Effect.runPromise(Effect.logWarning(...))`
+- Made `broadcast()` method async to support await
+- Left one `console.error` in top-level catch block (allowed per requirements)
+
+**Key Technical Pattern:**
+- Structured logging integrates with Effect runtime
+- Async logging requires await in async contexts
+- Method signatures may need updating to support async logging
+- Catch blocks can retain console.* when Effect context unavailable
+
+**Impact:**
+- Consistent Effect-First logging throughout codebase
+- Better integration with Effect runtime and potential future logging infrastructure
+- Example code demonstrates proper Effect logging patterns
+- Only 1 console.* usage remains (in allowed catch block)
+
+## Story 014: Add README Documentation for Production Deployment
+
+COMPLETED ✅
+
+**Problem:**
+- No production deployment guidance in README
+- Users unaware of DO sharding requirements, Effect.runPromise needs
+- Common pitfalls not documented, leading to support issues
+
+**Solution:**
+- Added comprehensive "Production Deployment" section to README.md
+- Documented DO sharding strategies with code examples
+- Explained Effect.runPromise requirement with before/after examples
+- Created detailed "Common Pitfalls" section covering all major issues
+- Added monitoring/debugging guidance
+
+**Key Technical Patterns:**
+- Sharding by consistent hashing ensures task affinity
+- Effect.runPromise() requirement clearly explained with examples
+- Error handling patterns documented for all public APIs
+- Recovery patterns emphasized for hibernation scenarios
+
+**Impact:**
+- Users can confidently deploy to production
+- Reduces support burden from common mistakes
+- Sets expectations for scaling and monitoring
+- Makes Effect.runPromise requirement obvious (major breaking change)

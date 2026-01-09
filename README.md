@@ -472,6 +472,189 @@ await Effect.runPromise(
 - **Pause/resume**: Tasks can be paused and resumed without losing state
 - **Structured errors**: All failures in explicit error channel (no swallowed exceptions)
 
+## Production Deployment
+
+### Durable Object Sharding Strategy
+
+For high-throughput applications, distribute tasks across multiple DO instances using consistent hashing:
+
+```typescript
+// Sharding by user ID - ensures user tasks stay in same DO
+function getShardId(userId: string, totalShards: number): string {
+  const hash = crypto.createHash('md5').update(userId).digest('hex');
+  const shardNum = parseInt(hash.slice(0, 8), 16) % totalShards;
+  return `scheduler-shard-${shardNum}`;
+}
+
+// In your Worker
+export default {
+  async fetch(request: Request, env: Env) {
+    const url = new URL(request.url);
+    const userId = url.searchParams.get('userId');
+    const shardId = getShardId(userId, 10); // 10 shards
+
+    const id = env.TASK_SCHEDULER_DO.idFromName(shardId);
+    const stub = env.TASK_SCHEDULER_DO.get(id);
+
+    return stub.fetch(request);
+  }
+};
+```
+
+**Scaling Guidelines:**
+- **1-10 DOs**: Low traffic applications
+- **10-100 DOs**: Medium traffic (thousands of concurrent users)
+- **100+ DOs**: High traffic (millions of users)
+- Monitor CPU usage per DO - shard when approaching 10s alarm processing time
+
+### Effect.runPromise Requirement
+
+**Critical**: All public API calls must be wrapped with `Effect.runPromise()`:
+
+```typescript
+// ✅ CORRECT: Wrap all scheduler calls
+await Effect.runPromise(scheduler.runNow(taskId, 'my-task', params));
+await Effect.runPromise(scheduler.schedule(time, taskId, 'my-task', params));
+await Effect.runPromise(scheduler.getTasks());
+
+// ❌ WRONG: Direct calls return Effect<T>, not Promise<T>
+const result = scheduler.runNow(taskId, 'my-task', params); // Effect<T>
+await result; // TypeError: Effect is not a Promise
+```
+
+**Why this matters:**
+- ironalarm APIs return `Effect<T, E, R>` for composability
+- Cloudflare Workers expect `Promise<T>` from fetch handlers
+- Effect.runPromise() executes the Effect and returns a Promise
+
+### Common Pitfalls
+
+#### 1. Handler Signature Mismatch
+
+```typescript
+// ❌ WRONG: Old v0.1.0 signature
+this.scheduler.register('my-task', (scheduler, taskId, params) => {
+  return Effect.gen(function* () {
+    // scheduler is passed as first param
+    yield* scheduler.checkpoint(taskId, 'key', 'value');
+  });
+});
+
+// ✅ CORRECT: New v0.2.0 signature
+this.scheduler.register('my-task', (taskId, params) => {
+  return Effect.gen(function* () {
+    const svc = yield* SchedulerService; // Get from context
+    yield* svc.checkpoint(taskId, 'key', 'value');
+  });
+});
+```
+
+**Migration**: Remove `scheduler` parameter, use `yield* SchedulerService` instead.
+
+#### 2. Missing Effect.runPromise in DO Methods
+
+```typescript
+// ❌ WRONG: DO methods must return Promise<T>
+async startTask(params: any) {
+  return this.scheduler.runNow(taskId, 'my-task', params); // Returns Effect<T>
+}
+
+// ✅ CORRECT: Wrap with Effect.runPromise
+async startTask(params: any) {
+  return Effect.runPromise(this.scheduler.runNow(taskId, 'my-task', params));
+}
+```
+
+#### 3. Infinite Loop Tasks Without maxRetries: Infinity
+
+```typescript
+// ❌ WRONG: Default 3 retries causes loops to fail after eviction
+await Effect.runPromise(
+  scheduler.runNow(taskId, 'mining-loop', params)
+);
+
+// ✅ CORRECT: Explicit infinite retries for loops
+await Effect.runPromise(
+  scheduler.runNow(taskId, 'mining-loop', params, { maxRetries: Infinity })
+);
+```
+
+#### 4. Missing Hibernation Recovery
+
+```typescript
+// ❌ WRONG: Tasks get stuck after DO hibernation
+async fetch(request: Request): Promise<Response> {
+  return this.app.fetch(request); // No recovery check
+}
+
+// ✅ CORRECT: Always check for stuck tasks
+async fetch(request: Request): Promise<Response> {
+  await this.recoverStuckTasks(); // Critical!
+  return this.app.fetch(request);
+}
+```
+
+#### 5. Task ID Validation Bypass
+
+```typescript
+// ❌ WRONG: Allows path traversal attacks
+await Effect.runPromise(
+  scheduler.runNow("../etc/passwd", "handler", params)
+);
+
+// ✅ CORRECT: Validation happens automatically
+// TaskLimitExceeded thrown for invalid identifiers
+```
+
+#### 6. Storage Exhaustion Without Limits
+
+```typescript
+// ❌ WRONG: Unbounded task creation
+const scheduler = new ReliableScheduler(storage); // Default 10000 limit
+
+// ✅ CORRECT: Configure limits for your use case
+const scheduler = new ReliableScheduler(storage, {
+  maxTotalTasks: 50000, // Adjust based on storage capacity
+  maxConcurrentTasks: 50 // Adjust based on CPU limits
+});
+```
+
+#### 7. Missing Error Handling
+
+```typescript
+// ❌ WRONG: Unhandled Effect errors crash the DO
+await Effect.runPromise(scheduler.runNow(taskId, 'missing-handler', params));
+
+// ✅ CORRECT: Handle errors explicitly
+const result = await Effect.runPromise(
+  Effect.either(scheduler.runNow(taskId, 'missing-handler', params))
+);
+
+if (result._tag === 'Left') {
+  // Handle HandlerMissing, ValidationError, TaskLimitExceeded, etc.
+}
+```
+
+### Monitoring and Debugging
+
+**Key Metrics to Monitor:**
+- DO CPU time per alarm cycle (>10s = too many tasks)
+- Task queue length (spikes indicate backlogs)
+- Recovery frequency (high = hibernation issues)
+- Error rates by type (ValidationError = bad inputs)
+
+**Debug Commands:**
+```bash
+# Check task states
+curl "https://your-worker.dev/tasks"
+
+# Force alarm processing
+curl "https://your-worker.dev/_alarm" -X POST
+
+# Check DO logs for recovery messages
+# Look for: [recoverStuckTasks], [fetch] DO woke up, [alarm] Recovered
+```
+
 ## License
 
 MIT

@@ -545,7 +545,7 @@ export class TaskSchedulerDO extends DurableObject {
 
           if (isStuck) {
             const reason = scheduledAt === 0 ? "never scheduled" : `${Math.round((now - scheduledAt) / 1000)}s overdue`;
-            console.log(`[resumeRunningTasks] Resuming stuck miner ${task.taskId}: ${reason}, rescheduling for immediate execution`);
+            await Effect.runPromise(Effect.log(`[resumeRunningTasks] Resuming stuck miner ${task.taskId}: ${reason}, rescheduling for immediate execution`));
             const params = task.params as Record<string, any>;
             // Schedule for immediate execution (now - 1ms so it's due immediately)
             await Effect.runPromise(this.scheduler.schedule(now - 1, task.taskId, "mine-resource-loop", params));
@@ -603,7 +603,7 @@ export class TaskSchedulerDO extends DurableObject {
   }
 
   // Broadcast task updates to all connected clients
-  private broadcast(message: { type: string; data: any }) {
+  private async broadcast(message: { type: string; data: any }) {
     const payload = JSON.stringify(message);
     // Use Durable Object's getWebSockets() for hibernation-safe WebSocket access
     const sockets = this.ctx.getWebSockets();
@@ -623,26 +623,24 @@ export class TaskSchedulerDO extends DurableObject {
       }
     }
     if (sent > 0 || sockets.length > 0) {
-      console.log(`[broadcast] Sent ${message.type} to ${sent}/${sockets.length} clients`);
+      await Effect.runPromise(Effect.log(`[broadcast] Sent ${message.type} to ${sent}/${sockets.length} clients`));
     }
   }
 
   // Helper to trigger broadcast from within task handlers
-  // Debounced to max once per 100ms to prevent broadcast storms
   async triggerBroadcast() {
     if (this.broadcastQueue) {
       // Already queued, skip
       return;
     }
-    this.broadcastQueue = setTimeout(async () => {
-      const tasks = await this.scheduler.getCachedTasks();
-      const allTasks = tasks.length > 0 ? tasks : await Effect.runPromise(this.scheduler.getTasks());
-      this.broadcast({
-        type: "tasks",
-        data: allTasks.map((t) => this.formatTaskForUI(t)),
-      });
-      this.broadcastQueue = null;
-    }, 100);
+    this.broadcastQueue = true as any;
+    const tasks = await this.scheduler.getCachedTasks();
+    const allTasks = tasks.length > 0 ? tasks : await Effect.runPromise(this.scheduler.getTasks());
+    await this.broadcast({
+      type: "tasks",
+      data: allTasks.map((t) => this.formatTaskForUI(t)),
+    });
+    this.broadcastQueue = null;
   }
 
   // Lightweight broadcast for resources updates only
@@ -661,8 +659,8 @@ export class TaskSchedulerDO extends DurableObject {
 
     const speedMultiplier = (await Effect.runPromise(this.scheduler.getCheckpoint(globalTaskId, "speedMultiplier"))) as number || 1;
 
-    console.log(`[broadcastResources] Sending resources:`, resources);
-    this.broadcast({
+    await Effect.runPromise(Effect.log(`[broadcastResources] Sending resources:`, resources));
+    await this.broadcast({
       type: "resources",
       data: {
         namespace,
@@ -773,7 +771,7 @@ export class TaskSchedulerDO extends DurableObject {
         try {
           await this.ensureGlobalStateHealthy(namespace);
         } catch (error) {
-          console.error("[GET /tasks] Failed to ensure global-state healthy:", error);
+          await Effect.runPromise(Effect.logError("[GET /tasks] Failed to ensure global-state healthy:", error));
         }
       }
 
@@ -907,7 +905,7 @@ export class TaskSchedulerDO extends DurableObject {
       try {
         await this.ensureGlobalStateHealthy("mission4");
       } catch (error) {
-        console.error("[WS] Failed to ensure global-state healthy:", error);
+        await Effect.runPromise(Effect.logError("[WS] Failed to ensure global-state healthy:", error));
       }
 
       // Send initial state
@@ -931,24 +929,24 @@ export class TaskSchedulerDO extends DurableObject {
       // Diagnostic logging: check task states on wake-up
       const tasks = await Effect.runPromise(this.scheduler.getTasks());
       const miners = tasks.filter(t => t.taskName === "mine-resource-loop" && t.taskId.startsWith("mission4-"));
-      console.log(`[fetch] DO woke up: ${miners.length} miners found`);
+      await Effect.runPromise(Effect.log(`[fetch] DO woke up: ${miners.length} miners found`));
 
       // Log each miner's state for diagnosis
       for (const miner of miners) {
         const scheduledAt = miner.scheduledAt || 0;
         const age = scheduledAt > 0 ? Date.now() - scheduledAt : -1;
-        console.log(`[fetch] Miner ${miner.taskId}: status=${miner.status}, scheduled=${scheduledAt}, age=${age > 0 ? Math.round(age / 1000) + 's' : 'never'}`);
+        await Effect.runPromise(Effect.log(`[fetch] Miner ${miner.taskId}: status=${miner.status}, scheduled=${scheduledAt}, age=${age > 0 ? Math.round(age / 1000) + 's' : 'never'}`));
       }
 
       await this.ensureGlobalStateHealthy("mission4");
       const recovered = await Effect.runPromise(this.scheduler.recoverStuckTasks(["mine-resource-loop", "global-state"]));
       if (recovered > 0) {
-        console.log(`[fetch] Recovered ${recovered} stuck task(s) after hibernation, triggering alarm to process them`);
+        await Effect.runPromise(Effect.log(`[fetch] Recovered ${recovered} stuck task(s) after hibernation, triggering alarm to process them`));
         // Trigger alarm immediately to process recovered tasks
         await Effect.runPromise(this.scheduler.alarm());
       }
     } catch (error) {
-      console.error("[fetch] Failed recovery:", error);
+      await Effect.runPromise(Effect.logError("[fetch] Failed recovery:", error));
     }
 
     return this.app.fetch(request);
@@ -961,7 +959,7 @@ export class TaskSchedulerDO extends DurableObject {
 
   // Handle WebSocket error events (called by Durable Object runtime)
   async webSocketError(ws: WebSocket, error: unknown) {
-    console.error("[WS] Error:", error);
+      await Effect.runPromise(Effect.logError("[WS] Error:", error));
   }
 
   // Handle WebSocket messages (called by Durable Object runtime)
@@ -976,14 +974,14 @@ export class TaskSchedulerDO extends DurableObject {
     try {
       const tasksBefore = await Effect.runPromise(this.scheduler.getTasks());
       const minersBefore = tasksBefore.filter(t => t.taskName === "mine-resource-loop" && t.taskId.startsWith("mission4-"));
-      console.log(`[alarm] Processing alarm: ${minersBefore.length} miners before recovery`);
+      await Effect.runPromise(Effect.log(`[alarm] Processing alarm: ${minersBefore.length} miners before recovery`));
 
       const recovered = await Effect.runPromise(this.scheduler.recoverStuckTasks(["mine-resource-loop", "global-state"]));
       if (recovered > 0) {
-        console.log(`[alarm] Recovered ${recovered} stuck task(s) before processing`);
+        await Effect.runPromise(Effect.log(`[alarm] Recovered ${recovered} stuck task(s) before processing`));
       }
     } catch (error) {
-      console.error("[alarm] Failed recovery:", error);
+      await Effect.runPromise(Effect.logError("[alarm] Failed recovery:", error));
     }
 
         await Effect.runPromise(this.scheduler.alarm());
@@ -992,17 +990,17 @@ export class TaskSchedulerDO extends DurableObject {
     try {
       await this.ensureGlobalStateHealthy("mission4");
     } catch (error) {
-      console.error("[alarm] Failed to ensure global-state healthy:", error);
+      await Effect.runPromise(Effect.logError("[alarm] Failed to ensure global-state healthy:", error));
     }
 
     // Recover again after alarm (in case alarm processing created new stuck tasks)
     try {
-      const recoveredAfter = await this.scheduler.recoverStuckTasks(["mine-resource-loop", "global-state"]);
+      const recoveredAfter = await Effect.runPromise(this.scheduler.recoverStuckTasks(["mine-resource-loop", "global-state"]));
       if (recoveredAfter > 0) {
-        console.log(`[alarm] Recovered ${recoveredAfter} stuck task(s) after processing`);
+        await Effect.runPromise(Effect.log(`[alarm] Recovered ${recoveredAfter} stuck task(s) after processing`));
       }
     } catch (error) {
-      console.error("[alarm] Failed recovery (post-alarm):", error);
+      await Effect.runPromise(Effect.logError("[alarm] Failed recovery (post-alarm):", error));
     }
 
     // Broadcast after alarm processing - use cached tasks if available
@@ -1016,11 +1014,11 @@ export class TaskSchedulerDO extends DurableObject {
     // Execution time monitoring
     const duration = Date.now() - startTime;
     if (duration > 10000) {
-      console.error(`[alarm] CRITICAL: Took ${duration}ms - likely approaching CPU limit`);
+      await Effect.runPromise(Effect.logError(`[alarm] CRITICAL: Took ${duration}ms - likely approaching CPU limit`));
     } else if (duration > 5000) {
-      console.warn(`[alarm] WARNING: Took ${duration}ms - monitor CPU usage`);
+      await Effect.runPromise(Effect.logWarning(`[alarm] WARNING: Took ${duration}ms - monitor CPU usage`));
     } else {
-      console.log(`[alarm] Completed in ${duration}ms`);
+      await Effect.runPromise(Effect.log(`[alarm] Completed in ${duration}ms`));
     }
   }
 
@@ -1036,7 +1034,7 @@ export class TaskSchedulerDO extends DurableObject {
       // If miner is in a bad state, recover it
       if (miner.status === "failed" || miner.status === "completed") {
         if (!this.runningEffects.has(miner.taskId)) {
-          console.log(`[healthCheck] Recovering miner ${miner.taskId} from ${miner.status}`);
+          await Effect.runPromise(Effect.log(`[healthCheck] Recovering miner ${miner.taskId} from ${miner.status}`));
           await this.scheduler.checkpoint(miner.taskId, "_recovered", true);
           this.runningEffects.add(miner.taskId);
           this.runTaskHandler(miner.taskId, miner.taskName, miner.params);
@@ -1051,13 +1049,13 @@ export class TaskSchedulerDO extends DurableObject {
 
         // If scheduled time is more than 1 minute in the past, it's stuck - reschedule immediately
         if (scheduledAt > 0 && now > scheduledAt + 60000) {
-          console.log(`[healthCheck] Rescheduling stuck miner ${miner.taskId} (scheduled ${Math.round((now - scheduledAt) / 1000)}s ago)`);
+          await Effect.runPromise(Effect.log(`[healthCheck] Rescheduling stuck miner ${miner.taskId} (scheduled ${Math.round((now - scheduledAt) / 1000)}s ago)`));
           // Reschedule for immediate execution (now - 1ms so it's due immediately)
           await this.scheduler.schedule(now - 1, miner.taskId, "mine-resource-loop", params);
         }
         // If miner has no scheduled time but should be running, reschedule it
         else if (scheduledAt === 0 && miner.status === "running") {
-          console.log(`[healthCheck] Miner ${miner.taskId} has no scheduled time, rescheduling for immediate execution`);
+          await Effect.runPromise(Effect.log(`[healthCheck] Miner ${miner.taskId} has no scheduled time, rescheduling for immediate execution`));
           await this.scheduler.schedule(now - 1, miner.taskId, "mine-resource-loop", params);
         }
       }
