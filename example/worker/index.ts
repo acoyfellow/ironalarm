@@ -273,44 +273,39 @@ export class TaskSchedulerDO extends DurableObject {
     // Register mine-resource-loop task handler - alarm-based mining loop
     this.scheduler.register(
       "mine-resource-loop",
-      (taskId: string, params: unknown) => {
-        const p = params as Record<string, any>;
-        const nodeId = (p.nodeId || "copper") as string;
-        const baseYield = (p.yield || 1) as number;
-        const timeMs = (p.timeMs || 4000) as number;
-
-        return Effect.gen(function* () {
+      (taskId: string, params: unknown) =>
+        Effect.gen(function* () {
           const svc = yield* SchedulerService;
+          const p = params as Record<string, any>;
+          const nodeId = (p.nodeId || "copper") as string;
+          const baseYield = (p.yield || 1) as number;
+          const timeMs = (p.timeMs || 4000) as number;
 
-          const miningLoop = Effect.gen(function* () {
-            // Check if task is paused or cancelled before processing
-           const task = yield* svc.getTask(taskId);
-           if (!task || task.status === "paused") {
-             return false; // Don't reschedule if cancelled/paused
-           }
+          // Check if task is paused or cancelled before processing
+          const task = yield* svc.getTask(taskId);
+          if (!task || task.status === "paused") {
+            return; // Don't reschedule if cancelled/paused
+          }
 
-           // Recover from failed or completed state
-           if (task.status === "failed" || task.status === "completed") {
-             // Use checkpoint to recover - it will set status back to "running"
-             yield* svc.checkpoint(taskId, "_recovered", true);
-           }
+          // Recover from failed or completed state
+          if (task.status === "failed" || task.status === "completed") {
+            yield* svc.checkpoint(taskId, "_recovered", true);
+          }
 
           // Get or initialize cycle counter
-          let cycle = ((yield* svc.getCheckpoint(taskId, "cycle")) || 0) as number;
+          const cycleValue = yield* svc.getCheckpoint(taskId, "cycle");
+          let cycle = (typeof cycleValue === 'number' ? cycleValue : 0);
 
-          // Calculate logarithmic yield multiplier based on cycles
-          // Formula: baseYield * (1 + log10(cycle + 1))
-          // cycle 0: 1x, cycle 9: 2x, cycle 99: 3x, cycle 999: 4x, etc.
+          // Calculate logarithmic yield multiplier
           const yieldMultiplier = 1 + Math.log10(cycle + 1);
           const actualYield = Math.floor(baseYield * yieldMultiplier);
 
-           // Deposit resources to global state - ensure it's healthy first
-           const globalTaskId = `mission4-global-state`;
-           yield* Effect.promise(() => doInstance.ensureGlobalStateHealthy("mission4"));
-           let globalTask = yield* svc.getTask(globalTaskId);
+          // Deposit resources to global state
+          const globalTaskId = `mission4-global-state`;
+          yield* Effect.promise(() => doInstance.ensureGlobalStateHealthy("mission4"));
+          let globalTask = yield* svc.getTask(globalTaskId);
 
           if (globalTask) {
-            // Use transaction to prevent race conditions when multiple miners update simultaneously
             yield* Effect.promise(() =>
               doInstance.ctx.storage.transaction(async (txn: any) => {
                 const task = await txn.get(`task:${globalTaskId}`) as Task | undefined;
@@ -326,70 +321,33 @@ export class TaskSchedulerDO extends DurableObject {
                   currentResources = rawResources as Record<string, number>;
                 }
 
-                // Add mined resources (with logarithmic multiplier)
                 const resourceType = nodeId;
                 currentResources[resourceType] = (currentResources[resourceType] || 0) + actualYield;
                 currentResources.copper = (currentResources.copper || 0) + actualYield;
 
-                // Update task progress atomically
                 task.progress = task.progress || {};
                 task.progress.resources = currentResources;
                 await txn.put(`task:${globalTaskId}`, task);
               })
             );
 
-            // Broadcast resources update
             yield* Effect.promise(() => doInstance.broadcastResources("mission4"));
           }
 
-          // Increment cycle and batch checkpoint updates (step and cycle) into single write
-          cycle++;
+          // Increment cycle and checkpoint
+          cycle = cycle + 1;
           yield* svc.checkpointMultiple(taskId, {
             step: `mining-${nodeId}`,
             cycle: cycle
           });
 
-          // Trigger broadcast to update cycle counter
           yield* Effect.promise(() => doInstance.triggerBroadcast());
 
-          return true; // Success, should reschedule
-        });
-
-        // Wrap in error handling to ensure we ALWAYS reschedule, even on error
-        return Effect.gen(function* () {
-          // Use Effect.catchAll to handle errors and ensure rescheduling
-          const shouldReschedule = yield* Effect.catchAll(miningLoop, (error) => {
-            console.error(`[mine-resource-loop] Error in task ${taskId}:`, error);
-            // On error, check if task still exists and is valid
-            return Effect.gen(function* () {
-              const innerSvc = yield* SchedulerService;
-              const task = yield* innerSvc.getTask(taskId);
-              // Only reschedule if task is still valid (not cancelled/paused)
-              // Note: failed/completed tasks will be recovered above, so we allow them
-              return task && task.status !== "paused";
-            });
-          });
-
-          // ALWAYS reschedule the next cycle if task is still valid
-          // This ensures the task never stops running
-          if (shouldReschedule) {
-            const nextCycleTime = Date.now() + timeMs;
-            yield* Effect.catchAll(
-              svc.schedule(nextCycleTime, taskId, "mine-resource-loop", params),
-              (error) => {
-                console.error(`[mine-resource-loop] Failed to reschedule task ${taskId}:`, error);
-                // Retry once with delay
-                return Effect.gen(function* () {
-                  const retrySvc = yield* SchedulerService;
-                  yield* Effect.sleep(Duration.millis(100));
-                  yield* retrySvc.schedule(nextCycleTime, taskId, "mine-resource-loop", params);
-                });
-              }
-            );
-          }
-        });
-      }
-    );
+           // Reschedule next cycle
+           const nextCycleTime = Date.now() + timeMs;
+           yield* svc.schedule(nextCycleTime, taskId, "mine-resource-loop", params);
+         })
+     );
 
     // Register sell-miner task handler - sells a miner and adds copper
     this.scheduler.register(
@@ -678,7 +636,7 @@ export class TaskSchedulerDO extends DurableObject {
     }
     this.broadcastQueue = setTimeout(async () => {
       const tasks = await this.scheduler.getCachedTasks();
-      const allTasks = tasks.length > 0 ? tasks : await this.scheduler.getTasks();
+      const allTasks = tasks.length > 0 ? tasks : await Effect.runPromise(this.scheduler.getTasks());
       this.broadcast({
         type: "tasks",
         data: allTasks.map((t) => this.formatTaskForUI(t)),
@@ -910,7 +868,7 @@ export class TaskSchedulerDO extends DurableObject {
       }
 
       // Get all tasks and filter by namespace
-      const allTasks = await this.scheduler.getTasks();
+      const allTasks = await Effect.runPromise(this.scheduler.getTasks());
       const namespaceTasks = allTasks.filter((t) =>
         t.taskId.startsWith(`${namespace}-`)
       );
@@ -1016,7 +974,7 @@ export class TaskSchedulerDO extends DurableObject {
 
     // CRITICAL: Recover stuck tasks before alarm processing
     try {
-      const tasksBefore = await this.scheduler.getTasks();
+      const tasksBefore = await Effect.runPromise(this.scheduler.getTasks());
       const minersBefore = tasksBefore.filter(t => t.taskName === "mine-resource-loop" && t.taskId.startsWith("mission4-"));
       console.log(`[alarm] Processing alarm: ${minersBefore.length} miners before recovery`);
 
@@ -1049,7 +1007,7 @@ export class TaskSchedulerDO extends DurableObject {
 
     // Broadcast after alarm processing - use cached tasks if available
     const cachedTasks = this.scheduler.getCachedTasks();
-    const tasks = cachedTasks.length > 0 ? cachedTasks : await this.scheduler.getTasks();
+      const tasks = cachedTasks.length > 0 ? cachedTasks : await Effect.runPromise(this.scheduler.getTasks());
     this.broadcast({
       type: "tasks",
       data: tasks.map((t) => this.formatTaskForUI(t)),

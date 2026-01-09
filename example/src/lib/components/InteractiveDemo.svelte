@@ -10,53 +10,33 @@
    import { createWebSocket } from "$lib/websocket-service";
    import TaskCard from "./TaskCard.svelte";
 
-   // Accept initial data from server load
-   let { data }: { data: { tasks: any[] } } = $props();
+  // Accept initial data from server load
+  let { data }: { data?: { tasks: any[] } } = $props();
 
-   let inputValue = $state("AI agents");
-   let selectedDuration = $state(60);
-   let isStarting = $state(false);
-    let tasks = $state<any[]>([]);
-   let dropdownOpen = $state(false);
-   let pollingInterval: ReturnType<typeof setInterval> | null = null;
-   let wsClose: (() => void) | null = null;
-   let now = $state(Date.now());
+  let inputValue = $state("AI agents");
+  let selectedDuration = $state(60);
+  let isStarting = $state(false);
+  let tasks = $state<any[]>(data?.tasks || []);
+  let dropdownOpen = $state(false);
+  let pollingInterval: ReturnType<typeof setInterval> | null = null;
+  let wsClose: (() => void) | null = null;
+  let now = $state(Date.now());
    let pausingTaskId = $state<string | null>(null);
    let resumingTaskId = $state<string | null>(null);
 
-  const durationOptions = [
-    { label: "1 second", value: 1 },
-    { label: "10 seconds", value: 10 },
-    { label: "Demo (60s)", value: 60 },
-    { label: "Realistic (1 hour)", value: 3600 },
-    { label: "Production (1 week)", value: 604800 },
-    { label: "1 Month", value: 2592000 },
-    { label: "1 Year", value: 31536000 },
-  ];
+   const durationOptions = [
+     { value: 60, label: "1 minute" },
+     { value: 300, label: "5 minutes" },
+     { value: 900, label: "15 minutes" },
+     { value: 1800, label: "30 minutes" },
+     { value: 3600, label: "1 hour" }
+   ];
 
-  const selectedLabel = $derived(
-    durationOptions.find((d) => d.value === selectedDuration)?.label ||
-      "Demo (60s)"
-  );
+   let selectedLabel = $derived(durationOptions.find(opt => opt.value === selectedDuration)?.label || "1 minute");
 
   async function handleStart() {
     isStarting = true;
     try {
-      const complexityMap: Record<number, string> = {
-        1: "1s",
-        10: "10s",
-        60: "demo",
-        3600: "realistic",
-        604800: "production",
-        2592000: "month",
-        31536000: "year",
-      };
-
-      await startTask({
-        taskName: "agent-loop",
-        complexity: complexityMap[selectedDuration] || "demo",
-        namespace: "task",
-      });
       await new Promise((r) => setTimeout(r, 500));
       await loadTasks();
     } catch (error) {
