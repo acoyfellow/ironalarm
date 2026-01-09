@@ -232,14 +232,15 @@ export class TaskSchedulerDO extends DurableObject {
     // Register trade-item task handler
     this.scheduler.register(
       "trade-item",
-      (sched: ReliableScheduler, taskId: string, params: unknown) =>
+      (taskId: string, params: unknown) =>
         Effect.gen(function* () {
+          const svc = yield* SchedulerService;
           const p = params as Record<string, any>;
           const itemType = p.itemType || null; // null = sell first available item
           const sellPrice = p.sellPrice || 100;
 
           // Get inventory
-          const inventory = ((yield* Effect.promise(() => sched.getCheckpoint("global-state", "inventory"))) ||
+          const inventory = ((yield* svc.getCheckpoint("global-state", "inventory")) ||
             { items: [] }) as Record<string, any>;
           if (!inventory.items) inventory.items = [];
 
@@ -254,15 +255,15 @@ export class TaskSchedulerDO extends DurableObject {
           if (itemIndex >= 0) {
             // Remove item from inventory
             inventory.items.splice(itemIndex, 1);
-            yield* Effect.promise(() => sched.checkpoint("global-state", "inventory", inventory));
+            yield* svc.checkpoint("global-state", "inventory", inventory);
 
             // Add money
-            const currentMoney = ((yield* Effect.promise(() => sched.getCheckpoint("global-state", "money"))) || 0) as number;
-            yield* Effect.promise(() => sched.checkpoint("global-state", "money", currentMoney + sellPrice));
-            yield* Effect.promise(() => sched.checkpoint(taskId, "sold", { price: sellPrice }));
+            const currentMoney = ((yield* svc.getCheckpoint("global-state", "money")) || 0) as number;
+            yield* svc.checkpoint("global-state", "money", currentMoney + sellPrice);
+            yield* svc.checkpoint(taskId, "sold", { price: sellPrice });
           }
 
-          yield* Effect.promise(() => sched.completeTask(taskId));
+          yield* svc.completeTask(taskId);
         })
     );
 
@@ -281,16 +282,16 @@ export class TaskSchedulerDO extends DurableObject {
         const miningLoop = Effect.gen(function* () {
           const svc = yield* SchedulerService;
           // Check if task is paused or cancelled before processing
-          const task = yield* svc.getTask(taskId);
-          if (!task || task.status === "paused") {
-            return false; // Don't reschedule if cancelled/paused
-          }
+           const task = yield* svc.getTask(taskId);
+           if (!task || task.status === "paused") {
+             return false; // Don't reschedule if cancelled/paused
+           }
 
-          // Recover from failed or completed state
-          if (task.status === "failed" || task.status === "completed") {
-            // Use checkpoint to recover - it will set status back to "running"
-            yield* Effect.promise(() => sched.checkpoint(taskId, "_recovered", true));
-          }
+           // Recover from failed or completed state
+           if (task.status === "failed" || task.status === "completed") {
+             // Use checkpoint to recover - it will set status back to "running"
+             yield* svc.checkpoint(taskId, "_recovered", true);
+           }
 
           // Get or initialize cycle counter
           let cycle = ((yield* svc.getCheckpoint(taskId, "cycle")) || 0) as number;
@@ -359,7 +360,8 @@ export class TaskSchedulerDO extends DurableObject {
             console.error(`[mine-resource-loop] Error in task ${taskId}:`, error);
             // On error, check if task still exists and is valid
             return Effect.gen(function* () {
-              const task = yield* Effect.promise(() => sched.getTask(taskId));
+              const innerSvc = yield* SchedulerService;
+              const task = yield* innerSvc.getTask(taskId);
               // Only reschedule if task is still valid (not cancelled/paused)
               // Note: failed/completed tasks will be recovered above, so we allow them
               return task && task.status !== "paused";
@@ -397,17 +399,17 @@ export class TaskSchedulerDO extends DurableObject {
           const copperToAdd = (p.copperToAdd || 0) as number;
 
           if (!taskIdToCancel || copperToAdd <= 0) {
-            yield* Effect.promise(() => sched.completeTask(taskId));
+            yield* svc.completeTask(taskId);
             return;
           }
 
           // Cancel the miner task
-          yield* Effect.promise(() => sched.cancelTask(taskIdToCancel));
+          yield* svc.cancelTask(taskIdToCancel);
 
           // Add copper to global state - ensure it's healthy first
           const globalTaskId = `mission4-global-state`;
           yield* Effect.promise(() => doInstance.ensureGlobalStateHealthy("mission4"));
-          let globalTask = yield* Effect.promise(() => sched.getTask(globalTaskId));
+          let globalTask = yield* svc.getTask(globalTaskId);
 
           if (globalTask) {
             // Use transaction to prevent race conditions
@@ -439,7 +441,7 @@ export class TaskSchedulerDO extends DurableObject {
             yield* Effect.promise(() => doInstance.broadcastResources("mission4"));
           }
 
-          yield* Effect.promise(() => sched.completeTask(taskId));
+          yield* svc.completeTask(taskId);
         })
     );
 
@@ -468,16 +470,16 @@ export class TaskSchedulerDO extends DurableObject {
           const task = yield* svc.getTask(taskId);
           if (!task) return;
 
-          // Recover from failed or completed state
-          if (task.status === "failed" || task.status === "completed") {
-            // Use checkpoint to recover - it will set status back to "running"
-            yield* Effect.promise(() => sched.checkpoint(taskId, "_recovered", true));
-          }
+           // Recover from failed or completed state
+           if (task.status === "failed" || task.status === "completed") {
+             // Use checkpoint to recover - it will set status back to "running"
+             yield* svc.checkpoint(taskId, "_recovered", true);
+           }
 
-          // Clear completed flag if somehow set
-          if (task.progress?.completed === true) {
-            yield* Effect.promise(() => sched.checkpoint(taskId, "completed", false));
-          }
+           // Clear completed flag if somehow set
+           if (task.progress?.completed === true) {
+             yield* svc.checkpoint(taskId, "completed", false);
+           }
 
           // Schedule next wake in 30 seconds using alarm-based scheduling
           // This allows the DO to hibernate between checks
@@ -540,7 +542,7 @@ export class TaskSchedulerDO extends DurableObject {
           );
 
           if (!canAfford) {
-            yield* Effect.promise(() => sched.completeTask(taskId));
+          yield* svc.completeTask(taskId);
             return;
           }
 
@@ -548,7 +550,7 @@ export class TaskSchedulerDO extends DurableObject {
           yield* Effect.promise(() => doInstance.broadcastResources("mission4"));
 
           // Complete this task
-          yield* Effect.promise(() => sched.completeTask(taskId));
+          yield* svc.completeTask(taskId);
         })
     );
 
@@ -572,7 +574,7 @@ export class TaskSchedulerDO extends DurableObject {
         // Recover failed/completed tasks by checkpointing them (checkpoint method now auto-recovers failed tasks)
         if (task.status === "failed" || task.status === "completed") {
           // Use checkpoint to recover - it will automatically set status back to "running"
-          await this.scheduler.checkpoint(task.taskId, "_recovered", true);
+          await Effect.runPromise(this.scheduler.checkpoint(task.taskId, "_recovered", true));
         }
 
         // For miners: if scheduled time is way in the past or never scheduled, reschedule for immediate execution
@@ -630,7 +632,8 @@ export class TaskSchedulerDO extends DurableObject {
       return;
     }
     try {
-      await Effect.runPromise(handler(this.scheduler, taskId, params));
+      const layer = this.scheduler._createServiceLayer();
+      await Effect.runPromise(Effect.provide(handler(taskId, params), layer) as Effect.Effect<void, unknown, never>);
     } catch {
       // Task threw - will be cleaned up
     } finally {

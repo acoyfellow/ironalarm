@@ -167,31 +167,67 @@
        "test_file": "test/concurrency.test.ts",
        "verification": "bun run test (concurrency.test.ts passes), typecheck passes"
      },
-     {
-       "id": "007",
-       "title": "Replace console.error with Effect.log* for structured logging",
-       "status": "completed",
-       "priority": "P2",
-       "description": "Use Effect's logging module for observability",
-       "acceptance_criteria": [
-         "console.error calls replaced with Effect.logError",
-         "console.log calls replaced with Effect.log",
-         "Log levels appropriate (debug, info, error)",
-         "Logging still outputs to console via runtime",
-         "Tests verify log output structure"
-       ],
-       "dependencies": [
-         "004"
-       ],
-       "files_to_modify": [
-         "src/index.ts"
-       ],
-       "test_file": "test/logging.test.ts",
-       "verification": "bun run test (logging.test.ts passes), typecheck passes"
-     }
+      {
+        "id": "007",
+        "title": "Replace console.error with Effect.log* for structured logging",
+        "status": "completed",
+        "priority": "P2",
+        "description": "Use Effect's logging module for observability",
+        "acceptance_criteria": [
+          "console.error calls replaced with Effect.logError",
+          "console.log calls replaced with Effect.log",
+          "Log levels appropriate (debug, info, error)",
+          "Logging still outputs to console via runtime",
+          "Tests verify log output structure"
+        ],
+        "dependencies": [
+          "004"
+        ],
+        "files_to_modify": [
+          "src/index.ts"
+        ],
+        "test_file": "test/logging.test.ts",
+        "verification": "bun run test (logging.test.ts passes), typecheck passes"
+      },
+      {
+        "id": "008",
+        "title": "FIX THE FUCKING EXAMPLE - Make demos work with Svelte5/SvelteKit properly",
+        "status": "pending",
+        "priority": "P0",
+        "description": "Fix all hydration mismatches, UI flickering, and ensure proper Svelte5/SvelteKit integration",
+        "acceptance_criteria": [
+          "No hydration mismatches - server and client render the same content",
+          "No UI flickering when clicking or loading",
+          "Miners show up immediately without refresh",
+          "WebSocket real-time updates work properly",
+          "Mission control game functions correctly",
+          "All demos (homepage, mission control) work end-to-end",
+          "Proper Svelte5 patterns used throughout",
+          "No console errors or hydration warnings"
+        ],
+        "dependencies": [
+          "001",
+          "002",
+          "003",
+          "004",
+          "005",
+          "006",
+          "007"
+        ],
+        "files_to_modify": [
+          "example/src/routes/+page.svelte",
+          "example/src/routes/mission/+page.svelte",
+          "example/src/lib/api-docs.ts",
+          "example/src/lib/websocket-service.ts",
+          "example/src/lib/components/*",
+          "example/worker/index.ts"
+        ],
+        "test_file": null,
+        "verification": "Manual testing: bun run dev, click around, no flickering, all features work"
+      }
   ],
   "completed": [],
-  "next_story_id": "001",
+  "next_story_id": "008",
   "rules": {
     "error_handling": "All failures must be in the error channel (E in Effect<A, E, R>). No try/catch that swallows errors.",
     "tests_first": "Write tests BEFORE implementing. All tests must pass before moving to next story.",

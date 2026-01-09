@@ -22,13 +22,14 @@
 
 | ID | Title | Status | Test File |
 |----|-------|--------|-----------|
-| 001 | Design and implement tagged errors | pending | test/errors.test.ts |
-| 002 | Add SchedulerService Context.Tag | pending | test/context.test.ts |
-| 003 | Refactor TaskHandler for DI | pending | test/handler.test.ts |
+| 001 | Design and implement tagged errors | completed | test/errors.test.ts |
+| 002 | Add SchedulerService Context.Tag | completed | test/context.test.ts |
+| 003 | Refactor TaskHandler for DI | completed | test/handler.test.ts |
 | 004 | Convert APIs to Effect types | completed | test/effect-api.test.ts |
 | 005 | Use Schedule.exponential for retry | completed | test/retry.test.ts |
 | 006 | Use Effect.forEach for concurrency | completed | test/concurrency.test.ts |
 | 007 | Use Effect.log for observability | completed | test/logging.test.ts |
+| 008 | FIX THE FUCKING EXAMPLE - Make demos work with Svelte5/SvelteKit properly | pending | N/A (manual testing) |
 
 ---
 
@@ -105,3 +106,20 @@ await scheduler.schedule(at, id, name, params).pipe(runPromise);
 - Used Effect.runPromise(Effect.log(...)) in async contexts
 - Structured logging with appropriate levels (log, logError, logWarning)
 - Effect logging integrates with runtime for console output
+
+## Example Migration Learnings
+
+- Added runSteps and runSubSteps to SchedulerService interface and _createServiceLayer
+- Updated all task handlers from (sched, taskId, params) to (taskId, params) with SchedulerService
+- Replaced all sched.xxx calls with svc.xxx calls in Effect contexts
+- Fixed runTaskHandler to provide SchedulerService layer for direct handler execution
+- Wrapped scheduler calls in routes with Effect.runPromise() where missing
+- Example now runs without 500 errors but has UI hydration issues (Story 008 needed)
+
+## Story 008: Fix Example Hydration and Svelte5/SvelteKit Issues
+
+- Server-side rendering doesn't match client-side state
+- WebSocket updates cause hydration mismatches
+- UI flickers and miners disappear/reappear
+- Need proper Svelte5 patterns for real-time data
+- Mission control game doesn't work properly

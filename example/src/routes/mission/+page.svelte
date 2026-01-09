@@ -118,7 +118,10 @@
 
   let wsConnected = $state(false);
   let wsClose: (() => void) | null = null;
-  let tasks = $state<any[]>([]);
+  // Accept initial data from server load
+  let { data }: { data: { tasks: any[] } } = $props();
+
+  let tasks = $state<any[]>(data?.tasks || []);
   let resources = $state<Record<string, number>>({});
   let speedMultiplier = $state(1);
   let now = $state(Date.now());
@@ -721,7 +724,8 @@
   }
 
   onMount(() => {
-    loadTasks();
+    // Tasks are already loaded from server, just start WebSocket and initialize resources
+    updateResources();
 
     // WebSocket connection
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
@@ -761,7 +765,8 @@
           untrack(() => {
             tasks = message.data.filter(
               (t: any) =>
-                t.taskId.startsWith("mission4-") || t.taskId === "global-state"
+                t.taskId.startsWith("mission4-") ||
+                t.taskId === "global-state"
             );
           });
         } else if (
@@ -789,8 +794,7 @@
     // Initialize global state
     const initGlobalState = async () => {
       try {
-        const existingTasks = await getTasks("mission4");
-        const globalTask = existingTasks.find(
+        const globalTask = tasks.find(
           (t) =>
             t.taskId === "mission4-global-state" ||
             (t.taskId === "global-state" && t.params?.namespace === "mission4")
@@ -804,8 +808,6 @@
           if (globalTask) await cancelTask(globalTask.taskId);
           await startTask({ taskName: "global-state", namespace: "mission4" });
           await loadTasks();
-        } else {
-          updateResources();
         }
       } catch {
         // Ignore init errors

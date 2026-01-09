@@ -1,7 +1,10 @@
 <script lang="ts">
-  import InteractiveDemo from "$lib/components/InteractiveDemo.svelte";
-  import CodeBlock from "$lib/components/CodeBlock.svelte";
-  import ApiMethod from "$lib/components/ApiMethod.svelte";
+   import InteractiveDemo from "$lib/components/InteractiveDemo.svelte";
+   import CodeBlock from "$lib/components/CodeBlock.svelte";
+   import ApiMethod from "$lib/components/ApiMethod.svelte";
+
+   // Get initial tasks data from server load
+   let { data }: { data: { tasks: any[] } } = $props();
 
   const quickStartCode = `import { ReliableScheduler, SchedulerService } from 'ironalarm';
 import { Effect } from 'effect';
@@ -228,7 +231,7 @@ export class MyDO {
         Start a simulated long-running task and watch the checkpoint system in
         action.
       </p>
-      <InteractiveDemo />
+       <InteractiveDemo data={data} />
     </section>
 
     <!-- Mining Game CTA -->

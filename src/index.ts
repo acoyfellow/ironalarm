@@ -49,6 +49,8 @@ const SchedulerService = Context.GenericTag<{
   cancelTask: (taskId: string) => Effect.Effect<boolean, never, never>;
   clearCompleted: () => Effect.Effect<number, never, never>;
   clearAll: () => Effect.Effect<number, never, never>;
+  runSteps: (taskId: string, steps: string[], options: { stepDuration?: number; onStep?: (stepName: string, stepIndex: number) => Promise<void> | Effect.Effect<void>; result?: string; autoComplete?: boolean }) => Effect.Effect<void, never, never>;
+  runSubSteps: (taskId: string, stepName: string, stepIndex: number, totalSteps: number, subStepCount: number, subStepDuration: number, onSubStep?: (subStepIndex: number) => Promise<void> | Effect.Effect<void>) => Effect.Effect<void, never, never>;
   getCachedTasks: (status?: TaskStatus) => Task[];
   formatTaskForUI: (task: Task) => any;
 }>("SchedulerService");
@@ -97,6 +99,10 @@ export class ReliableScheduler {
       cancelTask: (taskId: string) => this._cancelTask(taskId),
       clearCompleted: () => this._clearCompleted(),
       clearAll: () => this._clearAll(),
+      runSteps: (taskId: string, steps: string[], options?: { stepDuration?: number; onStep?: (stepName: string, stepIndex: number) => Promise<void> | Effect.Effect<void>; result?: string; autoComplete?: boolean }) =>
+        this._runSteps(taskId, steps, options || {}),
+      runSubSteps: (taskId: string, stepName: string, stepIndex: number, totalSteps: number, subStepCount: number, subStepDuration: number, onSubStep?: (subStepIndex: number) => Promise<void> | Effect.Effect<void>) =>
+        this._runSubSteps(taskId, stepName, stepIndex, totalSteps, subStepCount, subStepDuration, onSubStep),
       getCachedTasks: (status?: TaskStatus) => this.getCachedTasks(status),
       formatTaskForUI: (task: Task) => this.formatTaskForUI(task),
     });

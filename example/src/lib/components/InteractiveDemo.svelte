@@ -1,23 +1,28 @@
 <script lang="ts">
-  import { onMount, onDestroy } from "svelte";
-  import {
-    startTask,
-    getTasks,
-    cancelTask,
-    pauseTask,
-    resumeTask,
-  } from "$routes/data.remote";
-  import TaskCard from "./TaskCard.svelte";
+   import { onMount, onDestroy, untrack } from "svelte";
+   import {
+     startTask,
+     getTasks,
+     cancelTask,
+     pauseTask,
+     resumeTask,
+   } from "$routes/data.remote";
+   import { createWebSocket } from "$lib/websocket-service";
+   import TaskCard from "./TaskCard.svelte";
 
-  let inputValue = $state("AI agents");
-  let selectedDuration = $state(60);
-  let isStarting = $state(false);
-  let tasks = $state<any[]>([]);
-  let dropdownOpen = $state(false);
-  let pollingInterval: ReturnType<typeof setInterval> | null = null;
-  let now = $state(Date.now());
-  let pausingTaskId = $state<string | null>(null);
-  let resumingTaskId = $state<string | null>(null);
+   // Accept initial data from server load
+   let { data }: { data: { tasks: any[] } } = $props();
+
+   let inputValue = $state("AI agents");
+   let selectedDuration = $state(60);
+   let isStarting = $state(false);
+   let tasks = $state<any[]>(data?.tasks || []);
+   let dropdownOpen = $state(false);
+   let pollingInterval: ReturnType<typeof setInterval> | null = null;
+   let wsClose: (() => void) | null = null;
+   let now = $state(Date.now());
+   let pausingTaskId = $state<string | null>(null);
+   let resumingTaskId = $state<string | null>(null);
 
   const durationOptions = [
     { label: "1 second", value: 1 },
@@ -130,25 +135,74 @@
     }
   }
 
-  onMount(async () => {
-    await loadTasks();
-    updatePolling();
+   onMount(() => {
+     // Tasks are already loaded from server, start polling as fallback
+     updatePolling();
 
-    const timeInterval = setInterval(() => {
-      now = Date.now();
-    }, 1000);
+     // WebSocket connection for real-time updates
+     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+     const host = import.meta.env.DEV
+       ? "localhost:1337"
+       : "ironalarm-api.coey.dev";
+     const wsUrl = `${protocol}//${host}/ws`;
 
-    return () => {
-      if (pollingInterval) clearInterval(pollingInterval);
-      clearInterval(timeInterval);
-    };
-  });
+     let wsDisconnectedTime: number | null = null;
+     let pollInterval: ReturnType<typeof setInterval> | null = null;
 
-  onDestroy(() => {
-    if (pollingInterval) {
-      clearInterval(pollingInterval);
-    }
-  });
+     const startPollingFallback = () => {
+       if (pollInterval) return;
+       pollInterval = setInterval(() => {
+         if (!wsClose && wsDisconnectedTime && Date.now() - wsDisconnectedTime > 5000) {
+           loadTasks();
+         }
+       }, 2000);
+     };
+
+     const stopPollingFallback = () => {
+       if (pollInterval) {
+         clearInterval(pollInterval);
+         pollInterval = null;
+       }
+       wsDisconnectedTime = null;
+     };
+
+     const ws = createWebSocket(
+       wsUrl,
+       (message) => {
+         if (message.type === "tasks") {
+           untrack(() => {
+             tasks = message.data.filter((t: any) => t.taskId.startsWith("task-"));
+           });
+         }
+       },
+       () => {
+         stopPollingFallback();
+       },
+       () => {
+         wsDisconnectedTime = Date.now();
+         startPollingFallback();
+       }
+     );
+     wsClose = ws.close;
+
+     const timeInterval = setInterval(() => {
+       now = Date.now();
+     }, 1000);
+
+     return () => {
+       if (pollingInterval) clearInterval(pollingInterval);
+       clearInterval(timeInterval);
+       stopPollingFallback();
+       wsClose?.();
+     };
+   });
+
+   onDestroy(() => {
+     if (pollingInterval) {
+       clearInterval(pollingInterval);
+     }
+     wsClose?.();
+   });
 
   function formatDuration(seconds: number): string {
     if (seconds < 60) return `${seconds}s`;
