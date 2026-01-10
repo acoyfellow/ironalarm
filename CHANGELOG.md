@@ -55,7 +55,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Test harness using Vitest with Cloudflare Workers integration
   - Tests for critical failure modes (handler missing, error recovery, state preservation)
   - Integration tests for concurrency limits and rapid mutations
-  - Helper utilities for DRY test code
-
-### Fixed
+  - Helper utilities for DRY test code### Fixed
 - **runSubSteps callback handling**: Fixed `runSubSteps()` to correctly handle `onSubStep` callbacks that return either `Promise<void>` or `Effect.Effect<void>`
