@@ -863,7 +863,7 @@
 </div>
 
 <div
-  class="min-h-screen bg-black text-white p-2 sm:p-6 space-y-3 sm:space-y-6 overflow-x-hidden"
+  class="min-h-screen bg-black text-white p-2 sm:p-6 space-y-3 sm:space-y-6 overflow-x-clip"
 >
   <!-- Game HUD - Mobile optimized -->
   <div class="max-w-5xl mx-auto">
