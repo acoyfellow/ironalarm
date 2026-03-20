@@ -54,7 +54,10 @@
   },
   "peerDependencies": {
     "typescript": "^5",
-    "effect": "^3.19.14"
+    "effect": "^3.19.17"
+  },
+  "overrides": {
+    "effect": "3.19.17"
   },
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "^0.12.1",

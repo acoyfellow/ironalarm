@@ -44,10 +44,13 @@
     "alchemy": "^0.83.0",
     "better-auth": "1.4.10",
     "drizzle-orm": "^0.45.1",
-    "effect": "^3.19.14",
+    "effect": "^3.19.17",
     "hono": "^4.11.3",
     "shiki": "^3.21.0",
     "three": "^0.182.0"
+  },
+  "overrides": {
+    "effect": "3.19.17"
   },
   "type": "module"
 }
