@@ -658,3 +658,43 @@ curl "https://your-worker.dev/_alarm" -X POST
 ## License
 
 MIT
+
+## Logging
+
+By default, the scheduler and example worker only emit **warnings and errors** to reduce Cloudflare Observability costs.
+
+### Configure log level
+
+Set `IRONALARM_LOG_LEVEL` in your worker environment to one of:
+
+- `debug`
+- `info`
+- `warn` (default)
+- `error`
+- `none`
+
+Example (Alchemy):
+
+```ts
+export const WORKER = await Worker(`${projectName}-worker`, {
+  name: `${projectName}-worker`,
+  entrypoint: "./worker/index.ts",
+  bindings: {
+    TASK_SCHEDULER_DO,
+  },
+  env: {
+    IRONALARM_LOG_LEVEL: "error",
+  },
+  adopt: true,
+  url: false,
+});
+```
+
+Example (Scheduler):
+
+```ts
+const scheduler = new ReliableScheduler(storage, {
+  maxConcurrentTasks: 10,
+  logLevel: "warn",
+});
+```

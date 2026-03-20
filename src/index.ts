@@ -5,6 +5,19 @@ import { Effect, Data, Context, Layer, Schedule, Duration } from "effect";
 
 type TaskStatus = "pending" | "running" | "completed" | "failed" | "paused";
 
+type LogLevel = "debug" | "info" | "warn" | "error" | "none";
+
+const LOG_LEVEL_PRIORITY: Record<LogLevel, number> = {
+  debug: 10,
+  info: 20,
+  warn: 30,
+  error: 40,
+  none: 50,
+};
+
+const shouldLog = (level: LogLevel, minLevel: LogLevel) =>
+  LOG_LEVEL_PRIORITY[level] >= LOG_LEVEL_PRIORITY[minLevel];
+
 interface Task {
   taskId: string;
   taskName: string;
@@ -99,6 +112,7 @@ export class ReliableScheduler {
   private cacheValid = false;
   private maxConcurrentTasks: number;
   private maxTotalTasks: number;
+  private logLevel: LogLevel;
 
   /**
    * Creates a new scheduler instance with the provided Durable Object storage.
@@ -106,11 +120,48 @@ export class ReliableScheduler {
    * @param options - Optional configuration
    * @param options.maxConcurrentTasks - Maximum number of tasks to process concurrently (default: 10)
    * @param options.maxTotalTasks - Maximum total tasks allowed (default: 10000)
+  * @param options.logLevel - Minimum log level (default: "warn")
    */
-  constructor(storage: DurableObjectStorage, options?: { maxConcurrentTasks?: number; maxTotalTasks?: number }) {
+  constructor(
+    storage: DurableObjectStorage,
+    options?: { maxConcurrentTasks?: number; maxTotalTasks?: number; logLevel?: LogLevel }
+  ) {
     this.storage = storage;
     this.maxConcurrentTasks = options?.maxConcurrentTasks ?? 10;
     this.maxTotalTasks = options?.maxTotalTasks ?? 10000;
+    this.logLevel = options?.logLevel ?? "warn";
+  }
+
+  private logDebug(message: string): Effect.Effect<void, never, never> {
+    if (!shouldLog("debug", this.logLevel)) return Effect.void;
+    return Effect.logDebug(message);
+  }
+
+  private logInfo(message: string): Effect.Effect<void, never, never> {
+    if (!shouldLog("info", this.logLevel)) return Effect.void;
+    return Effect.log(message);
+  }
+
+  private logWarn(message: string): Effect.Effect<void, never, never> {
+    if (!shouldLog("warn", this.logLevel)) return Effect.void;
+    return Effect.logWarning(message);
+  }
+
+  private logError(message: string): Effect.Effect<void, never, never> {
+    if (!shouldLog("error", this.logLevel)) return Effect.void;
+    return Effect.logError(message);
+  }
+
+  private logInfoPromise(message: string): Promise<void> {
+    return Effect.runPromise(this.logInfo(message));
+  }
+
+  private logWarnPromise(message: string): Promise<void> {
+    return Effect.runPromise(this.logWarn(message));
+  }
+
+  private logErrorPromise(message: string): Promise<void> {
+    return Effect.runPromise(this.logError(message));
   }
 
   /**
@@ -342,7 +393,7 @@ export class ReliableScheduler {
       if (updated) {
         this.invalidateCache();
       } else {
-        yield* Effect.logWarning(`[checkpoint] Failed to update checkpoint ${key} for task ${taskId}`);
+        yield* this.logWarn(`[checkpoint] Failed to update checkpoint ${key} for task ${taskId}`);
       }
     });
   }
@@ -388,7 +439,7 @@ export class ReliableScheduler {
       if (updated) {
         this.invalidateCache();
       } else {
-        yield* Effect.logWarning(`[checkpointMultiple] Failed to update checkpoints for task ${taskId}`);
+        yield* this.logWarn(`[checkpointMultiple] Failed to update checkpoints for task ${taskId}`);
       }
     });
   }
@@ -483,7 +534,7 @@ export class ReliableScheduler {
             );
             if (existingTask) {
               const reason = scheduledAt === 0 ? "never scheduled" : `${Math.round((now - scheduledAt) / 1000)}s overdue`;
-              yield* Effect.log(`[recoverStuckTasks] Recovering task ${task.taskId} (${task.taskName}): ${reason}, rescheduling for immediate execution`);
+              yield* this.logInfo(`[recoverStuckTasks] Recovering task ${task.taskId} (${task.taskName}): ${reason}, rescheduling for immediate execution`);
               existingTask.scheduledAt = newScheduledAt;
               existingTask.status = "pending";
               yield* Effect.promise(() => this.storage.put(`task:${task.taskId}`, existingTask));
@@ -740,7 +791,7 @@ export class ReliableScheduler {
       const now = Date.now();
       const dueTaskIds = yield* this._getDueTaskIds(now);
 
-      yield* Effect.logDebug(`[_alarm] Found ${dueTaskIds.length} due tasks at ${now}`);
+      yield* this.logDebug(`[_alarm] Found ${dueTaskIds.length} due tasks at ${now}`);
 
       // Separate recovery tasks (stuck) from normal tasks
       const recoveryTasks: string[] = [];
@@ -753,10 +804,10 @@ export class ReliableScheduler {
           const isStuck = scheduledAt === 0 || (scheduledAt > 0 && now > scheduledAt + 5000);
           if (isStuck) {
             recoveryTasks.push(taskId);
-            yield* Effect.logDebug(`[_alarm] Recovery task: ${taskId} (${task.taskName}), scheduled=${scheduledAt}, overdue=${scheduledAt > 0 ? Math.round((now - scheduledAt) / 1000) : 'never'}s`);
+            yield* this.logDebug(`[_alarm] Recovery task: ${taskId} (${task.taskName}), scheduled=${scheduledAt}, overdue=${scheduledAt > 0 ? Math.round((now - scheduledAt) / 1000) : 'never'}s`);
           } else {
             normalTasks.push(taskId);
-            yield* Effect.logDebug(`[_alarm] Normal task: ${taskId} (${task.taskName}), scheduled=${scheduledAt}`);
+            yield* this.logDebug(`[_alarm] Normal task: ${taskId} (${task.taskName}), scheduled=${scheduledAt}`);
           }
         } else {
           // If task not found, treat as normal (will be skipped in processTask)
@@ -764,7 +815,7 @@ export class ReliableScheduler {
         }
       }
 
-      yield* Effect.logDebug(`[_alarm] Processing ${recoveryTasks.length} recovery tasks, ${normalTasks.length} normal tasks`);
+      yield* this.logDebug(`[_alarm] Processing ${recoveryTasks.length} recovery tasks, ${normalTasks.length} normal tasks`);
 
       // Process recovery tasks first (they're more critical)
       yield* Effect.forEach(recoveryTasks, (taskId) => this._processTaskEffect(taskId), { concurrency: this.maxConcurrentTasks });
@@ -789,19 +840,19 @@ export class ReliableScheduler {
     const startTime = Date.now();
     const task = await this.storage.get<Task>(`task:${taskId}`);
     if (!task) {
-      await Effect.runPromise(Effect.log(`[processTask] Task ${taskId} not found, skipping`));
+      await this.logInfoPromise(`[processTask] Task ${taskId} not found, skipping`);
       return;
     }
 
-    await Effect.runPromise(Effect.log(`[processTask] Processing task ${taskId} (${task.taskName}), status=${task.status}, scheduled=${task.scheduledAt}`));
+    await this.logInfoPromise(`[processTask] Processing task ${taskId} (${task.taskName}), status=${task.status}, scheduled=${task.scheduledAt}`);
 
     if (task.status === "paused") {
-      await Effect.runPromise(Effect.log(`[processTask] Task ${taskId} is paused, skipping`));
+      await this.logInfoPromise(`[processTask] Task ${taskId} is paused, skipping`);
       return;
     }
 
     if (task.progress.completed) {
-      await Effect.runPromise(Effect.log(`[processTask] Task ${taskId} is completed, marking as completed`));
+      await this.logInfoPromise(`[processTask] Task ${taskId} is completed, marking as completed`);
       await this._updateTaskSync(taskId, (t) => {
         t.status = "completed";
         return true;
@@ -811,11 +862,11 @@ export class ReliableScheduler {
 
     const handler = this.handlers.get(task.taskName);
     if (!handler) {
-      await Effect.runPromise(Effect.logError(`[processTask] No handler for taskName "${task.taskName}"`));
+      await this.logErrorPromise(`[processTask] No handler for taskName "${task.taskName}"`);
       return;
     }
 
-    await Effect.runPromise(Effect.log(`[processTask] Running handler for task ${taskId} (${task.taskName})`));
+    await this.logInfoPromise(`[processTask] Running handler for task ${taskId} (${task.taskName})`);
 
     // Mark task as running if not already
     const updated = await this._updateTaskSync(taskId, (t) => {
@@ -834,7 +885,7 @@ export class ReliableScheduler {
       const result = await Effect.runPromise(Effect.provide(Effect.retry(handler(taskId, task.params), schedule), layer) as Effect.Effect<void, unknown, never>);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : String(err);
-      await Effect.runPromise(Effect.logError(`Task ${taskId} (${task.taskName}) threw: ${errorMessage}`));
+      await this.logErrorPromise(`Task ${taskId} (${task.taskName}) threw: ${errorMessage}`);
       await this._updateTaskSync(taskId, (t) => {
         t.status = "failed";
         t.progress.error = errorMessage;
@@ -844,7 +895,7 @@ export class ReliableScheduler {
       // Track execution time per task
       const duration = Date.now() - startTime;
       if (duration > 1000) {
-        await Effect.runPromise(Effect.logWarning(`[processTask] Task ${taskId} (${task.taskName}) took ${duration}ms`));
+        await this.logWarnPromise(`[processTask] Task ${taskId} (${task.taskName}) took ${duration}ms`);
       }
     }
   }
@@ -979,7 +1030,7 @@ export class ReliableScheduler {
             const waitTime = Math.round((dueTime - now) / 1000);
             if (due.length === 0 && waitTime < 60) {
               // Only log if no tasks are due and wait is short (to avoid spam)
-              yield* Effect.logDebug(`[_getDueTaskIds] Next task ${taskId} due in ${waitTime}s (scheduled=${dueTime}, now=${now})`);
+              yield* this.logDebug(`[_getDueTaskIds] Next task ${taskId} due in ${waitTime}s (scheduled=${dueTime}, now=${now})`);
             }
           }
           break;
@@ -987,7 +1038,7 @@ export class ReliableScheduler {
       }
 
       if (due.length > 0) {
-        yield* Effect.logDebug(`[_getDueTaskIds] Found ${due.length} due tasks: ${due.join(', ')}`);
+        yield* this.logDebug(`[_getDueTaskIds] Found ${due.length} due tasks: ${due.join(', ')}`);
       }
       return due;
     });

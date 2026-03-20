@@ -154,3 +154,13 @@ SvelteKit Component → Remote Function → Cloudflare Worker → TaskSchedulerD
 - [Better Auth Docs](https://www.better-auth.com/)
 - [Durable Objects Docs](https://developers.cloudflare.com/durable-objects/)
 - [Alchemy Docs](https://alchemy.run/)
+
+## Logging levels
+
+This demo can be noisy in production. Control log volume with `IRONALARM_LOG_LEVEL` (default: `warn`).
+
+Example:
+
+```bash
+IRONALARM_LOG_LEVEL=error bun run deploy
+```
